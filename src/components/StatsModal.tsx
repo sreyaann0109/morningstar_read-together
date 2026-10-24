@@ -3,6 +3,7 @@
 import React from 'react';
 import { X, Flame, Trophy, Calendar } from 'lucide-react';
 import { UserProfile } from '../types';
+import { getUTC8DateString, addDaysUTC8 } from '../lib/dateUtils';
 
 interface StatsModalProps {
   isOpen: boolean;
@@ -15,18 +16,17 @@ const WEEKDAY_NAMES = ['日', '一', '二', '三', '四', '五', '六'];
 export const StatsModal: React.FC<StatsModalProps> = ({ isOpen, onClose, user }) => {
   if (!isOpen) return null;
 
-  // Dynamically generate the exact last 7 calendar days ending today
-  const today = new Date();
+  // Dynamically generate the exact last 7 calendar days ending today in UTC+8
+  const todayStr = getUTC8DateString();
   const last7Days = Array.from({ length: 7 }, (_, idx) => {
     const daysAgo = 6 - idx; // 6, 5, 4, 3, 2, 1, 0
-    const d = new Date(today);
-    d.setDate(today.getDate() - daysAgo);
-    const month = d.getMonth() + 1;
-    const date = d.getDate();
-    const weekday = WEEKDAY_NAMES[d.getDay()];
+    const dStr = addDaysUTC8(todayStr, -daysAgo);
+    const [, m, d] = dStr.split('-').map(Number);
+    const dayOfWeek = new Date(`${dStr}T00:00:00+08:00`).getDay();
+    const weekday = WEEKDAY_NAMES[dayOfWeek];
     const isCompleted = user.streakDays > daysAgo;
     return {
-      dateLabel: `${month}/${date}`,
+      dateLabel: `${m}/${d}`,
       dayLabel: daysAgo === 0 ? '今天' : `週${weekday}`,
       isCompleted,
     };

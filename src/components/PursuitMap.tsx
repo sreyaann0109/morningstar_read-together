@@ -10,6 +10,7 @@ import {
   BookOpen,
   Trophy,
 } from 'lucide-react';
+import { getUTC8DateString } from '../lib/dateUtils';
 
 interface PursuitMapProps {
   userId: string;
@@ -32,11 +33,8 @@ export const PursuitMap: React.FC<PursuitMapProps> = ({
   compact = false,
   interactive = true,
 }) => {
-  const today = new Date();
-  const todayYear = today.getFullYear();
-  const todayMonth = today.getMonth() + 1; // 1-12
-  const todayDate = today.getDate();
-  const todayStr = `${todayYear}-${String(todayMonth).padStart(2, '0')}-${String(todayDate).padStart(2, '0')}`;
+  const todayStr = getUTC8DateString();
+  const [todayYear, todayMonth, todayDate] = todayStr.split('-').map(Number);
 
   const [viewYear, setViewYear] = useState<number>(todayYear);
   const [viewMonth, setViewMonth] = useState<number>(todayMonth);

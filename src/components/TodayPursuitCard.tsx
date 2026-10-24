@@ -141,10 +141,6 @@ export const TodayPursuitCard: React.FC<TodayPursuitCardProps> = ({
   const lastFinishedLocation = isNTHalfYear && plan.completedUnits > 0 ? getNTChapterLocation(plan.completedUnits) : null;
   const nextLocation = isNTHalfYear ? getNTChapterLocation(Math.min(TOTAL_NT_CHAPTERS, plan.completedUnits + 1)) : null;
   const ntScheduleInfo = isNTHalfYear ? getTodayNTSchedule(plan.completedUnits) : null;
-  const nextDayNT =
-    isNTHalfYear && ntScheduleInfo
-      ? getNTDaySchedule(Math.min(TOTAL_NT_DAYS, ntScheduleInfo.dayNumber + 1))
-      : null;
   const nextReadScheduleText = ntScheduleInfo?.schedule.displayText || nextLocation?.displayText || '馬太福音 第 1 章';
 
   // Location helpers for Speed Reading
@@ -673,7 +669,7 @@ export const TodayPursuitCard: React.FC<TodayPursuitCardProps> = ({
                     <BookOpen className="w-4 h-4 text-white" />
                     <span>
                       {isNTHalfYear
-                        ? `📖 多讀一天（推進至【${nextDayNT?.displayText || nextReadScheduleText}】）`
+                        ? `📖 多讀一天（推進至【${nextReadScheduleText}】）`
                         : isNTSpeed && speedPace
                         ? `📖 多讀 1 章（推進至【${speedNextLocation?.displayText || ''}】）`
                         : `📖 多讀一${unit}（完成第 ${Math.min(plan.completedUnits + 1, plan.totalUnits)} ${unit}）`}

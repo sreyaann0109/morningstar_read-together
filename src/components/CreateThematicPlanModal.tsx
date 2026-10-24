@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { X, PlusCircle, RefreshCw, Sparkles, KeyRound, Check } from 'lucide-react';
 import { PursuitPlan, PlanCategory, UserProfile } from '../types';
 import { CODE_EMOJIS } from './JoinByCodeModal';
+import { getUTC8DateString, addDaysUTC8, diffDaysUTC8 } from '../lib/dateUtils';
 
 interface CreateThematicPlanModalProps {
   isOpen: boolean;
@@ -18,7 +19,7 @@ export const CreateThematicPlanModal: React.FC<CreateThematicPlanModalProps> = (
   adminUser,
   onCreateThematicPlan,
 }) => {
-  const todayStr = new Date().toISOString().split('T')[0];
+  const todayStr = getUTC8DateString();
   const [title, setTitle] = useState('');
   const [category, setCategory] = useState<PlanCategory>('custom');
   const [unitName, setUnitName] = useState<'篇' | '章'>('篇');
@@ -45,9 +46,8 @@ export const CreateThematicPlanModal: React.FC<CreateThematicPlanModalProps> = (
       setCurrentVerses('新約全書 27 卷共 260 章');
       setDescription('堅定持續速讀新約聖經，進入主話大能，享受主生命豐富與靈裡火熱！');
       // Default to 60 days
-      const d = new Date(start);
-      d.setDate(d.getDate() + 59);
-      setEndDate(d.toISOString().split('T')[0]);
+      const baseStart = startDate || todayStr;
+      setEndDate(addDaysUTC8(baseStart, 59));
     } else if (newCat === 'nt-half-year') {
       setTitle('半年新約讀經一遍');
       setUnitName('章');
@@ -62,10 +62,8 @@ export const CreateThematicPlanModal: React.FC<CreateThematicPlanModalProps> = (
   };
 
   const handleSetSpeedPreset = (days: number) => {
-    const start = startDate ? new Date(startDate) : new Date();
-    const d = new Date(start);
-    d.setDate(d.getDate() + (days - 1));
-    setEndDate(d.toISOString().split('T')[0]);
+    const baseStart = startDate || todayStr;
+    setEndDate(addDaysUTC8(baseStart, days - 1));
   };
 
   // Reset form and generate a fresh 6-Emoji invite code every time the modal opens
@@ -75,7 +73,7 @@ export const CreateThematicPlanModal: React.FC<CreateThematicPlanModalProps> = (
       setCategory('custom');
       setUnitName('篇');
       setTotalUnits('20');
-      setStartDate(new Date().toISOString().split('T')[0]);
+      setStartDate(todayStr);
       setEndDate('');
       setCurrentVerses('');
       setSummary('');
@@ -317,7 +315,7 @@ export const CreateThematicPlanModal: React.FC<CreateThematicPlanModalProps> = (
                 </div>
                 {startDate && endDate && (
                   <p className="text-[11px] text-amber-800 font-medium pt-1">
-                    🎯 目前設定期程共 {Math.max(1, Math.round((new Date(endDate).getTime() - new Date(startDate).getTime()) / 86400000) + 1)} 天，每日目標進度約 {Math.round((260 / Math.max(1, Math.round((new Date(endDate).getTime() - new Date(startDate).getTime()) / 86400000) + 1)) * 10) / 10} 章。系統將每日自動檢查是否趕上進度並提醒！
+                    🎯 目前設定期程共 {Math.max(1, diffDaysUTC8(startDate, endDate) + 1)} 天，每日目標進度約 {Math.round((260 / Math.max(1, diffDaysUTC8(startDate, endDate) + 1)) * 10) / 10} 章。系統將每日自動檢查是否趕上進度並提醒！
                   </p>
                 )}
               </div>

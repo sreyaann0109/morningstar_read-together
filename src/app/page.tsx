@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Header } from '../components/Header';
 import { TodayPursuitCard } from '../components/TodayPursuitCard';
 import { CompanionsFeed } from '../components/CompanionsFeed';
@@ -60,6 +60,7 @@ import {
   getLastMutationTimestamp,
 } from '../lib/api';
 import { hashPasswordWeb, generateRandomTempPassword } from '../lib/password';
+import { getUTC8DateString, addDaysUTC8 } from '../lib/dateUtils';
 import { DeletedCommentRecord } from '../components/CompanionsFeed';
 
 const getUserStorageKey = (userId: string, key: string) => `morningstar_user_${userId}_${key}`;
@@ -142,13 +143,11 @@ const loadUserDailyHistory = (targetUser: UserProfile): Record<string, number> =
 
   // 預設依 streak 與近月天數初始化真實追求數據（若 streak 為 0 則預設為空，嚴格杜絕幽靈方格）
   const initialHistory: Record<string, number> = {};
-  const today = new Date();
+  const todayStr = getUTC8DateString();
   const streak = targetUser.streakDays || 0;
   if (streak > 0) {
     for (let i = 0; i < streak; i++) {
-      const d = new Date(today);
-      d.setDate(d.getDate() - i);
-      const dateStr = d.toISOString().split('T')[0];
+      const dateStr = addDaysUTC8(todayStr, -i);
       initialHistory[dateStr] = i === 0 ? 2 : (i % 3 === 0 ? 3 : 2);
     }
   }
@@ -752,16 +751,27 @@ export default function Home() {
     ? Boolean(currentSelfMember.todayCompleted)
     : false;
 
-  // Filter posts to only those belonging to the currently selected pursuit theme
-  const visiblePosts =
-    !currentPlan || (user.role !== 'admin' && userJoinedPlans.length === 0)
-      ? []
-      : posts.filter((post) => {
-          if (post.planId && currentPlan.id) {
-            return post.planId === currentPlan.id;
-          }
-          return post.planTitle === currentPlan.title;
-        });
+  // Filter posts to all joined pursuit plans of the current user (plus currentPlan)
+  const feedPosts = useMemo(() => {
+    if (user.role !== 'admin' && userJoinedPlans.length === 0) return [];
+    const joinedIds = new Set(userJoinedPlans.map((p) => p.id));
+    if (currentPlan?.id) joinedIds.add(currentPlan.id);
+    return posts.filter((post) => {
+      if (post.planId && joinedIds.has(post.planId)) return true;
+      if (!post.planId && currentPlan?.title && post.planTitle === currentPlan.title) return true;
+      return false;
+    });
+  }, [posts, user.role, userJoinedPlans, currentPlan?.id, currentPlan?.title]);
+
+  const visiblePosts = useMemo(() => {
+    if (!currentPlan || (user.role !== 'admin' && userJoinedPlans.length === 0)) return [];
+    return posts.filter((post) => {
+      if (post.planId && currentPlan.id) {
+        return post.planId === currentPlan.id;
+      }
+      return post.planTitle === currentPlan.title;
+    });
+  }, [posts, currentPlan, user.role, userJoinedPlans.length]);
 
   // Derive companions strictly from rawCurrentPlan.members with per-user independent progress
   const currentCompanions: Companion[] = (() => {
@@ -913,7 +923,7 @@ export default function Home() {
         name: user.name,
         avatar: user.avatar,
         locality: user.locality,
-        joinedAt: new Date().toISOString().split('T')[0],
+        joinedAt: getUTC8DateString(),
         todayCompleted: false,
         streakDays: user.streakDays,
         completedUnits: 0,
@@ -1107,7 +1117,7 @@ export default function Home() {
 
   // Admin: Add / Remove User from Plan
   const handleAddUserToPlan = (planId: string, targetUser: UserProfile) => {
-    const todayStr = new Date().toISOString().split('T')[0];
+    const todayStr = getUTC8DateString();
     let targetPlanTitle = '';
     const updated = plansRef.current.map((p) => {
       if (p.id === planId) {
@@ -1193,7 +1203,7 @@ export default function Home() {
     const currentPlans = plansRef.current;
     const targetPlan = currentPlans.find((p) => p.id === planId);
     const targetPlanTitle = targetPlan?.title || '';
-    const todayStr = new Date().toISOString().split('T')[0];
+    const todayStr = getUTC8DateString();
 
     const updated = currentPlans.map((p) => {
       if (p.id === planId) {
@@ -1869,7 +1879,7 @@ export default function Home() {
               name: user.name,
               avatar: user.avatar,
               locality: user.locality,
-              joinedAt: new Date().toISOString().split('T')[0],
+              joinedAt: getUTC8DateString(),
               todayCompleted: nextState,
               streakDays: user.streakDays,
               lastActive: '今日 剛剛',
@@ -1895,7 +1905,7 @@ export default function Home() {
       savePlans(updatedPlans);
     }
 
-    const todayStr = new Date().toISOString().split('T')[0];
+    const todayStr = getUTC8DateString();
     setDailyPursuitHistory((prev) => {
       const cur = prev[todayStr] || 0;
       const nextVal = nextState ? cur + (chapterDelta || 1) : Math.max(0, cur - (chapterDelta || 1));
@@ -1994,7 +2004,7 @@ export default function Home() {
             name: user.name,
             avatar: user.avatar,
             locality: user.locality,
-            joinedAt: new Date().toISOString().split('T')[0],
+            joinedAt: getUTC8DateString(),
             todayCompleted: true,
             streakDays: user.streakDays,
             lastActive: '今日 剛剛',
@@ -2025,7 +2035,7 @@ export default function Home() {
       streakDays: prevPlanCompleted ? prev.streakDays : prev.streakDays + 1,
     }));
 
-    const todayStr = new Date().toISOString().split('T')[0];
+    const todayStr = getUTC8DateString();
     setDailyPursuitHistory((prev) => {
       const cur = prev[todayStr] || 0;
       const updated = { ...prev, [todayStr]: cur + deltaChapters };
@@ -2084,7 +2094,7 @@ export default function Home() {
       streakDays: !snap.prevTodayCompleted ? Math.max(0, prev.streakDays - 1) : prev.streakDays,
     }));
 
-    const todayStr = new Date().toISOString().split('T')[0];
+    const todayStr = getUTC8DateString();
     setDailyPursuitHistory((prev) => {
       const cur = prev[todayStr] || 0;
       const updated = { ...prev, [todayStr]: Math.max(0, cur - deltaRevert) };
@@ -2174,7 +2184,7 @@ export default function Home() {
               name: user.name,
               avatar: user.avatar,
               locality: user.locality,
-              joinedAt: new Date().toISOString().split('T')[0],
+              joinedAt: getUTC8DateString(),
               todayCompleted: true,
               streakDays: user.streakDays,
               lastActive: '今日 剛剛',
@@ -2920,8 +2930,10 @@ export default function Home() {
                 {/* Companions Feed */}
                 <div className={mobileTab === 'today' ? 'hidden md:block' : 'block'}>
                   <CompanionsFeed
-                    posts={visiblePosts}
+                    posts={feedPosts}
                     activePlanTitle={currentPlan?.title}
+                    activePlanId={currentPlan?.id}
+                    joinedPlans={userJoinedPlans}
                     currentUserId={user.id}
                     currentUserName={user.name}
                     isAdmin={isLoggedIn && user.role === 'admin'}

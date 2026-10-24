@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { X, Edit3, BookOpen, Sparkles, Check, Bookmark, RefreshCw, KeyRound } from 'lucide-react';
 import { PursuitPlan, PlanCategory } from '../types';
 import { CODE_EMOJIS } from './JoinByCodeModal';
+import { getUTC8DateString, addDaysUTC8, diffDaysUTC8 } from '../lib/dateUtils';
 
 interface EditCurrentPursuitModalProps {
   isOpen: boolean;
@@ -18,7 +19,7 @@ export const EditCurrentPursuitModal: React.FC<EditCurrentPursuitModalProps> = (
   currentPlan,
   onSavePlan,
 }) => {
-  const todayStr = new Date().toISOString().split('T')[0];
+  const todayStr = getUTC8DateString();
   const [title, setTitle] = useState(currentPlan.title);
   const [category, setCategory] = useState<PlanCategory>(currentPlan.category);
   const [unitName, setUnitName] = useState<'篇' | '章'>(
@@ -47,10 +48,7 @@ export const EditCurrentPursuitModal: React.FC<EditCurrentPursuitModalProps> = (
         setTitle('新約速讀一遍');
       }
       if (!endDate) {
-        const start = startDate ? new Date(startDate) : new Date();
-        const d = new Date(start);
-        d.setDate(d.getDate() + 59);
-        setEndDate(d.toISOString().split('T')[0]);
+        setEndDate(addDaysUTC8(startDate || todayStr, 59));
       }
     } else if (newCat === 'nt-half-year') {
       setUnitName('章');
@@ -66,10 +64,7 @@ export const EditCurrentPursuitModal: React.FC<EditCurrentPursuitModalProps> = (
   };
 
   const handleSetSpeedPreset = (days: number) => {
-    const start = startDate ? new Date(startDate) : new Date();
-    const d = new Date(start);
-    d.setDate(d.getDate() + (days - 1));
-    setEndDate(d.toISOString().split('T')[0]);
+    setEndDate(addDaysUTC8(startDate || todayStr, days - 1));
   };
 
   // Sync state whenever currentPlan changes or modal opens
@@ -311,9 +306,9 @@ export const EditCurrentPursuitModal: React.FC<EditCurrentPursuitModalProps> = (
                 {startDate && endDate && (
                   <p className="text-[11px] text-amber-800 dark:text-amber-300 font-medium pt-1">
                     已選期程：{startDate} 至 {endDate} (共{' '}
-                    {Math.max(1, Math.round((new Date(endDate).getTime() - new Date(startDate).getTime()) / (1000 * 60 * 60 * 24)) + 1)}{' '}
+                    {Math.max(1, diffDaysUTC8(startDate, endDate) + 1)}{' '}
                     天，平均每天約{' '}
-                    {(260 / Math.max(1, Math.round((new Date(endDate).getTime() - new Date(startDate).getTime()) / (1000 * 60 * 60 * 24)) + 1)).toFixed(1)}{' '}
+                    {(260 / Math.max(1, diffDaysUTC8(startDate, endDate) + 1)).toFixed(1)}{' '}
                     章)
                   </p>
                 )}

@@ -1,3 +1,5 @@
+import { getUTC8DateString, diffDaysUTC8, addDaysUTC8 } from '../lib/dateUtils';
+
 export interface NTBook {
   name: string;      // 例如：馬太福音
   shortName: string; // 例如：太
@@ -191,19 +193,14 @@ export function calculateNTSpeedPace(
   const nextChapter = Math.min(TOTAL_NT_CHAPTERS, currentRoundUnits + 1);
   const currentLocation = getNTChapterLocation(nextChapter);
 
-  // Date calculations
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  // Date calculations in UTC+8
+  const todayStr = getUTC8DateString();
+  const startStr = (startDateStr || todayStr).split('T')[0];
+  const endStr = (endDateStr || addDaysUTC8(startStr, 60)).split('T')[0];
 
-  const start = startDateStr ? new Date(startDateStr) : new Date();
-  start.setHours(0, 0, 0, 0);
-
-  // Default end date is 60 days after start if not provided
-  const end = endDateStr ? new Date(endDateStr) : new Date(start.getTime() + 60 * 86400000);
-  end.setHours(0, 0, 0, 0);
-
-  const totalDays = Math.max(1, Math.round((end.getTime() - start.getTime()) / 86400000) + 1);
-  const daysElapsed = Math.max(1, Math.min(totalDays, Math.round((today.getTime() - start.getTime()) / 86400000) + 1));
+  const totalDays = Math.max(1, diffDaysUTC8(startStr, endStr) + 1);
+  const rawElapsed = diffDaysUTC8(startStr, todayStr) + 1;
+  const daysElapsed = Math.max(1, Math.min(totalDays, rawElapsed));
   const daysRemaining = Math.max(0, totalDays - daysElapsed);
 
   const dailyTargetChapters = Math.round((TOTAL_NT_CHAPTERS / totalDays) * 10) / 10;
@@ -274,15 +271,12 @@ export function calculateNTHalfYearPace(
   const nextChapter = Math.min(TOTAL_NT_CHAPTERS, completedChapters + 1);
   const currentLocation = getNTChapterLocation(nextChapter);
 
-  // Date calculations
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  // Date calculations in UTC+8
+  const todayStr = getUTC8DateString();
+  const startStr = (startDateStr || todayStr).split('T')[0];
 
-  const start = startDateStr ? new Date(startDateStr) : new Date();
-  start.setHours(0, 0, 0, 0);
-
-  // If start is in the future, daysElapsed is 1
-  const daysDiff = Math.round((today.getTime() - start.getTime()) / 86400000) + 1;
+  // If start is in the future, daysElapsed is clamped to 1
+  const daysDiff = diffDaysUTC8(startStr, todayStr) + 1;
   const daysElapsed = Math.max(1, Math.min(TOTAL_NT_DAYS, daysDiff));
   const daysRemaining = Math.max(0, TOTAL_NT_DAYS - daysElapsed);
 

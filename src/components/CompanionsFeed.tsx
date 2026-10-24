@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   MessageCircle,
   Sparkles,
@@ -13,8 +13,9 @@ import {
   SlidersHorizontal,
   BookOpen,
   RotateCcw,
+  ChevronDown,
 } from 'lucide-react';
-import { SharingPost, Comment, SiteSettings } from '../types';
+import { SharingPost, Comment, SiteSettings, PursuitPlan } from '../types';
 
 export interface DeletedCommentRecord {
   postId: string;
@@ -25,6 +26,8 @@ export interface DeletedCommentRecord {
 interface CompanionsFeedProps {
   posts: SharingPost[];
   activePlanTitle?: string;
+  activePlanId?: string;
+  joinedPlans?: PursuitPlan[];
   currentUserId?: string;
   currentUserName: string;
   isAdmin?: boolean;
@@ -44,6 +47,8 @@ interface CompanionsFeedProps {
 export const CompanionsFeed: React.FC<CompanionsFeedProps> = ({
   posts,
   activePlanTitle,
+  activePlanId,
+  joinedPlans = [],
   currentUserId,
   currentUserName,
   isAdmin = false,
@@ -65,7 +70,17 @@ export const CompanionsFeed: React.FC<CompanionsFeedProps> = ({
   const [activeCommentPostId, setActiveCommentPostId] = useState<string | null>(null);
   const [commentText, setCommentText] = useState('');
 
-  // Filtering State (Feed is strictly scoped to the active theme)
+  // Pursuit Plan selection state (defaults to activePlanId, allows selecting any joined plan or 'all')
+  const [selectedPlanId, setSelectedPlanId] = useState<string>(activePlanId || 'all');
+
+  // Sync default selection when current activePlanId changes
+  useEffect(() => {
+    if (activePlanId) {
+      setSelectedPlanId(activePlanId);
+    }
+  }, [activePlanId]);
+
+  // Filtering State: Author filter (all vs mine)
   const [authorFilter, setAuthorFilter] = useState<'all' | 'mine'>('all');
 
   // Inline post editing state (reflection text + unitTitle)
@@ -82,17 +97,32 @@ export const CompanionsFeed: React.FC<CompanionsFeedProps> = ({
     return post.authorName === currentUserName;
   };
 
-  // Filtered Posts for active theme (chronological order)
+  // Filtered Posts: filtered by chosen joined pursuit plan and author
   const filteredAndSortedPosts = useMemo(() => {
     let result = [...posts];
 
-    // 1. Author Filter
+    // 1. Pursuit Plan Filter: default to activePlanId, or specific joined plan, or 'all'
+    if (selectedPlanId && selectedPlanId !== 'all') {
+      result = result.filter((p) => {
+        if (p.planId) return p.planId === selectedPlanId;
+        const targetPlan = joinedPlans?.find((jp) => jp.id === selectedPlanId);
+        if (targetPlan) return p.planTitle === targetPlan.title;
+        return p.planTitle === activePlanTitle;
+      });
+    }
+
+    // 2. Author Filter
     if (authorFilter === 'mine') {
       result = result.filter((p) => isOwnPost(p));
     }
 
     return result;
-  }, [posts, authorFilter, currentUserId, currentUserName]);
+  }, [posts, selectedPlanId, joinedPlans, activePlanTitle, authorFilter, currentUserId, currentUserName]);
+
+  const selectedPlan = joinedPlans?.find((p) => p.id === selectedPlanId);
+  const displayTitle = selectedPlanId === 'all'
+    ? '全部已加入追求'
+    : (selectedPlan?.title || activePlanTitle);
 
   const handleSendComment = (postId: string) => {
     if (!commentText.trim()) return;
@@ -147,59 +177,104 @@ export const CompanionsFeed: React.FC<CompanionsFeedProps> = ({
       <div className="space-y-3 pb-2 border-b border-stone-200/60">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
-            <h3 className="font-bold text-base text-stone-900 flex items-center gap-2 flex-wrap">
+            <h3 className="font-bold text-base text-stone-900 dark:text-stone-100 flex items-center gap-2 flex-wrap">
               <span>同伴追求動態牆</span>
-              {activePlanTitle && (
+              {displayTitle && (
                 <span
-                  className="text-xs bg-amber-100 text-amber-900 font-bold px-2.5 py-0.5 rounded-full border border-amber-300 shadow-2xs max-w-[240px] truncate"
-                  title={activePlanTitle}
+                  className="text-xs bg-amber-100 dark:bg-amber-950/70 text-amber-900 dark:text-amber-200 font-bold px-2.5 py-0.5 rounded-full border border-amber-300 dark:border-amber-700 shadow-2xs max-w-[240px] truncate"
+                  title={displayTitle}
                 >
-                  {activePlanTitle.replace(/^主題：/, '')}
+                  {displayTitle.replace(/^主題：/, '')}
                 </span>
               )}
-              <span className="text-xs bg-stone-100 text-stone-600 font-medium px-2 py-0.5 rounded-full">
+              <span className="text-xs bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-300 font-medium px-2 py-0.5 rounded-full">
                 {hasJoinedPlans ? filteredAndSortedPosts.length : 0} 則分享
               </span>
             </h3>
-            <p className="text-xs text-stone-500">
-              {activePlanTitle
-                ? `動態牆跟隨主題【${activePlanTitle.replace(/^主題：/, '')}】，展示此主題內同伴每日晨興與追求的摸著與亮光`
+            <p className="text-xs text-stone-500 dark:text-stone-400">
+              {selectedPlanId === 'all'
+                ? '展示您已加入之全部追求主題內同伴每日晨興與追求的摸著與亮光，彼此激勵、同聲阿們'
+                : displayTitle
+                ? `動態牆展示主題【${displayTitle.replace(/^主題：/, '')}】，展示此主題內同伴每日晨興與追求的摸著與亮光`
                 : '展示追求主題內同伴每日晨興與追求的亮光點滴，彼此激勵、同聲阿們'}
             </p>
           </div>
         </div>
 
-        {/* Author Filter Pills */}
-        {hasJoinedPlans && posts.length > 0 && (
-          <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none text-xs">
-            <span className="text-stone-400 flex items-center gap-1 text-[11px] whitespace-nowrap">
-              <SlidersHorizontal className="w-3 h-3" />
-              對象：
-            </span>
+        {/* Pursuit Selector & Author Filter */}
+        {hasJoinedPlans && (
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pt-1 flex-wrap">
+            {/* Joined Pursuit Selector (Allows saint to freely pick among joined plans, defaults to activePlanId) */}
+            {joinedPlans && joinedPlans.length > 0 && (
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <span className="text-stone-400 flex items-center gap-1 text-[11px] whitespace-nowrap font-medium">
+                  <BookOpen className="w-3.5 h-3.5 text-amber-600" />
+                  追求主題：
+                </span>
+                <div className="relative inline-block">
+                  <select
+                    value={selectedPlanId}
+                    onChange={(e) => setSelectedPlanId(e.target.value)}
+                    className="appearance-none text-xs font-semibold bg-amber-50/90 dark:bg-stone-800 text-amber-900 dark:text-amber-200 pl-2.5 pr-7 py-1 rounded-xl border border-amber-300 dark:border-stone-700 hover:border-amber-400 focus:outline-none focus:ring-1 focus:ring-amber-500 max-w-[240px] sm:max-w-[300px] truncate shadow-2xs cursor-pointer"
+                    title="自由選擇已加入的追求主題（預設為當前追求）"
+                  >
+                    {/* Active Plan First (Default) */}
+                    {activePlanId && (
+                      <option value={activePlanId}>
+                        🎯 當前：{joinedPlans.find((p) => p.id === activePlanId)?.title || activePlanTitle || '當前追求'}
+                      </option>
+                    )}
+                    {/* Other joined plans */}
+                    {joinedPlans
+                      .filter((p) => p.id !== activePlanId)
+                      .map((p) => (
+                        <option key={p.id} value={p.id}>
+                          📖 {p.title}
+                        </option>
+                      ))}
+                    {/* Option to show all joined plans */}
+                    {joinedPlans.length > 1 && (
+                      <option value="all">
+                        🌟 全部已加入主題 ({joinedPlans.length})
+                      </option>
+                    )}
+                  </select>
+                  <ChevronDown className="w-3 h-3 text-amber-700 dark:text-amber-300 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
+                </div>
+              </div>
+            )}
 
             {/* Author Filter: All vs Mine */}
-            <button
-              type="button"
-              onClick={() => setAuthorFilter('all')}
-              className={`px-2.5 py-1 rounded-xl whitespace-nowrap border transition-all ${
-                authorFilter === 'all'
-                  ? 'bg-stone-900 text-white border-stone-900 font-medium shadow-2xs'
-                  : 'bg-white text-stone-600 border-stone-200 hover:border-stone-300'
-              }`}
-            >
-              全部同伴
-            </button>
-            <button
-              type="button"
-              onClick={() => setAuthorFilter('mine')}
-              className={`px-2.5 py-1 rounded-xl whitespace-nowrap border transition-all ${
-                authorFilter === 'mine'
-                  ? 'bg-amber-600 text-white border-amber-600 font-medium shadow-2xs'
-                  : 'bg-white text-stone-600 border-stone-200 hover:border-amber-300'
-              }`}
-            >
-              我的分享
-            </button>
+            {posts.length > 0 && (
+              <div className="flex items-center gap-1.5 text-xs">
+                <span className="text-stone-400 flex items-center gap-1 text-[11px] whitespace-nowrap">
+                  <SlidersHorizontal className="w-3 h-3" />
+                  對象：
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setAuthorFilter('all')}
+                  className={`px-2.5 py-1 rounded-xl whitespace-nowrap border transition-all text-xs ${
+                    authorFilter === 'all'
+                      ? 'bg-stone-900 text-white border-stone-900 font-medium shadow-2xs'
+                      : 'bg-white dark:bg-stone-800 text-stone-600 dark:text-stone-300 border-stone-200 dark:border-stone-700 hover:border-stone-300'
+                  }`}
+                >
+                  全部同伴
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setAuthorFilter('mine')}
+                  className={`px-2.5 py-1 rounded-xl whitespace-nowrap border transition-all text-xs ${
+                    authorFilter === 'mine'
+                      ? 'bg-amber-600 text-white border-amber-600 font-medium shadow-2xs'
+                      : 'bg-white dark:bg-stone-800 text-stone-600 dark:text-stone-300 border-stone-200 dark:border-stone-700 hover:border-amber-300'
+                  }`}
+                >
+                  只看自己
+                </button>
+              </div>
+            )}
           </div>
         )}
       </div>
