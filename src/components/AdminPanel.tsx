@@ -467,128 +467,131 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
       {/* Main Two-Column Frame (Left: Category Menu, Right: Collapsible Accordion Lists) */}
       <div className="flex flex-col md:flex-row gap-4 items-start">
         {/* Left Side: Category Navigation Menu */}
-        <aside className="w-full md:w-56 flex-shrink-0 bg-white rounded-3xl border border-stone-200 p-2 shadow-2xs space-y-1">
-          <div className="px-3 py-1.5 text-[11px] font-bold text-stone-400 tracking-wider">
+        {/* Left Side: Category Navigation Menu (Mobile: Horizontal Pills; Desktop: Vertical Sidebar) */}
+        <aside className="w-full md:w-56 flex-shrink-0 bg-white rounded-2xl md:rounded-3xl border border-stone-200 p-1.5 sm:p-2 shadow-2xs">
+          <div className="px-3 py-1.5 text-[11px] font-bold text-stone-400 tracking-wider hidden md:block">
             管理專題目錄
           </div>
 
-          <button
-            type="button"
-            onClick={() => setActiveCategory('plans')}
-            className={`w-full py-2.5 px-3.5 rounded-2xl text-xs font-bold flex items-center justify-between transition-all ${
-              activeCategory === 'plans'
-                ? 'bg-amber-500 text-white shadow-xs'
-                : 'text-stone-700 hover:bg-stone-100'
-            }`}
-          >
-            <div className="flex items-center gap-2.5">
-              <BookOpen className="w-4 h-4" />
-              <span>追求主題管理</span>
-            </div>
-            <span
-              className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
+          <div className="flex flex-row overflow-x-auto no-scrollbar gap-1.5 md:flex-col md:space-y-1 md:overflow-visible pb-1 md:pb-0">
+            <button
+              type="button"
+              onClick={() => setActiveCategory('plans')}
+              className={`flex-shrink-0 md:w-full py-2 px-3 sm:py-2.5 sm:px-3.5 rounded-xl md:rounded-2xl text-xs font-bold flex items-center justify-between gap-2 transition-all ${
                 activeCategory === 'plans'
-                  ? 'bg-white/20 text-white'
-                  : 'bg-stone-100 text-stone-600'
+                  ? 'bg-amber-500 text-white shadow-xs'
+                  : 'text-stone-700 hover:bg-stone-100 bg-stone-50/60 md:bg-transparent'
               }`}
             >
-              {plans.length}
-            </span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveCategory('users')}
-            className={`w-full py-2.5 px-3.5 rounded-2xl text-xs font-bold flex items-center justify-between transition-all ${
-              activeCategory === 'users'
-                ? 'bg-amber-500 text-white shadow-xs'
-                : 'text-stone-700 hover:bg-stone-100'
-            }`}
-          >
-            <div className="flex items-center gap-2.5">
-              <Users className="w-4 h-4" />
-              <span>聖徒名冊與帳號</span>
-            </div>
-            <span
-              className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
-                activeCategory === 'users'
-                  ? 'bg-white/20 text-white'
-                  : 'bg-stone-100 text-stone-600'
-              }`}
-            >
-              {allUsers.length}
-            </span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveCategory('passwords')}
-            className={`w-full py-2.5 px-3.5 rounded-2xl text-xs font-bold flex items-center justify-between transition-all ${
-              activeCategory === 'passwords'
-                ? 'bg-amber-500 text-white shadow-xs'
-                : 'text-stone-700 hover:bg-stone-100'
-            }`}
-          >
-            <div className="flex items-center gap-2.5">
-              <KeyRound className="w-4 h-4" />
-              <span>密碼與臨時碼</span>
-            </div>
-            {usersWithPendingReset.length > 0 ? (
-              <span className="text-[10px] px-2 py-0.5 rounded-full font-extrabold bg-rose-500 text-white animate-pulse">
-                {usersWithPendingReset.length}
-              </span>
-            ) : (
+              <div className="flex items-center gap-2">
+                <BookOpen className="w-4 h-4 flex-shrink-0" />
+                <span className="whitespace-nowrap">追求主題管理</span>
+              </div>
               <span
-                className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
-                  activeCategory === 'passwords'
+                className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
+                  activeCategory === 'plans'
                     ? 'bg-white/20 text-white'
-                    : 'bg-stone-100 text-stone-600'
+                    : 'bg-stone-200/70 text-stone-600'
                 }`}
               >
-                0
+                {plans.length}
               </span>
-            )}
-          </button>
+            </button>
 
-          <button
-            type="button"
-            onClick={() => setActiveCategory('stats')}
-            className={`w-full py-2.5 px-3.5 rounded-2xl text-xs font-bold flex items-center justify-between transition-all ${
-              activeCategory === 'stats'
-                ? 'bg-amber-500 text-white shadow-xs'
-                : 'text-stone-700 hover:bg-stone-100'
-            }`}
-          >
-            <div className="flex items-center gap-2.5">
-              <BarChart3 className="w-4 h-4" />
-              <span>全站追求數據</span>
-            </div>
-            <ChevronRight className="w-3.5 h-3.5 opacity-60" />
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveCategory('settings')}
-            className={`w-full py-2.5 px-3.5 rounded-2xl text-xs font-bold flex items-center justify-between transition-all ${
-              activeCategory === 'settings'
-                ? 'bg-amber-500 text-white shadow-xs'
-                : 'text-stone-700 hover:bg-stone-100'
-            }`}
-          >
-            <div className="flex items-center gap-2.5">
-              <Sliders className="w-4 h-4" />
-              <span>設定</span>
-            </div>
-            <span
-              className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
-                activeCategory === 'settings'
-                  ? 'bg-white/20 text-white'
-                  : 'bg-stone-100 text-stone-600'
+            <button
+              type="button"
+              onClick={() => setActiveCategory('users')}
+              className={`flex-shrink-0 md:w-full py-2 px-3 sm:py-2.5 sm:px-3.5 rounded-xl md:rounded-2xl text-xs font-bold flex items-center justify-between gap-2 transition-all ${
+                activeCategory === 'users'
+                  ? 'bg-amber-500 text-white shadow-xs'
+                  : 'text-stone-700 hover:bg-stone-100 bg-stone-50/60 md:bg-transparent'
               }`}
             >
-              8 項控制
-            </span>
-          </button>
+              <div className="flex items-center gap-2">
+                <Users className="w-4 h-4 flex-shrink-0" />
+                <span className="whitespace-nowrap">聖徒名冊與帳號</span>
+              </div>
+              <span
+                className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
+                  activeCategory === 'users'
+                    ? 'bg-white/20 text-white'
+                    : 'bg-stone-200/70 text-stone-600'
+                }`}
+              >
+                {allUsers.length}
+              </span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setActiveCategory('passwords')}
+              className={`flex-shrink-0 md:w-full py-2 px-3 sm:py-2.5 sm:px-3.5 rounded-xl md:rounded-2xl text-xs font-bold flex items-center justify-between gap-2 transition-all ${
+                activeCategory === 'passwords'
+                  ? 'bg-amber-500 text-white shadow-xs'
+                  : 'text-stone-700 hover:bg-stone-100 bg-stone-50/60 md:bg-transparent'
+              }`}
+            >
+              <div className="flex items-center gap-2">
+                <KeyRound className="w-4 h-4 flex-shrink-0" />
+                <span className="whitespace-nowrap">密碼與臨時碼</span>
+              </div>
+              {usersWithPendingReset.length > 0 ? (
+                <span className="text-[10px] px-1.5 py-0.2 rounded-full font-extrabold bg-rose-500 text-white animate-pulse">
+                  {usersWithPendingReset.length}
+                </span>
+              ) : (
+                <span
+                  className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
+                    activeCategory === 'passwords'
+                      ? 'bg-white/20 text-white'
+                      : 'bg-stone-200/70 text-stone-600'
+                  }`}
+                >
+                  0
+                </span>
+              )}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setActiveCategory('stats')}
+              className={`flex-shrink-0 md:w-full py-2 px-3 sm:py-2.5 sm:px-3.5 rounded-xl md:rounded-2xl text-xs font-bold flex items-center justify-between gap-2 transition-all ${
+                activeCategory === 'stats'
+                  ? 'bg-amber-500 text-white shadow-xs'
+                  : 'text-stone-700 hover:bg-stone-100 bg-stone-50/60 md:bg-transparent'
+              }`}
+            >
+              <div className="flex items-center gap-2">
+                <BarChart3 className="w-4 h-4 flex-shrink-0" />
+                <span className="whitespace-nowrap">全站追求數據</span>
+              </div>
+              <ChevronRight className="w-3.5 h-3.5 opacity-60 hidden md:block" />
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setActiveCategory('settings')}
+              className={`flex-shrink-0 md:w-full py-2 px-3 sm:py-2.5 sm:px-3.5 rounded-xl md:rounded-2xl text-xs font-bold flex items-center justify-between gap-2 transition-all ${
+                activeCategory === 'settings'
+                  ? 'bg-amber-500 text-white shadow-xs'
+                  : 'text-stone-700 hover:bg-stone-100 bg-stone-50/60 md:bg-transparent'
+              }`}
+            >
+              <div className="flex items-center gap-2">
+                <Sliders className="w-4 h-4 flex-shrink-0" />
+                <span className="whitespace-nowrap">設定</span>
+              </div>
+              <span
+                className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
+                  activeCategory === 'settings'
+                    ? 'bg-white/20 text-white'
+                    : 'bg-stone-200/70 text-stone-600'
+                }`}
+              >
+                8 項
+              </span>
+            </button>
+          </div>
         </aside>
 
         {/* Right Side: Collapsible Detail Area */}
@@ -756,13 +759,14 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                               togglePlanExpanded(plan.id);
                             }
                           }}
-                          className="p-3 sm:p-3.5 flex items-center justify-between gap-3 cursor-pointer group select-none"
+                          className="p-3 sm:p-3.5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5 sm:gap-3 cursor-pointer group select-none"
                         >
-                          <div className="flex items-center gap-2.5 min-w-0">
+                          {/* Top / Left section: Checkbox, Title & Badges */}
+                          <div className="flex items-start gap-2.5 min-w-0 flex-1">
                             {/* Batch Selection Checkbox */}
                             <div
                               onClick={(e) => toggleSelectPlan(plan.id, e)}
-                              className="p-1 rounded-lg hover:bg-stone-100 cursor-pointer text-stone-400 hover:text-amber-600 transition-colors flex-shrink-0"
+                              className="p-1 rounded-lg hover:bg-stone-100 cursor-pointer text-stone-400 hover:text-amber-600 transition-colors flex-shrink-0 mt-0.5"
                               title="選取進行批量處理"
                             >
                               {isSelected ? (
@@ -771,29 +775,40 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                                 <Square className="w-4 h-4 text-stone-300 hover:text-stone-500" />
                               )}
                             </div>
-                            <span className="w-2.5 h-2.5 rounded-full bg-amber-500 flex-shrink-0" />
-                            <div className="min-w-0">
-                              <div className="flex items-center gap-2 flex-wrap">
-                                <h4 className="font-extrabold text-sm text-stone-900 group-hover:text-amber-900 transition-colors">
+                            <span className="w-2.5 h-2.5 rounded-full bg-amber-500 flex-shrink-0 mt-1.5" />
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center justify-between gap-2">
+                                <h4 className="font-extrabold text-sm sm:text-base text-stone-900 group-hover:text-amber-900 transition-colors truncate">
                                   {plan.title}
                                 </h4>
+                                {/* Mobile-only Chevron Indicator */}
+                                <div className="flex sm:hidden items-center text-stone-400 flex-shrink-0">
+                                  {isExpanded ? (
+                                    <ChevronUp className="w-4 h-4 text-amber-600" />
+                                  ) : (
+                                    <ChevronDown className="w-4 h-4" />
+                                  )}
+                                </div>
+                              </div>
+
+                              <div className="flex items-center gap-1.5 flex-wrap mt-1">
                                 <span className="text-[10px] font-bold text-amber-800 bg-amber-50 border border-amber-200 px-1.5 py-0.2 rounded-md">
                                   共 {plan.totalUnits} {plan.unitName || (plan.category === 'bible' || plan.category === 'nt-half-year' || plan.category === 'nt-speed-reading' ? '章' : '篇')}
                                 </span>
                                 <span className="text-[10px] font-semibold text-emerald-800 bg-emerald-50 border border-emerald-200 px-1.5 py-0.2 rounded-md">
                                   今日 {completedCount}/{totalMembers} 人 ({completionPercentage}%)
                                 </span>
+                                {plan.startDate && (
+                                  <span className="text-[10px] text-stone-400">
+                                    · {plan.startDate}{plan.endDate ? ` ~ ${plan.endDate}` : ' 起'}
+                                  </span>
+                                )}
                               </div>
-                              {plan.startDate && (
-                                <p className="text-[11px] text-stone-400 mt-0.5">
-                                  期間：{plan.startDate}
-                                  {plan.endDate ? ` ~ ${plan.endDate}` : ' 起'}
-                                </p>
-                              )}
                             </div>
                           </div>
 
-                          <div className="flex items-center gap-2 flex-shrink-0">
+                          {/* Actions section: Quick Edit & Invite Code Copy */}
+                          <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap pt-2 sm:pt-0 border-t border-stone-100 sm:border-0 justify-between sm:justify-end">
                             {/* Quick Edit Theme Content Button */}
                             <button
                               type="button"
@@ -830,7 +845,9 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                                 {copiedInvitePlanId === plan.id ? '已複製' : '複製'}
                               </span>
                             </button>
-                            <div className="flex items-center gap-1 text-xs font-semibold text-stone-400 group-hover:text-amber-800 transition-colors">
+
+                            {/* Desktop Expand indicator */}
+                            <div className="hidden sm:flex items-center gap-1 text-xs font-semibold text-stone-400 group-hover:text-amber-800 transition-colors">
                               <span className="hidden md:inline text-[11px]">
                                 {isExpanded ? '收合' : '展開詳情'}
                               </span>
@@ -848,7 +865,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                           <div className="px-4 pb-4 pt-1 space-y-3.5 border-t border-stone-100 animate-in fade-in duration-150">
                             {/* 0. Dedicated Theme Content & Settings Card */}
                             <div className="p-3.5 rounded-2xl bg-stone-50/80 border border-stone-200 space-y-2.5">
-                              <div className="flex items-center justify-between">
+                              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                                 <span className="text-xs font-extrabold text-stone-800 flex items-center gap-1.5">
                                   <BookOpen className="w-4 h-4 text-amber-600" />
                                   主題內容與追求設定
@@ -856,7 +873,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                                 <button
                                   type="button"
                                   onClick={() => onEditPlan(plan)}
-                                  className="px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold flex items-center gap-1.5 shadow-2xs transition-all"
+                                  className="w-full sm:w-auto px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold flex items-center justify-center gap-1.5 shadow-2xs transition-all"
                                   title="編輯此追求主題設定與內容"
                                 >
                                   <Edit3 className="w-3.5 h-3.5" />
@@ -917,8 +934,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                               <span className="text-xs font-bold text-amber-950 block">
                                 🔑 6-Emoji 專屬邀請碼：
                               </span>
-                              <div className="flex items-center justify-between gap-2">
-                                <span className="tracking-widest text-base font-extrabold text-amber-950 bg-white px-3 py-1 rounded-xl border border-amber-300">
+                              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                                <span className="tracking-widest text-base font-extrabold text-amber-950 bg-white px-3 py-1 rounded-xl border border-amber-300 text-center sm:text-left">
                                   {plan.inviteCode}
                                 </span>
                                 <button
@@ -928,7 +945,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                                     setCopiedInvitePlanId(plan.id);
                                     setTimeout(() => setCopiedInvitePlanId(null), 2500);
                                   }}
-                                  className="px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold flex items-center gap-1.5 shadow-2xs transition-all"
+                                  className="w-full sm:w-auto px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold flex items-center justify-center gap-1.5 shadow-2xs transition-all"
                                 >
                                   {copiedInvitePlanId === plan.id ? (
                                     <Check className="w-3.5 h-3.5" />
@@ -958,7 +975,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
 
                             {/* 3. Vertical Row: Members List */}
                             <div className="space-y-2">
-                              <div className="flex items-center justify-between">
+                              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                                 <span className="text-xs font-bold text-stone-700 block">
                                   👥 參與聖徒成員名單（共 {totalMembers} 位，逐條縱向）：
                                 </span>
@@ -979,7 +996,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                                         }
                                       }
                                     }}
-                                    className="px-2 py-0.5 rounded-lg border border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-700 font-semibold text-[10px] flex items-center gap-1 transition-colors shadow-2xs"
+                                    className="w-full sm:w-auto px-2 py-1 rounded-lg border border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-700 font-semibold text-[10px] flex items-center justify-center gap-1 transition-colors shadow-2xs self-end sm:self-auto"
                                     title="將本主題所有成員批量移出"
                                   >
                                     <UserMinus className="w-3 h-3" />
@@ -994,15 +1011,15 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                                   {members.map((m, idx) => (
                                     <div
                                       key={m.userId}
-                                      className="p-2.5 rounded-xl border border-stone-200 bg-stone-50/50 flex items-center justify-between gap-2 text-xs"
+                                      className="p-2.5 rounded-xl border border-stone-200 bg-stone-50/50 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs"
                                     >
-                                      <div className="flex items-center gap-2.5 min-w-0">
-                                        <span className="text-xs text-stone-400 font-mono w-4">
+                                      <div className="flex items-start sm:items-center gap-2.5 min-w-0 flex-1">
+                                        <span className="text-xs text-stone-400 font-mono w-4 flex-shrink-0 mt-0.5 sm:mt-0">
                                           {idx + 1}.
                                         </span>
                                         <span className="text-base flex-shrink-0">{m.avatar}</span>
-                                        <div className="min-w-0">
-                                          <div className="flex items-center gap-1.5">
+                                        <div className="min-w-0 flex-1">
+                                          <div className="flex items-center gap-1.5 flex-wrap">
                                             <span className="font-bold text-stone-900 truncate">
                                               {m.name}
                                             </span>
@@ -1016,7 +1033,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                                               </span>
                                             )}
                                           </div>
-                                          <div className="flex items-center gap-2 text-[10px] text-stone-500">
+                                          <div className="flex items-center gap-2 text-[10px] text-stone-500 flex-wrap mt-0.5">
                                             <span>連續追求：{m.streakDays} 天</span>
                                             <span>·</span>
                                             <span className="font-medium text-stone-700">
@@ -1026,7 +1043,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                                         </div>
                                       </div>
 
-                                      <div className="flex items-center gap-1.5 flex-shrink-0">
+                                      <div className="flex items-center gap-1.5 flex-wrap pt-1.5 sm:pt-0 border-t border-stone-200/50 sm:border-0 justify-end w-full sm:w-auto">
                                         {onResetUserProgress && (
                                           <button
                                             type="button"
@@ -1065,7 +1082,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                             {/* 4. Vertical Row: Quick Add Candidates */}
                             {nonMembers.length > 0 && (
                               <div className="space-y-1.5 pt-2 border-t border-stone-100">
-                                <div className="flex items-center justify-between">
+                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                                   <span className="text-xs font-semibold text-stone-600 block">
                                     ➕ 快速加入尚未參與之聖徒（共 {nonMembers.length} 位）：
                                   </span>
@@ -1078,7 +1095,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                                         nonMembers.forEach((u) => onAddUserToPlan(plan.id, u));
                                       }
                                     }}
-                                    className="px-2.5 py-1 rounded-lg bg-amber-500 hover:bg-amber-600 text-white font-bold text-[11px] flex items-center gap-1 shadow-2xs transition-colors"
+                                    className="w-full sm:w-auto px-2.5 py-1 rounded-lg bg-amber-500 hover:bg-amber-600 text-white font-bold text-[11px] flex items-center justify-center gap-1 shadow-2xs transition-colors"
                                     title="一鍵將所有尚未加入的聖徒批量加入此追求主題"
                                   >
                                     <Sparkles className="w-3 h-3" />
@@ -1089,19 +1106,19 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                                   {nonMembers.map((u) => (
                                     <div
                                       key={u.id}
-                                      className="p-2 rounded-xl bg-stone-50 border border-dashed border-stone-200 flex items-center justify-between text-xs"
+                                      className="p-2 rounded-xl bg-stone-50 border border-dashed border-stone-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs"
                                     >
-                                      <span className="flex items-center gap-2 text-stone-700 font-medium">
-                                        <span>{u.avatar}</span>
-                                        <span>{u.name}</span>
-                                        <span className="text-[10px] text-stone-400 font-mono">
+                                      <span className="flex items-center gap-2 text-stone-700 font-medium min-w-0">
+                                        <span className="flex-shrink-0">{u.avatar}</span>
+                                        <span className="font-bold truncate">{u.name}</span>
+                                        <span className="text-[10px] text-stone-400 font-mono truncate">
                                           ({u.email})
                                         </span>
                                       </span>
                                       <button
                                         type="button"
                                         onClick={() => onAddUserToPlan(plan.id, u)}
-                                        className="px-2.5 py-1 rounded-lg bg-amber-500 hover:bg-amber-600 text-white font-bold text-[11px] flex items-center gap-1 shadow-2xs transition-colors"
+                                        className="w-full sm:w-auto px-2.5 py-1 rounded-lg bg-amber-500 hover:bg-amber-600 text-white font-bold text-[11px] flex items-center justify-center gap-1 shadow-2xs transition-colors self-end sm:self-auto"
                                       >
                                         <Plus className="w-3 h-3" />
                                         <span>加入主題</span>

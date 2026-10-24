@@ -115,7 +115,7 @@ export const EditCurrentPursuitModal: React.FC<EditCurrentPursuitModalProps> = (
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/40 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100 rounded-3xl w-full max-w-xl max-h-[90vh] overflow-y-auto shadow-2xl border border-stone-200 dark:border-stone-800 p-6 sm:p-7 relative">
+      <div className="bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100 rounded-3xl w-full max-w-xl max-h-[90vh] overflow-y-auto shadow-2xl border border-stone-200 dark:border-stone-800 p-4 sm:p-7 relative">
         <button
           onClick={onClose}
           className="absolute top-5 right-5 p-2 rounded-full text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors"
@@ -152,8 +152,8 @@ export const EditCurrentPursuitModal: React.FC<EditCurrentPursuitModalProps> = (
           </div>
 
           {/* Category & Units */}
-          <div className="grid grid-cols-12 gap-3">
-            <div className="col-span-6">
+          <div className="grid grid-cols-1 sm:grid-cols-12 gap-3">
+            <div className="sm:col-span-6">
               <label className="block text-xs font-semibold text-stone-700 dark:text-stone-300 mb-1">
                 追求類別
               </label>
@@ -172,31 +172,33 @@ export const EditCurrentPursuitModal: React.FC<EditCurrentPursuitModalProps> = (
               </select>
             </div>
 
-            <div className="col-span-3">
-              <label className="block text-xs font-semibold text-stone-700 dark:text-stone-300 mb-1">
-                追求總數
-              </label>
-              <input
-                type="number"
-                min="1"
-                value={totalUnits}
-                onChange={(e) => setTotalUnits(e.target.value)}
-                className="w-full text-sm rounded-xl border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800 p-2.5 focus:outline-none focus:border-amber-500 font-semibold text-stone-900 dark:text-stone-100"
-              />
-            </div>
+            <div className="grid grid-cols-3 sm:col-span-6 gap-2 sm:gap-3">
+              <div className="col-span-2">
+                <label className="block text-xs font-semibold text-stone-700 dark:text-stone-300 mb-1">
+                  追求總數
+                </label>
+                <input
+                  type="number"
+                  min="1"
+                  value={totalUnits}
+                  onChange={(e) => setTotalUnits(e.target.value)}
+                  className="w-full text-sm rounded-xl border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800 p-2.5 focus:outline-none focus:border-amber-500 font-semibold text-stone-900 dark:text-stone-100"
+                />
+              </div>
 
-            <div className="col-span-3">
-              <label className="block text-xs font-semibold text-stone-700 dark:text-stone-300 mb-1">
-                單位
-              </label>
-              <select
-                value={unitName}
-                onChange={(e) => setUnitName(e.target.value as '篇' | '章')}
-                className="w-full text-xs rounded-xl border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800 p-2.5 focus:outline-none focus:border-amber-500 font-semibold text-stone-900 dark:text-stone-100"
-              >
-                <option value="篇">篇</option>
-                <option value="章">章</option>
-              </select>
+              <div className="col-span-1">
+                <label className="block text-xs font-semibold text-stone-700 dark:text-stone-300 mb-1">
+                  單位
+                </label>
+                <select
+                  value={unitName}
+                  onChange={(e) => setUnitName(e.target.value as '篇' | '章')}
+                  className="w-full text-xs rounded-xl border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800 p-2.5 focus:outline-none focus:border-amber-500 font-semibold text-stone-900 dark:text-stone-100"
+                >
+                  <option value="篇">篇</option>
+                  <option value="章">章</option>
+                </select>
+              </div>
             </div>
           </div>
 
@@ -241,7 +243,7 @@ export const EditCurrentPursuitModal: React.FC<EditCurrentPursuitModalProps> = (
 
           {/* Start Date & End Date */}
           <div className="space-y-2">
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs font-semibold text-stone-700 dark:text-stone-300 mb-1">
                   開始追求時間 <span className="text-rose-500">*</span>

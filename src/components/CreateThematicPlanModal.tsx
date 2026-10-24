@@ -129,7 +129,7 @@ export const CreateThematicPlanModal: React.FC<CreateThematicPlanModalProps> = (
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/40 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="bg-white rounded-3xl w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-2xl border border-stone-200 p-6 sm:p-7 relative">
+      <div className="bg-white rounded-3xl w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-2xl border border-stone-200 p-4 sm:p-7 relative">
         <button
           onClick={onClose}
           className="absolute top-5 right-5 p-2 rounded-full text-stone-400 hover:text-stone-700 hover:bg-stone-100 transition-colors"
@@ -196,8 +196,8 @@ export const CreateThematicPlanModal: React.FC<CreateThematicPlanModalProps> = (
           </div>
 
           {/* Category & Units */}
-          <div className="grid grid-cols-12 gap-3">
-            <div className="col-span-6">
+          <div className="grid grid-cols-1 sm:grid-cols-12 gap-3">
+            <div className="sm:col-span-6">
               <label className="block text-xs font-semibold text-stone-700 mb-1">
                 追求類別
               </label>
@@ -216,39 +216,41 @@ export const CreateThematicPlanModal: React.FC<CreateThematicPlanModalProps> = (
               </select>
             </div>
 
-            <div className="col-span-4">
-              <label className="block text-xs font-semibold text-stone-700 mb-1">
-                追求總數 <span className="text-rose-500">*</span>
-              </label>
-              <input
-                type="number"
-                min="1"
-                required
-                value={totalUnits}
-                onChange={(e) => setTotalUnits(e.target.value)}
-                placeholder="例如：30"
-                className="w-full text-sm rounded-xl border border-stone-200 p-2.5 focus:outline-none focus:border-amber-500 font-semibold"
-              />
-            </div>
+            <div className="grid grid-cols-3 sm:col-span-6 gap-2 sm:gap-3">
+              <div className="col-span-2">
+                <label className="block text-xs font-semibold text-stone-700 mb-1">
+                  追求總數 <span className="text-rose-500">*</span>
+                </label>
+                <input
+                  type="number"
+                  min="1"
+                  required
+                  value={totalUnits}
+                  onChange={(e) => setTotalUnits(e.target.value)}
+                  placeholder="例如：30"
+                  className="w-full text-sm rounded-xl border border-stone-200 p-2.5 focus:outline-none focus:border-amber-500 font-semibold"
+                />
+              </div>
 
-            <div className="col-span-2">
-              <label className="block text-xs font-semibold text-stone-700 mb-1">
-                單位
-              </label>
-              <select
-                value={unitName}
-                onChange={(e) => setUnitName(e.target.value as '篇' | '章')}
-                className="w-full text-xs rounded-xl border border-stone-200 p-2.5 focus:outline-none focus:border-amber-500 bg-white font-semibold"
-              >
-                <option value="篇">篇</option>
-                <option value="章">章</option>
-              </select>
+              <div className="col-span-1">
+                <label className="block text-xs font-semibold text-stone-700 mb-1">
+                  單位
+                </label>
+                <select
+                  value={unitName}
+                  onChange={(e) => setUnitName(e.target.value as '篇' | '章')}
+                  className="w-full text-xs rounded-xl border border-stone-200 p-2.5 focus:outline-none focus:border-amber-500 bg-white font-semibold"
+                >
+                  <option value="篇">篇</option>
+                  <option value="章">章</option>
+                </select>
+              </div>
             </div>
           </div>
 
           {/* Start Date & End Date */}
           <div className="space-y-2">
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs font-semibold text-stone-700 mb-1">
                   開始追求時間 <span className="text-rose-500">*</span>
