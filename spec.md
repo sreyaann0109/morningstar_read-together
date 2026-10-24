@@ -2,7 +2,6 @@
 
 > **當前系統版本**：`v1.1.1`  
 > **正式站點 (Production)**：[https://morningstar-read-together.vercel.app/](https://morningstar-read-together.vercel.app/)（對應 `main` 分支）  
-> **預覽站點 (Staging / Preview)**：Vercel 自動部署預覽（對應 `develop` 分支）  
 > **核心資料庫架構**：100% Pure Cloud Supabase PostgreSQL (Zero-Mock Clean Schema，徹底棄用本地 SQLite 與檔案持久化)  
 > 
 > *「我們並有申言者更確定的話，你們留意這話，如同留意照在暗處的燈，直等到天發亮，晨星在你們心裏出現，你們就作得好了。」——彼得後書一章 19 節*  
@@ -19,7 +18,7 @@
 >    - **嚴格禁用**：「靈修」、「靈程」、「靈修進度」、「打卡」、「靜修」、「信徒」、「教友」。
 >    - **必須採用**：「晨興」、「追求」、「追求進度」、「摸著」、「亮光」、「同伴」、「聖徒」、「阿們」、「神聖帳幕」。
 > 3. **部署與 Git 分支紀律（嚴禁自動推送）**：
->    - **日常工作分支**：一律在 `develop` 分支作業。
+>    - **日常工作分支**：一律採用 `main` 單一主分支進行開發與提交。
 >    - **本地優先提交**：修改完成後必須於本機執行 `npx tsc --noEmit` 驗證，並使用清晰語義的 Conventional Commits 於本機提交。
 >    - **嚴禁自動 Push**：未經使用者明確發布「push」指令前，**絕對不可執行 `git push`**，以維護遠端部署紀錄之整潔。
 >    - **本機服務常態運行**：任何修改與重構完成後，必須確保本機 `http://localhost:3000` 正常運作且隨時可供驗證。
@@ -42,15 +41,12 @@
 * **身分驗證與安全**：加鹽雜湊密碼體系（PBKDF2/SHA-256 Web Crypto 相容）+ 臨時密碼強制更換機制
 * **郵件發送服務**：Nodemailer 整合 Google Gmail SMTP (Port 465 SSL 協定)，支援 6 碼驗證碼與直達安全 Token 連結
 
-### 2.2 雙分支與版本部署策略 (Dual-Branch Strategy)
-* **`main` 分支（Production）**：
-  * 當前版本標籤：`v1.0.0`
+### 2.2 單一主分支部署策略 (Single-Branch Strategy: `main`)
+* **`main` 分支（Production & Main Development）**：
+  * 當前版本標籤：`v1.1.1`
   * 綁定線上生產環境網域：`https://morningstar-read-together.vercel.app/`
-  * 保持最高穩定性，僅在功能於 `develop` 完整驗證並完成 Milestone 總結後方由管理者核准合併。
-* **`develop` 分支（Development & Staging）**：
-  * 當前版本標籤：`v1.1.0`
-  * 進行所有新功能開發、測試驗證、UI 微調與使用者體驗優化。
-  * Vercel 依此分支生成預覽部署環境，供同工測試。
+  * 全站所有新功能開發、測試驗證、UI 微調、修復與版本發布一律直接在 `main` 主分支作業。
+  * 保持「本機驗證無誤 ➔ Conventional Commit ➔ 使用者確認 push ➔ Vercel 自動部署」之簡潔流暢工作流。
 
 ---
 
