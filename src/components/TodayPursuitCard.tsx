@@ -371,7 +371,7 @@ export const TodayPursuitCard: React.FC<TodayPursuitCardProps> = ({
               </div>
               <div className="pt-2.5 mt-2 border-t border-stone-100 dark:border-stone-800 text-xs text-stone-600 dark:text-stone-400 flex items-center justify-between flex-wrap gap-1">
                 <span>
-                  下一期待讀：<strong className="text-amber-800 dark:text-amber-300">{nextReadScheduleText}</strong>
+                  下一期待讀：<strong className="text-amber-800 dark:text-amber-300">第 {ntScheduleInfo?.dayNumber || 1} 天 · {nextReadScheduleText}</strong>
                 </span>
                 <span className="text-[11px] text-stone-400">
                   已讀 {Math.floor(plan.completedUnits / 2)} 天 / 全 130 天
@@ -656,7 +656,7 @@ export const TodayPursuitCard: React.FC<TodayPursuitCardProps> = ({
         {/* Action Buttons */}
         <div className="space-y-2.5 pt-1">
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-            {isCompletedToday ? (
+            {isCompletedToday && (isNTSpeed ? (speedPace?.currentRoundUnits ?? 0) > 0 : plan.completedUnits > 0) ? (
               <>
                 {/* Advance unit button if more chapters to read or if in speed reading */}
                 {isNTSpeed || plan.completedUnits < plan.totalUnits ? (
@@ -669,7 +669,7 @@ export const TodayPursuitCard: React.FC<TodayPursuitCardProps> = ({
                     <BookOpen className="w-4 h-4 text-white" />
                     <span>
                       {isNTHalfYear
-                        ? `📖 多讀一天（推進至【${nextReadScheduleText}】）`
+                        ? `📖 多讀一天（推進至第 ${Math.min(TOTAL_NT_DAYS, Math.floor(plan.completedUnits / 2) + 1)} 天 · 【${nextReadScheduleText}】）`
                         : isNTSpeed && speedPace
                         ? `📖 多讀 1 章（推進至【${speedNextLocation?.displayText || ''}】）`
                         : `📖 多讀一${unit}（完成第 ${Math.min(plan.completedUnits + 1, plan.totalUnits)} ${unit}）`}
@@ -702,10 +702,10 @@ export const TodayPursuitCard: React.FC<TodayPursuitCardProps> = ({
                 <Circle className="w-5 h-5 text-amber-100" />
                 <span>
                   {isNTHalfYear && ntScheduleInfo
-                    ? `勾選今日已追求（${ntScheduleInfo.schedule.displayText}）`
+                    ? `勾選今日已追求（第 ${ntScheduleInfo.dayNumber} 天 · ${ntScheduleInfo.schedule.displayText}）`
                     : isNTSpeed && speedPace
                     ? `勾選今日已追求（推進至【${getNTChapterLocation(Math.min(260, plan.completedUnits + Math.max(1, Math.round(speedPace.dailyTargetChapters)))).displayText}】）`
-                    : '勾選今日已追求'}
+                    : `勾選今日已追求（第 ${Math.min(plan.completedUnits + 1, plan.totalUnits)} ${unit}）`}
                 </span>
               </button>
             )}

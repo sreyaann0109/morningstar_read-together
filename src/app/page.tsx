@@ -112,11 +112,19 @@ const loadUserData = (targetUser: UserProfile, sourcePlansOverride?: PursuitPlan
       localStorage.setItem(getUserStorageKey(targetUser.id, 'joined_plans'), JSON.stringify(activeJoinedIds));
     } catch (e) {}
 
-    // 3. Completed Today
+    // 3. Completed Today (Strictly anchored to UTC+8 current date)
     let completedToday = false;
-    const savedCompletedStr = localStorage.getItem(getUserStorageKey(targetUser.id, 'completed_today'));
-    if (savedCompletedStr !== null) {
-      completedToday = JSON.parse(savedCompletedStr);
+    const todayDateStr = getUTC8DateString();
+    const savedCompletedDate = localStorage.getItem(getUserStorageKey(targetUser.id, 'completed_today_date'));
+    if (savedCompletedDate === todayDateStr) {
+      const savedCompletedStr = localStorage.getItem(getUserStorageKey(targetUser.id, 'completed_today'));
+      if (savedCompletedStr !== null) {
+        completedToday = JSON.parse(savedCompletedStr);
+      }
+    } else {
+      try {
+        localStorage.setItem(getUserStorageKey(targetUser.id, 'completed_today'), JSON.stringify(false));
+      } catch (e) {}
     }
 
     return { activeProfile, activeJoinedIds, completedToday };
@@ -745,10 +753,11 @@ export default function Home() {
 
   const currentPlan = rawCurrentPlan ? getUserPlan(rawCurrentPlan, user.id) : null;
 
-  // Per-plan per-user todayCompleted status (isolated per pursuit plan and per user)
+  // Per-plan per-user todayCompleted status (isolated per pursuit plan and per user, strictly anchored to UTC+8 current date)
+  const currentUtc8Date = getUTC8DateString();
   const currentSelfMember = rawCurrentPlan?.members?.find((m) => m.userId === user.id);
   const isCurrentPlanCompletedToday = currentSelfMember
-    ? Boolean(currentSelfMember.todayCompleted)
+    ? Boolean(currentSelfMember.todayCompleted) && (!currentSelfMember.lastCompletedDate || currentSelfMember.lastCompletedDate === currentUtc8Date)
     : false;
 
   // Filter posts to all joined pursuit plans of the current user (plus currentPlan)
@@ -1861,11 +1870,13 @@ export default function Home() {
             currentVerses = loc.displayText;
           }
 
+          const toggleDateStr = getUTC8DateString();
           let updatedMembers = (p.members || []).map((m) =>
             m.userId === user.id
               ? {
                   ...m,
                   todayCompleted: nextState,
+                  lastCompletedDate: nextState ? toggleDateStr : undefined,
                   completedUnits: newCompleted,
                   currentUnitTitle,
                   currentVerses,
@@ -1879,8 +1890,9 @@ export default function Home() {
               name: user.name,
               avatar: user.avatar,
               locality: user.locality,
-              joinedAt: getUTC8DateString(),
+              joinedAt: toggleDateStr,
               todayCompleted: nextState,
+              lastCompletedDate: nextState ? toggleDateStr : undefined,
               streakDays: user.streakDays,
               lastActive: '今日 剛剛',
               encouragedToday: false,
@@ -1893,6 +1905,7 @@ export default function Home() {
           try {
             localStorage.setItem(getUserStorageKey(user.id, `plan_${p.id}_completed_units`), JSON.stringify(newCompleted));
             localStorage.setItem(getUserStorageKey(user.id, `plan_${p.id}_completed_today`), JSON.stringify(nextState));
+            localStorage.setItem(getUserStorageKey(user.id, 'completed_today_date'), toggleDateStr);
           } catch (e) {}
 
           return {
@@ -1983,6 +1996,7 @@ export default function Home() {
       secondsRemaining: 10,
     };
 
+    const batchDateStr = getUTC8DateString();
     // Update plans (per-user independent progress)
     const updatedPlans = plansRef.current.map((p) => {
       if (p.id === activePlanId) {
@@ -1991,6 +2005,7 @@ export default function Home() {
             ? {
                 ...m,
                 todayCompleted: true,
+                lastCompletedDate: batchDateStr,
                 completedUnits: boundedChapter,
                 currentUnitTitle: nextUnitTitle,
                 currentVerses: nextVerses,
@@ -2004,8 +2019,9 @@ export default function Home() {
             name: user.name,
             avatar: user.avatar,
             locality: user.locality,
-            joinedAt: getUTC8DateString(),
+            joinedAt: batchDateStr,
             todayCompleted: true,
+            lastCompletedDate: batchDateStr,
             streakDays: user.streakDays,
             lastActive: '今日 剛剛',
             encouragedToday: false,
@@ -2026,6 +2042,7 @@ export default function Home() {
     try {
       localStorage.setItem(getUserStorageKey(user.id, `plan_${activePlanId}_completed_units`), JSON.stringify(boundedChapter));
       localStorage.setItem(getUserStorageKey(user.id, `plan_${activePlanId}_completed_today`), JSON.stringify(true));
+      localStorage.setItem(getUserStorageKey(user.id, 'completed_today_date'), batchDateStr);
     } catch (e) {}
 
     // Update user and sync to backend

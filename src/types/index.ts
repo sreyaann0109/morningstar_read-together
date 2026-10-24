@@ -8,6 +8,7 @@ export interface ThematicMember {
   locality?: string;
   joinedAt: string;
   todayCompleted: boolean;
+  lastCompletedDate?: string;
   streakDays: number;
   lastActive: string;
   encouragedToday?: boolean;
