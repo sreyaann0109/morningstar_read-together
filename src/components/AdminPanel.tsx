@@ -808,10 +808,28 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                               <span>編輯內容</span>
                             </button>
 
-                            {/* Inline 6-Emoji Invite Code Pill */}
-                            <span className="hidden sm:inline-block tracking-widest text-xs font-mono font-bold bg-amber-50 text-amber-900 border border-amber-200 px-2 py-0.5 rounded-lg">
-                              {plan.inviteCode}
-                            </span>
+                            {/* Inline 6-Emoji Invite Code Copy Button in Admin Panel */}
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onCopyInvite(plan.inviteCode, plan.title);
+                                setCopiedInvitePlanId(plan.id);
+                                setTimeout(() => setCopiedInvitePlanId(null), 2500);
+                              }}
+                              className="py-1 px-2.5 rounded-xl border border-amber-300 dark:border-amber-700 bg-amber-100/90 dark:bg-amber-950/60 hover:bg-amber-200 dark:hover:bg-amber-900/80 text-amber-950 dark:text-amber-200 text-xs font-bold flex items-center gap-1.5 transition-all shadow-2xs"
+                              title="管理員複製 6-Emoji 專屬邀請碼"
+                            >
+                              {copiedInvitePlanId === plan.id ? (
+                                <Check className="w-3.5 h-3.5 text-emerald-600" />
+                              ) : (
+                                <Copy className="w-3.5 h-3.5 text-amber-700 dark:text-amber-400" />
+                              )}
+                              <span className="tracking-wider font-mono text-xs">{plan.inviteCode}</span>
+                              <span className="text-[10px] text-amber-800 dark:text-amber-300 bg-white/80 dark:bg-stone-800 px-1 py-0.2 rounded font-sans">
+                                {copiedInvitePlanId === plan.id ? '已複製' : '複製'}
+                              </span>
+                            </button>
                             <div className="flex items-center gap-1 text-xs font-semibold text-stone-400 group-hover:text-amber-800 transition-colors">
                               <span className="hidden md:inline text-[11px]">
                                 {isExpanded ? '收合' : '展開詳情'}

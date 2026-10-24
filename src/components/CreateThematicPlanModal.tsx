@@ -90,9 +90,7 @@ export const CreateThematicPlanModal: React.FC<CreateThematicPlanModalProps> = (
     e.preventDefault();
     if (!title.trim() || inviteEmojis.length !== 6) return;
 
-    const formattedTitle = title.trim().startsWith('主題：')
-      ? title.trim()
-      : `主題：${title.trim()}`;
+    const formattedTitle = title.trim().replace(/^主題：/, '').trim();
 
     const newPlan: PursuitPlan = {
       id: `theme-${Date.now()}`,

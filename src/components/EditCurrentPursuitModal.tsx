@@ -56,7 +56,7 @@ export const EditCurrentPursuitModal: React.FC<EditCurrentPursuitModalProps> = (
       setUnitName('章');
       setTotalUnits('260');
       if (!title || title.includes('新約') || title === currentPlan.title) {
-        setTitle('主題：半年新約讀經一遍');
+        setTitle('半年新約讀經一遍');
       }
     } else if (newCat === 'bible') {
       setUnitName('章');
@@ -74,7 +74,7 @@ export const EditCurrentPursuitModal: React.FC<EditCurrentPursuitModalProps> = (
 
   // Sync state whenever currentPlan changes or modal opens
   useEffect(() => {
-    setTitle(currentPlan.title);
+    setTitle(currentPlan.title.replace(/^主題：/, ''));
     setCategory(currentPlan.category);
     setUnitName((currentPlan.unitName as '篇' | '章') || (currentPlan.category === 'bible' ? '章' : '篇'));
     setDescription(currentPlan.description || '');
@@ -97,7 +97,7 @@ export const EditCurrentPursuitModal: React.FC<EditCurrentPursuitModalProps> = (
 
     onSavePlan({
       ...currentPlan,
-      title: title.trim(),
+      title: title.trim().replace(/^主題：/, ''),
       category,
       unitName,
       description: description.trim(),

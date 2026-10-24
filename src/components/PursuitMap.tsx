@@ -17,6 +17,8 @@ interface PursuitMapProps {
   unitName?: string;
   dailyHistory: Record<string, number>; // Key: YYYY-MM-DD -> units read
   todayCompleted?: boolean;
+  compact?: boolean;
+  interactive?: boolean; // 設為 false 時點擊無動作、無浮層彈窗，專為袖珍展示設計
 }
 
 const WEEKDAYS = ['日', '一', '二', '三', '四', '五', '六'];
@@ -27,6 +29,8 @@ export const PursuitMap: React.FC<PursuitMapProps> = ({
   unitName = '章',
   dailyHistory = {},
   todayCompleted = false,
+  compact = false,
+  interactive = true,
 }) => {
   const today = new Date();
   const todayYear = today.getFullYear();
@@ -108,19 +112,23 @@ export const PursuitMap: React.FC<PursuitMapProps> = ({
   const isCurrentMonthView = viewYear === todayYear && viewMonth === todayMonth;
 
   return (
-    <div className="bg-white dark:bg-stone-900/70 rounded-3xl border border-stone-200/80 dark:border-[#273449] p-4 sm:p-5 shadow-xs transition-all relative overflow-hidden text-stone-900">
+    <div
+      className={`border border-stone-200/80 dark:border-stone-800 shadow-xs transition-all relative overflow-hidden text-stone-900 dark:text-stone-100 ${
+        compact
+          ? 'rounded-2xl p-2.5 sm:p-3 bg-stone-50/70 dark:bg-stone-800/40 max-w-sm mx-auto w-full'
+          : 'rounded-3xl p-4 sm:p-5 bg-white dark:bg-stone-900/70'
+      }`}
+    >
       {/* Decorative background glow */}
       <div className="absolute top-0 right-0 w-36 h-36 bg-amber-200/10 rounded-full blur-2xl pointer-events-none -mr-12 -mt-12" />
 
       {/* Header */}
-      <div className="flex items-center justify-between gap-2 mb-3 relative z-10 flex-wrap">
-        <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-xl bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-300 flex items-center justify-center text-sm shadow-2xs flex-shrink-0">
-            🗺️
-          </div>
+      <div className={`flex items-center justify-between gap-2 relative z-10 flex-wrap ${compact ? 'mb-1.5' : 'mb-3'}`}>
+        <div className="flex items-center gap-1.5">
+          <span className={`${compact ? 'text-xs' : 'text-sm'}`}>🗺️</span>
           <div className="flex items-center gap-1.5">
-            <h3 className="font-bold text-sm text-stone-900 dark:text-stone-100 tracking-tight">
-              追求地圖
+            <h3 className={`font-bold ${compact ? 'text-xs' : 'text-sm'} text-stone-900 dark:text-stone-100 tracking-tight`}>
+              {compact && userName ? `${userName} 的追求地圖` : '追求地圖'}
             </h3>
             <span className="text-[9px] font-bold bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800 px-1.5 py-0.2 rounded-full">
               每日方格
@@ -129,90 +137,109 @@ export const PursuitMap: React.FC<PursuitMapProps> = ({
         </div>
 
         {/* Month Navigation Controls */}
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1">
           {!isCurrentMonthView && (
             <button
               type="button"
               onClick={handleResetToCurrentMonth}
-              className="text-[10px] font-semibold px-2 py-0.5 rounded-lg bg-amber-50 dark:bg-amber-950/50 hover:bg-amber-100 dark:hover:bg-amber-900/60 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800 transition-colors"
+              className="text-[9px] font-semibold px-1.5 py-0.5 rounded bg-amber-50 dark:bg-amber-950/50 hover:bg-amber-100 dark:hover:bg-amber-900/60 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800 transition-colors"
             >
               本月
             </button>
           )}
 
-          <div className="flex items-center bg-stone-100 dark:bg-stone-800/80 rounded-xl p-0.5 border border-stone-200/70 dark:border-[#273449]">
+          <div className="flex items-center bg-stone-100 dark:bg-stone-800 rounded-lg p-0.5 border border-stone-200/70 dark:border-stone-700">
             <button
               type="button"
               onClick={handlePrevMonth}
-              className="p-1 rounded-lg hover:bg-white dark:hover:bg-stone-700 text-stone-600 dark:text-stone-300 transition-colors"
+              className="p-0.5 rounded hover:bg-white dark:hover:bg-stone-700 text-stone-600 dark:text-stone-300 transition-colors"
               title="上個月"
             >
-              <ChevronLeft className="w-3.5 h-3.5" />
+              <ChevronLeft className="w-3 h-3" />
             </button>
-            <span className="px-1.5 text-xs font-bold text-stone-800 dark:text-stone-200 min-w-[76px] text-center select-none">
+            <span
+              className={`px-1 font-bold text-stone-800 dark:text-stone-200 ${
+                compact ? 'min-w-[56px] text-[10px]' : 'min-w-[76px] text-xs'
+              } text-center select-none`}
+            >
               {viewYear}年{viewMonth}月
             </span>
             <button
               type="button"
               onClick={handleNextMonth}
-              className="p-1 rounded-lg hover:bg-white dark:hover:bg-stone-700 text-stone-600 dark:text-stone-300 transition-colors"
+              className="p-1 rounded hover:bg-white dark:hover:bg-stone-700 text-stone-600 dark:text-stone-300 transition-colors"
               title="下個月"
             >
-              <ChevronRight className="w-3.5 h-3.5" />
+              <ChevronRight className="w-3 h-3" />
             </button>
           </div>
         </div>
       </div>
 
       {/* Monthly Statistics Summary Bar */}
-      <div suppressHydrationWarning className="grid grid-cols-3 gap-1.5 mb-3 relative z-10">
-        <div className="bg-amber-50/60 dark:bg-amber-500/10 border border-amber-200/50 dark:border-amber-500/30 rounded-xl py-1.5 px-2 text-center">
-          <span className="text-[10px] font-medium text-amber-800 dark:text-amber-300 block leading-tight">
-            本月天數
-          </span>
-          <span className="text-sm font-extrabold text-amber-900 dark:text-amber-100 leading-tight">
-            {monthPursuitDaysCount} <span className="text-[10px] font-normal">天</span>
-          </span>
+      {compact ? (
+        <div
+          suppressHydrationWarning
+          className="flex items-center justify-between bg-white/80 dark:bg-stone-800/80 rounded-lg px-2 py-1 mb-2 text-[10px] text-stone-600 dark:text-stone-300 border border-stone-200/60 dark:border-stone-700/60 relative z-10"
+        >
+          <span>本月追求 <strong className="text-amber-800 dark:text-amber-300 font-extrabold">{monthPursuitDaysCount}</strong> 天</span>
+          <span>累計 <strong className="text-amber-800 dark:text-amber-300 font-extrabold">{monthTotalUnits}</strong> {unitName}</span>
+          <span>最高 <strong className="text-amber-800 dark:text-amber-300 font-extrabold">{monthMaxUnits}</strong> {unitName}</span>
         </div>
+      ) : (
+        <div suppressHydrationWarning className="grid grid-cols-3 gap-1.5 mb-3 relative z-10">
+          <div className="bg-amber-50/60 dark:bg-amber-500/10 border border-amber-200/50 dark:border-amber-500/30 rounded-xl py-1.5 px-2 text-center">
+            <span className="text-[10px] font-medium text-amber-800 dark:text-amber-300 block leading-tight">
+              本月天數
+            </span>
+            <span className="text-sm font-extrabold text-amber-900 dark:text-amber-100 leading-tight">
+              {monthPursuitDaysCount} <span className="text-[10px] font-normal">天</span>
+            </span>
+          </div>
 
-        <div className="bg-amber-50/60 dark:bg-amber-500/10 border border-amber-200/50 dark:border-amber-500/30 rounded-xl py-1.5 px-2 text-center">
-          <span className="text-[10px] font-medium text-amber-800 dark:text-amber-300 block leading-tight">
-            本月累計
-          </span>
-          <span className="text-sm font-extrabold text-amber-900 dark:text-amber-100 leading-tight">
-            {monthTotalUnits} <span className="text-[10px] font-normal">{unitName}</span>
-          </span>
-        </div>
+          <div className="bg-amber-50/60 dark:bg-amber-500/10 border border-amber-200/50 dark:border-amber-500/30 rounded-xl py-1.5 px-2 text-center">
+            <span className="text-[10px] font-medium text-amber-800 dark:text-amber-300 block leading-tight">
+              本月累計
+            </span>
+            <span className="text-sm font-extrabold text-amber-900 dark:text-amber-100 leading-tight">
+              {monthTotalUnits} <span className="text-[10px] font-normal">{unitName}</span>
+            </span>
+          </div>
 
-        <div className="bg-amber-50/60 dark:bg-amber-500/10 border border-amber-200/50 dark:border-amber-500/30 rounded-xl py-1.5 px-2 text-center">
-          <span className="text-[10px] font-medium text-amber-800 dark:text-amber-300 block leading-tight">
-            單日最高
-          </span>
-          <span className="text-sm font-extrabold text-amber-900 dark:text-amber-100 leading-tight">
-            {monthMaxUnits} <span className="text-[10px] font-normal">{unitName}</span>
-          </span>
+          <div className="bg-amber-50/60 dark:bg-amber-500/10 border border-amber-200/50 dark:border-amber-500/30 rounded-xl py-1.5 px-2 text-center">
+            <span className="text-[10px] font-medium text-amber-800 dark:text-amber-300 block leading-tight">
+              單日最高
+            </span>
+            <span className="text-sm font-extrabold text-amber-900 dark:text-amber-100 leading-tight">
+              {monthMaxUnits} <span className="text-[10px] font-normal">{unitName}</span>
+            </span>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Calendar Weekday Headers */}
-      <div className="grid grid-cols-7 gap-1 mb-1 text-center text-[10px] font-bold text-stone-400 dark:text-stone-500">
+      <div
+        className={`grid grid-cols-7 gap-0.5 text-center font-bold text-stone-400 dark:text-stone-500 ${
+          compact ? 'mb-0.5 text-[8px]' : 'mb-1 text-[10px]'
+        }`}
+      >
         {WEEKDAYS.map((w, idx) => (
           <div
             key={w}
             className={`py-0.5 ${idx === 0 || idx === 6 ? 'text-amber-700 dark:text-amber-400' : ''}`}
           >
-            週{w}
+            {w}
           </div>
         ))}
       </div>
 
       {/* Calendar Grid of Day Squares (每一天為一方格) */}
-      <div suppressHydrationWarning className="grid grid-cols-7 gap-1 sm:gap-1.5 relative z-10">
+      <div suppressHydrationWarning className={`grid grid-cols-7 ${compact ? 'gap-0.5' : 'gap-1 sm:gap-1.5'} relative z-10`}>
         {/* Empty padding boxes before the 1st day of the month */}
         {Array.from({ length: firstDayOfWeek }).map((_, idx) => (
           <div
             key={`pad-${idx}`}
-            className="aspect-square rounded-lg bg-transparent border border-dashed border-stone-100 dark:border-stone-800/40 opacity-20"
+            className="aspect-square rounded bg-transparent border border-dashed border-stone-100 dark:border-stone-800/40 opacity-20"
           />
         ))}
 
@@ -227,15 +254,15 @@ export const PursuitMap: React.FC<PursuitMapProps> = ({
           return (
             <div
               key={dateStr}
-              onClick={() => setSelectedDayInfo({ dateStr, dayNum: day, units })}
-              className={`aspect-square rounded-lg sm:rounded-xl border p-1 flex flex-col justify-between transition-all cursor-pointer relative group select-none hover:scale-105 active:scale-95 ${getLevelClasses(
-                units
-              )} ${
+              onClick={interactive ? () => setSelectedDayInfo({ dateStr, dayNum: day, units }) : undefined}
+              className={`aspect-square ${compact ? 'rounded p-0.5' : 'rounded-lg sm:rounded-xl p-1'} border flex flex-col justify-between transition-all select-none ${
+                interactive ? 'cursor-pointer hover:scale-105 active:scale-95' : 'cursor-default'
+              } ${getLevelClasses(units)} ${
                 isToday
-                  ? 'ring-2 ring-amber-500 ring-offset-1 ring-offset-white dark:ring-offset-stone-900 shadow-2xs font-extrabold'
+                  ? `${compact ? 'ring-1.5' : 'ring-2'} ring-amber-500 shadow-2xs font-extrabold`
                   : ''
               } ${
-                isSelected
+                interactive && isSelected
                   ? 'border-amber-600 dark:border-amber-300 ring-2 ring-amber-400/80 shadow-xs'
                   : ''
               }`}
@@ -244,7 +271,7 @@ export const PursuitMap: React.FC<PursuitMapProps> = ({
               {/* Day Number */}
               <div className="flex items-center justify-between w-full leading-none">
                 <span
-                  className={`text-[8px] sm:text-[9px] ${
+                  className={`${compact ? 'text-[7px]' : 'text-[8px] sm:text-[9px]'} ${
                     units >= 5
                       ? 'text-white'
                       : isToday
@@ -256,48 +283,35 @@ export const PursuitMap: React.FC<PursuitMapProps> = ({
                 </span>
 
                 {isToday && (
-                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500 inline-block" />
+                  <span className={`${compact ? 'w-1 h-1' : 'w-1.5 h-1.5'} rounded-full bg-amber-500 inline-block`} />
                 )}
               </div>
 
-              {/* Units Display inside Square (方格內顯示當天讀了多少單位) */}
+              {/* Units Display inside Square */}
               <div className="flex-1 flex items-center justify-center text-center">
                 {units > 0 ? (
-                  <div className="flex flex-col items-center justify-center leading-none">
-                    <span
-                      className={`text-[11px] sm:text-xs font-black leading-none ${
-                        units >= 5 ? 'text-white' : ''
-                      }`}
-                    >
-                      {units}
-                    </span>
-                    <span
-                      className={`text-[7px] sm:text-[8px] font-medium leading-none mt-0.5 ${
-                        units >= 5
-                          ? 'text-amber-100'
-                          : 'text-amber-800/80 dark:text-amber-300/80'
-                      }`}
-                    >
-                      {unitName}
-                    </span>
-                  </div>
-                ) : (
-                  <span className="text-stone-300 dark:text-stone-600 text-[10px] leading-none">-</span>
-                )}
+                  <span
+                    className={`${compact ? 'text-[9px]' : 'text-[11px] sm:text-xs'} font-black leading-none ${
+                      units >= 5 ? 'text-white' : ''
+                    }`}
+                  >
+                    {units}
+                  </span>
+                ) : null}
               </div>
             </div>
           );
         })}
       </div>
 
-      {/* Selected Day Detail Popover / Banner */}
-      {selectedDayInfo && (
-        <div className="mt-3 p-2.5 rounded-xl bg-amber-50 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-800 flex items-center justify-between gap-2 animate-in fade-in">
+      {/* Selected Day Detail Popover / Banner (僅在 interactive 為 true 時顯現) */}
+      {interactive && selectedDayInfo && (
+        <div className={`${compact ? 'mt-2 p-2' : 'mt-3 p-2.5'} rounded-xl bg-amber-50 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-800 flex items-center justify-between gap-2 animate-in fade-in`}>
           <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded-lg bg-amber-500 text-white flex items-center justify-center font-bold text-xs shadow-2xs flex-shrink-0">
+            <div className={`${compact ? 'w-5 h-5 text-[11px]' : 'w-6 h-6 text-xs'} rounded-lg bg-amber-500 text-white flex items-center justify-center font-bold shadow-2xs flex-shrink-0`}>
               {selectedDayInfo.dayNum}
             </div>
-            <div className="text-xs">
+            <div className={`${compact ? 'text-[11px]' : 'text-xs'}`}>
               <span className="font-bold text-stone-900 dark:text-stone-100">
                 {viewMonth}月{selectedDayInfo.dayNum}日：
               </span>{' '}
@@ -320,24 +334,24 @@ export const PursuitMap: React.FC<PursuitMapProps> = ({
         </div>
       )}
 
-      {/* Compact Legend */}
-      <div className="mt-3 pt-2.5 border-t border-stone-100 dark:border-[#273449] flex items-center justify-between text-[10px] text-stone-400 dark:text-stone-500 flex-wrap gap-1">
-        <span className="font-medium text-stone-500 dark:text-stone-400">方格色階：</span>
-        <div className="flex items-center gap-2">
-          <div className="flex items-center gap-1">
-            <span className="w-2.5 h-2.5 rounded bg-stone-100 dark:bg-stone-800 border border-stone-200 dark:border-[#273449]" />
+      {/* Pocket Legend */}
+      <div className={`${compact ? 'mt-1.5 pt-1 text-[8px]' : 'mt-3 pt-2.5 text-[10px]'} border-t border-stone-100 dark:border-stone-800 flex items-center justify-between text-stone-400 dark:text-stone-500 flex-wrap gap-1`}>
+        <span>色階：</span>
+        <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-0.5">
+            <span className="w-2 h-2 rounded bg-stone-100 dark:bg-stone-800 border border-stone-200 dark:border-[#273449]" />
             <span>0</span>
           </div>
-          <div className="flex items-center gap-1">
-            <span className="w-2.5 h-2.5 rounded bg-amber-100 dark:bg-amber-500/20 border border-amber-300 dark:border-amber-500/50" />
+          <div className="flex items-center gap-0.5">
+            <span className="w-2 h-2 rounded bg-amber-100 dark:bg-amber-500/20 border border-amber-300 dark:border-amber-500/50" />
             <span>1-2</span>
           </div>
-          <div className="flex items-center gap-1">
-            <span className="w-2.5 h-2.5 rounded bg-amber-300 dark:bg-amber-500/40 border border-amber-400" />
+          <div className="flex items-center gap-0.5">
+            <span className="w-2 h-2 rounded bg-amber-300 dark:bg-amber-500/40 border border-amber-400" />
             <span>3-4</span>
           </div>
-          <div className="flex items-center gap-1">
-            <span className="w-2.5 h-2.5 rounded bg-amber-500" />
+          <div className="flex items-center gap-0.5">
+            <span className="w-2 h-2 rounded bg-amber-500" />
             <span>5+</span>
           </div>
         </div>

@@ -8,6 +8,7 @@ import {
   DEFAULT_SANCTUARY_CONFIG,
   SANCTUARY_THEMES,
 } from '../data/relicsData';
+import { PursuitMap } from './PursuitMap';
 
 interface CompanionSanctuaryModalProps {
   isOpen: boolean;
@@ -16,6 +17,8 @@ interface CompanionSanctuaryModalProps {
   companionSanctuary?: SanctuaryConfig;
   onAmenCompanion: (companionId: string, companionName: string) => void;
   hasAmenedToday?: boolean;
+  dailyHistory?: Record<string, number>;
+  unitName?: string;
 }
 
 export const CompanionSanctuaryModal: React.FC<CompanionSanctuaryModalProps> = ({
@@ -25,6 +28,8 @@ export const CompanionSanctuaryModal: React.FC<CompanionSanctuaryModalProps> = (
   companionSanctuary = DEFAULT_SANCTUARY_CONFIG,
   onAmenCompanion,
   hasAmenedToday = false,
+  dailyHistory = {},
+  unitName = '章',
 }) => {
   if (!isOpen || !companion) return null;
 
@@ -36,28 +41,28 @@ export const CompanionSanctuaryModal: React.FC<CompanionSanctuaryModalProps> = (
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/40 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="bg-white rounded-3xl w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-2xl border border-stone-200 p-6 sm:p-7 relative">
+      <div className="bg-white dark:bg-stone-900 rounded-3xl w-full max-w-xl max-h-[90vh] overflow-y-auto shadow-2xl border border-stone-200 dark:border-stone-800 p-6 sm:p-7 relative text-stone-900 dark:text-stone-100">
         <button
           onClick={onClose}
-          className="absolute top-5 right-5 p-2 rounded-full text-stone-400 hover:text-stone-700 hover:bg-stone-100 transition-colors"
+          className="absolute top-5 right-5 p-2 rounded-full text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors"
         >
           <X className="w-5 h-5" />
         </button>
 
         {/* Companion Header */}
         <div className="flex items-center gap-3 mb-5">
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-100 to-amber-200 border border-amber-300 flex items-center justify-center text-2xl shadow-xs">
+          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-100 to-amber-200 dark:from-amber-950 dark:to-amber-900 border border-amber-300 dark:border-amber-700 flex items-center justify-center text-2xl shadow-xs">
             {companion.avatar}
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h3 className="text-base font-bold text-stone-900">{companion.name} 的晨興帳幕</h3>
-              <span className="text-[10px] bg-amber-100 text-amber-800 font-semibold px-2 py-0.5 rounded-full">
+              <h3 className="text-base font-bold text-stone-900 dark:text-stone-100">{companion.name} 的晨興帳幕</h3>
+              <span className="text-[10px] bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 font-semibold px-2 py-0.5 rounded-full">
                 {companion.role}
               </span>
             </div>
-            <div className="flex items-center gap-2 text-xs text-stone-500 mt-0.5">
-              <span className="flex items-center gap-0.5 text-amber-600 font-medium">
+            <div className="flex items-center gap-2 text-xs text-stone-500 dark:text-stone-400 mt-0.5">
+              <span className="flex items-center gap-0.5 text-amber-600 dark:text-amber-400 font-medium">
                 <Flame className="w-3.5 h-3.5 fill-amber-500 text-amber-500" />
                 連續追求 {companion.streakDays} 天
               </span>
@@ -112,31 +117,46 @@ export const CompanionSanctuaryModal: React.FC<CompanionSanctuaryModalProps> = (
           </div>
         </div>
 
-        {/* Relic verses breakdown */}
-        <div className="mb-5 space-y-2">
-          <span className="text-xs font-bold text-stone-700 block">陳設信物之屬靈意境：</span>
-          <div className="space-y-1.5 max-h-40 overflow-y-auto">
-            {placedRelics.filter(Boolean).map((relic) => (
-              <div
-                key={relic!.id}
-                className="p-2.5 bg-stone-50 rounded-xl border border-stone-200/60 text-[11px]"
-              >
-                <div className="flex items-center gap-1.5 font-semibold text-stone-800">
-                  <span>{relic!.emoji}</span>
-                  <span>{relic!.name}</span>
-                  <span className="text-stone-400 font-normal">· {relic!.meaning}</span>
-                </div>
-                <div className="text-amber-900/90 font-serif italic mt-1">
-                  {relic!.verseQuote}
-                </div>
-              </div>
-            ))}
-          </div>
+        {/* Companion Compact Pursuit Map (同伴追求地圖：袖珍版，點擊無干擾) */}
+        <div className="mb-3.5">
+          <PursuitMap
+            userId={companion.id}
+            userName={companion.name}
+            unitName={unitName}
+            dailyHistory={dailyHistory}
+            todayCompleted={companion.todayCompleted}
+            compact={true}
+            interactive={false}
+          />
         </div>
 
+        {/* Relic verses breakdown */}
+        {placedRelics.filter(Boolean).length > 0 && (
+          <div className="mb-5 space-y-2">
+            <span className="text-xs font-bold text-stone-700 dark:text-stone-300 block">陳設信物之屬靈意境：</span>
+            <div className="space-y-1.5 max-h-40 overflow-y-auto pr-1">
+              {placedRelics.filter(Boolean).map((relic) => (
+                <div
+                  key={relic!.id}
+                  className="p-2.5 bg-stone-50 dark:bg-stone-800/60 rounded-xl border border-stone-200/60 dark:border-stone-700/60 text-[11px]"
+                >
+                  <div className="flex items-center gap-1.5 font-semibold text-stone-800 dark:text-stone-200">
+                    <span>{relic!.emoji}</span>
+                    <span>{relic!.name}</span>
+                    <span className="text-stone-400 dark:text-stone-500 font-normal">· {relic!.meaning}</span>
+                  </div>
+                  <div className="text-amber-900/90 dark:text-amber-300/90 font-serif italic mt-1">
+                    {relic!.verseQuote}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Action button: Amen */}
-        <div className="flex items-center justify-between pt-3 border-t border-stone-100">
-          <span className="text-xs text-stone-500">
+        <div className="flex items-center justify-between pt-3 border-t border-stone-100 dark:border-stone-800">
+          <span className="text-xs text-stone-500 dark:text-stone-400">
             給同伴一句阿們與禱告，在愛中彼此建造！
           </span>
 
@@ -145,7 +165,7 @@ export const CompanionSanctuaryModal: React.FC<CompanionSanctuaryModalProps> = (
             disabled={hasAmenedToday}
             className={`px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all ${
               hasAmenedToday
-                ? 'bg-emerald-100 text-emerald-800 cursor-default'
+                ? 'bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 cursor-default border border-emerald-300 dark:border-emerald-800'
                 : 'bg-amber-500 hover:bg-amber-600 text-white shadow-xs active:scale-95'
             }`}
           >

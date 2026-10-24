@@ -101,8 +101,11 @@ export const SetProgressModal: React.FC<SetProgressModalProps> = ({
             <div className="flex items-center justify-between text-xs text-stone-600">
               <span className="font-semibold text-amber-900">目前已讀進度</span>
               <span className="font-bold text-stone-800">
-                第 {currentCompleted} {unit} / 共 {totalUnits} {unit}
-                {isNTHalfYear && `（已完成 ${Math.floor(currentCompleted / 2)} / ${TOTAL_NT_DAYS} 天）`}
+                {isNTHalfYear || isNTSpeed
+                  ? currentCompleted > 0
+                    ? `已讀至【${getNTChapterLocation(currentCompleted).displayText}】`
+                    : '尚未開始追求'
+                  : `第 ${currentCompleted} ${unit} / 共 ${totalUnits} ${unit}`}
               </span>
             </div>
             {/* Progress Track */}
@@ -113,11 +116,11 @@ export const SetProgressModal: React.FC<SetProgressModalProps> = ({
               />
             </div>
             <div className="text-[11px] text-stone-500 flex items-center justify-between">
-              <span>起點：第 1 {unit}</span>
+              <span>{isNTHalfYear || isNTSpeed ? '起點：馬太福音 第 1 章' : `起點：第 1 ${unit}`}</span>
               <span>
                 {isCompletedAll
                   ? `🎉 本主題已全數讀完`
-                  : isNTHalfYear
+                  : isNTHalfYear || isNTSpeed
                   ? `下一待讀：${getNTChapterLocation(currentCompleted + 1).displayText}`
                   : `下一${unit}待讀：第 ${currentCompleted + 1} ${unit}`}
               </span>

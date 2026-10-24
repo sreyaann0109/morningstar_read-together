@@ -478,9 +478,6 @@ export default function Home() {
             localStorage.setItem(getUserStorageKey(currentUid, 'joined_plans'), JSON.stringify(memberPlanIds));
           } catch (e) {}
           setSelectedPlanId((prev) => {
-            if (userRef.current.role === 'admin') {
-              return prev && backendData.plans?.some((p) => p.id === prev) ? prev : backendData.plans?.[0]?.id || '';
-            }
             return prev && memberPlanIds.includes(prev) ? prev : memberPlanIds[0] || '';
           });
         }
@@ -598,9 +595,6 @@ export default function Home() {
           } catch (e) {}
 
           setSelectedPlanId((prev) => {
-            if (userRef.current.role === 'admin') {
-              return prev && backendData.plans?.some((p) => p.id === prev) ? prev : backendData.plans?.[0]?.id || '';
-            }
             return prev && memberPlanIds.includes(prev) ? prev : memberPlanIds[0] || '';
           });
         }
@@ -723,9 +717,6 @@ export default function Home() {
       if (userId === userRef.current.id) {
         setJoinedPlanIds(memberPlanIds);
         setSelectedPlanId((prev) => {
-          if (userRef.current.role === 'admin') {
-            return prev && updatedPlans.some((p) => p.id === prev) ? prev : updatedPlans[0]?.id || '';
-          }
           return memberPlanIds.includes(prev) ? prev : memberPlanIds[0] || '';
         });
       }
@@ -733,20 +724,18 @@ export default function Home() {
   };
 
   // Authoritative plan membership:
-  // For admins: all created pursuit plans are directly accessible
-  // For general users: strictly plans where user is a member in plan.members
-  const userJoinedPlans = (
-    user.role === 'admin'
-      ? plans
-      : plans.filter((p) => (p.members || []).some((m) => m.userId === user.id))
-  ).map((p) => getUserPlan(p, user.id));
+  // Strictly plans where user is a member in plan.members (applies equally to admins and regular saints)
+  // Admins only see pursuit plans they have actually joined in their personal pursuit view
+  const userJoinedPlans = plans
+    .filter((p) => (p.members || []).some((m) => m.userId === user.id))
+    .map((p) => getUserPlan(p, user.id));
   const userJoinedPlanTitles = userJoinedPlans.map((p) => p.title);
 
   // Current active plan with per-user independent progress
   const rawCurrentPlan = (() => {
     if (selectedPlanId) {
       const found = plans.find((p) => p.id === selectedPlanId);
-      if (found && (user.role === 'admin' || (found.members || []).some((m) => m.userId === user.id))) {
+      if (found && (found.members || []).some((m) => m.userId === user.id)) {
         return found;
       }
     }
@@ -2272,13 +2261,27 @@ export default function Home() {
 
       // 自己對自己的分享點按阿們，不產生通知提醒自己
       if (authorUserId && authorUserId !== user.id) {
+        const cleanPlanTitle = (postObj.planTitle || '').replace(/^主題：/, '').trim();
+        const cleanUnitTitle = (postObj.unitTitle || '').trim();
+
+        let targetDesc = '';
+        if (cleanPlanTitle && cleanUnitTitle) {
+          targetDesc = `《${cleanPlanTitle}》【${cleanUnitTitle}】亮光分享`;
+        } else if (cleanUnitTitle) {
+          targetDesc = `【${cleanUnitTitle}】亮光分享`;
+        } else if (cleanPlanTitle) {
+          targetDesc = `《${cleanPlanTitle}》亮光分享`;
+        } else {
+          targetDesc = '亮光分享';
+        }
+
         const newNotif: AppNotification = {
           id: `notif-${Date.now()}`,
           type: 'post_amen',
           actorName: user.name,
           actorAvatar: user.avatar,
           recipientUserId: authorUserId,
-          targetTitle: `《${postObj.planTitle}》亮光分享`,
+          targetTitle: targetDesc,
           planId: postObj.planId,
           createdAt: '剛剛',
           read: false,
@@ -2329,15 +2332,29 @@ export default function Home() {
 
       // 自己在自己的貼文下方留言不通知自己；同伴留言則產生通知提醒作者
       if (recipientId && recipientId !== user.id) {
-        const preview = content.trim().slice(0, 24);
-        const snippet = `${preview}${content.trim().length > 24 ? '...' : ''}`;
+        const preview = content.trim().slice(0, 28);
+        const snippet = `${preview}${content.trim().length > 28 ? '...' : ''}`;
+        const cleanPlanTitle = (postObj.planTitle || '').replace(/^主題：/, '').trim();
+        const cleanUnitTitle = (postObj.unitTitle || '').trim();
+
+        let targetDesc = '';
+        if (cleanPlanTitle && cleanUnitTitle) {
+          targetDesc = `《${cleanPlanTitle}》【${cleanUnitTitle}】亮光分享`;
+        } else if (cleanUnitTitle) {
+          targetDesc = `【${cleanUnitTitle}】亮光分享`;
+        } else if (cleanPlanTitle) {
+          targetDesc = `《${cleanPlanTitle}》亮光分享`;
+        } else {
+          targetDesc = '亮光分享';
+        }
+
         const newNotif: AppNotification = {
           id: `notif-${Date.now()}`,
           type: 'post_comment',
           actorName: user.name,
           actorAvatar: user.avatar,
           recipientUserId: recipientId,
-          targetTitle: `《${postObj.planTitle}》${postObj.unitTitle ? postObj.unitTitle + ' ' : ''}亮光分享：「${snippet}」`,
+          targetTitle: `${targetDesc}：「${snippet}」`,
           planId: postObj.planId,
           createdAt: '剛剛',
           read: false,
@@ -2625,6 +2642,23 @@ export default function Home() {
     ? allUsers.find((u) => u.id === viewingCompanion.id)?.sanctuary || DEFAULT_SANCTUARY_CONFIG
     : DEFAULT_SANCTUARY_CONFIG;
 
+  const viewingCompanionUser = viewingCompanion
+    ? allUsers.find((u) => u.id === viewingCompanion.id) || {
+        id: viewingCompanion.id,
+        name: viewingCompanion.name,
+        email: '',
+        streakDays: viewingCompanion.streakDays || 0,
+        totalChaptersRead: viewingCompanion.completedUnits || 0,
+        totalSharesCount: 0,
+        totalAmenReceived: 0,
+        avatar: viewingCompanion.avatar,
+      }
+    : null;
+
+  const viewingCompanionDailyHistory = viewingCompanionUser
+    ? loadUserDailyHistory(viewingCompanionUser)
+    : {};
+
   const displayThemeClass =
     user.displayMode === 'warm'
       ? 'theme-warm bg-[#f4eee1] text-stone-900'
@@ -2740,31 +2774,35 @@ export default function Home() {
               onSwitchAdminMode={() => setIsAdminMode(true)}
             />
           </div>
-        ) : plans.length === 0 && user.role === 'admin' && !isAdminMode ? (
-          /* Admin Empty Plans State (管理員無追求主題時呈現管理引導頁面，不顯示輸入邀請碼頁面) */
+        ) : userJoinedPlans.length === 0 && user.role === 'admin' && !isAdminMode ? (
+          /* Admin Empty Joined Plans State (管理員尚未加入任何追求主題時呈現管理引導頁面，絕不呈現未加入的主題內容) */
           <div className="py-12 flex items-center justify-center min-h-[calc(100vh-220px)]">
-            <div className="max-w-md w-full mx-auto p-8 rounded-3xl bg-white border border-stone-200/80 shadow-sm text-center">
-              <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-amber-50 text-amber-700 flex items-center justify-center text-3xl">
+            <div className="max-w-md w-full mx-auto p-8 rounded-3xl bg-white dark:bg-stone-800 border border-stone-200/80 dark:border-stone-700 shadow-sm text-center">
+              <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 flex items-center justify-center text-3xl">
                 🛡️
               </div>
-              <h3 className="text-lg font-bold text-stone-900 mb-2">尚未建立追求主題</h3>
-              <p className="text-xs text-stone-600 mb-6 font-serif leading-relaxed">
-                身為管理員，您無須輸入邀請碼。請直接開啟新的追求主題，帶領聖徒同心合意竭力追求主話！
+              <h3 className="text-lg font-bold text-stone-900 dark:text-stone-100 mb-2">
+                {plans.length === 0 ? '尚未建立追求主題' : '尚未加入任何追求主題'}
+              </h3>
+              <p className="text-xs text-stone-600 dark:text-stone-400 mb-6 font-serif leading-relaxed">
+                {plans.length === 0
+                  ? '身為管理同工，請直接開啟新的追求主題，帶領聖徒同心合意竭力追求主話！'
+                  : '您身為管理同工，目前尚未加入任何追求主題。您可以前往「控制台」將自己加入主題成員，或是開啟新的追求主題！'}
               </p>
               <div className="flex flex-col sm:flex-row gap-3 justify-center">
                 <button
-                  onClick={() => setIsCreatePlanOpen(true)}
+                  onClick={() => setIsAdminMode(true)}
                   className="px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-semibold flex items-center justify-center gap-2 shadow-xs transition-colors"
                 >
-                  <Plus className="w-4 h-4" />
-                  <span>開啟新追求主題</span>
+                  <ShieldCheck className="w-4 h-4" />
+                  <span>進入管理控制台</span>
                 </button>
                 <button
-                  onClick={() => setIsAdminMode(true)}
-                  className="px-5 py-2.5 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-800 text-xs font-semibold flex items-center justify-center gap-2 transition-colors"
+                  onClick={() => setIsCreatePlanOpen(true)}
+                  className="px-5 py-2.5 rounded-xl bg-stone-100 dark:bg-stone-700 hover:bg-stone-200 dark:hover:bg-stone-600 text-stone-800 dark:text-stone-200 text-xs font-semibold flex items-center justify-center gap-2 transition-colors"
                 >
-                  <ShieldCheck className="w-4 h-4 text-amber-700" />
-                  <span>進入後台管理</span>
+                  <Plus className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+                  <span>開啟新追求主題</span>
                 </button>
               </div>
             </div>
@@ -3144,6 +3182,8 @@ export default function Home() {
         companionSanctuary={viewingCompanionSanctuary}
         onAmenCompanion={handleAmenCompanion}
         hasAmenedToday={viewingCompanion ? !!companionAmenMap[viewingCompanion.id] : false}
+        dailyHistory={viewingCompanionDailyHistory}
+        unitName={currentPlan?.unitName || viewingCompanion?.unitName || '章'}
       />
 
       {/* Mandatory Force Change Password Modal if logged-in user has mustChangePassword === true */}

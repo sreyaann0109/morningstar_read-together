@@ -1,9 +1,5 @@
 import { DEFAULT_SITE_SETTINGS, SiteSettings } from '../types';
 import { getSupabase } from './supabase';
-import fs from 'fs';
-import path from 'path';
-
-const LOCAL_SETTINGS_FILE = path.join(process.cwd(), 'src/data/persistedSettings.json');
 
 export interface TimestampedSettings extends SiteSettings {
   _updatedAt?: number;
@@ -14,37 +10,12 @@ export function stripInternalFields(settings: TimestampedSettings): SiteSettings
   return { ...DEFAULT_SITE_SETTINGS, ...clean };
 }
 
-function readLocalSettingsFile(): TimestampedSettings | null {
-  try {
-    if (fs.existsSync(LOCAL_SETTINGS_FILE)) {
-      const content = fs.readFileSync(LOCAL_SETTINGS_FILE, 'utf-8');
-      const parsed = JSON.parse(content);
-      return { ...DEFAULT_SITE_SETTINGS, ...parsed };
-    }
-  } catch (e) {}
-  return null;
-}
-
-function writeLocalSettingsFile(settings: TimestampedSettings) {
-  try {
-    const dir = path.dirname(LOCAL_SETTINGS_FILE);
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir, { recursive: true });
-    }
-    fs.writeFileSync(LOCAL_SETTINGS_FILE, JSON.stringify(settings, null, 2), 'utf-8');
-  } catch (e) {}
-}
-
-let inMemorySettings: TimestampedSettings = readLocalSettingsFile() || {
+let inMemorySettings: TimestampedSettings = {
   ...DEFAULT_SITE_SETTINGS,
   _updatedAt: 0,
 };
 
 export async function getPersistedSiteSettings(): Promise<SiteSettings> {
-  const local = readLocalSettingsFile();
-  if (local && (local._updatedAt || 0) >= (inMemorySettings._updatedAt || 0)) {
-    inMemorySettings = local;
-  }
 
   try {
     const supabase = getSupabase();
@@ -64,7 +35,6 @@ export async function getPersistedSiteSettings(): Promise<SiteSettings> {
           const localTs = inMemorySettings._updatedAt || 0;
           if (remoteTs >= localTs) {
             inMemorySettings = remote;
-            writeLocalSettingsFile(remote);
           } else if (localTs > remoteTs) {
             await supabase
               .from('user_state')
@@ -96,7 +66,6 @@ export async function getPersistedSiteSettings(): Promise<SiteSettings> {
           const localTs = inMemorySettings._updatedAt || 0;
           if (remoteTs >= localTs) {
             inMemorySettings = remote;
-            writeLocalSettingsFile(remote);
           }
           return stripInternalFields(inMemorySettings);
         }
@@ -115,7 +84,6 @@ export async function savePersistedSiteSettings(body: Partial<SiteSettings>): Pr
     _updatedAt: nowTs,
   };
   inMemorySettings = newSettings;
-  writeLocalSettingsFile(newSettings);
 
   const supabase = getSupabase();
   if (supabase) {

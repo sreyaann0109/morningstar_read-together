@@ -64,15 +64,88 @@ export const Header: React.FC<HeaderProps> = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [isBellOpen]);
 
+  const parseCommentNotification = (rawTitle: string) => {
+    // 1. 移除多餘的 "主題：" 前綴
+    const cleaned = (rawTitle || '')
+      .replace(/《主題：/g, '《')
+      .replace(/^主題：/, '')
+      .trim();
+
+    let shareTitle = '';
+    let comment = '';
+
+    // 2. 優先檢查是否包含「亮光分享」
+    const lightIndex = cleaned.lastIndexOf('亮光分享');
+    if (lightIndex !== -1) {
+      const sharePart = cleaned.slice(0, lightIndex).trim();
+      const afterLight = cleaned.slice(lightIndex + '亮光分享'.length).trim();
+
+      // 提取留言內容：去除開頭的冒號、空白與包裹的引號
+      comment = afterLight
+        .replace(/^[：:\s]+/, '')
+        .replace(/^[「『"']/, '')
+        .replace(/[」』"']$/, '')
+        .trim();
+
+      // 格式化分享主題（例如：《半年新約讀經一遍》馬太福音 第 1 ～ 2 章）
+      const planUnitMatch = sharePart.match(/^(《[^》]+》)\s*(.+)$/);
+      if (planUnitMatch) {
+        const plan = planUnitMatch[1];
+        let unit = planUnitMatch[2].trim();
+        if (!unit.startsWith('【') && unit.length > 0) {
+          unit = `【${unit}】`;
+        }
+        shareTitle = `${plan}${unit ? ` ${unit}` : ''}亮光分享`;
+      } else if (sharePart) {
+        let formattedPart = sharePart;
+        if (!formattedPart.startsWith('《') && !formattedPart.startsWith('【')) {
+          formattedPart = `【${formattedPart}】`;
+        }
+        shareTitle = `${formattedPart}亮光分享`;
+      } else {
+        shareTitle = '亮光分享';
+      }
+    } else {
+      // 3. 次選：以最後一個冒號區分分享標題與留言內容
+      const lastColonIndex = Math.max(cleaned.lastIndexOf('：'), cleaned.lastIndexOf(':'));
+      if (lastColonIndex !== -1) {
+        shareTitle = cleaned.slice(0, lastColonIndex).trim();
+        comment = cleaned
+          .slice(lastColonIndex + 1)
+          .replace(/^[「『"']/, '')
+          .replace(/[」』"']$/, '')
+          .trim();
+      } else {
+        shareTitle = cleaned || '亮光分享';
+      }
+    }
+
+    return { shareTitle, comment };
+  };
+
   const getNotificationLabel = (item: AppNotification) => {
     switch (item.type) {
-      case 'post_amen':
+      case 'post_amen': {
+        let cleanTitle = (item.targetTitle || '')
+          .replace(/《主題：/g, '《')
+          .replace(/^主題：/, '')
+          .trim();
+        const planUnitMatch = cleanTitle.match(/^(《[^》]+》)\s*([^【]+?)\s*亮光分享$/);
+        if (planUnitMatch) {
+          const plan = planUnitMatch[1];
+          const unit = planUnitMatch[2].trim();
+          cleanTitle = `${plan}【${unit}】亮光分享`;
+        }
         return (
           <>
-            對您的 <span className="font-semibold text-amber-800">{item.targetTitle}</span> 按了{' '}
-            <span className="font-bold text-amber-700">「✨ 阿們」</span>
+            對您的{' '}
+            <span className="font-semibold text-amber-800 dark:text-amber-300">
+              {cleanTitle || '亮光分享'}
+            </span>{' '}
+            按了 <span className="font-bold text-amber-700 dark:text-amber-400">「✨ 阿們」</span>
           </>
         );
+      }
       case 'sanctuary_amen':
         return (
           <>
@@ -80,26 +153,41 @@ export const Header: React.FC<HeaderProps> = ({
           </>
         );
       case 'post_comment': {
-        const match = item.targetTitle.match(/^(.*?)(?:[：:]\s*(.+))?$/);
-        if (match && match[2]) {
-          const postTitle = match[1].trim();
-          const commentContent = match[2].trim();
-          const formattedComment = commentContent.startsWith('「')
-            ? commentContent
-            : `「${commentContent}」`;
+        const parsed = parseCommentNotification(item.targetTitle);
+        if (parsed.comment) {
           return (
             <>
-              在您的 <span className="font-semibold text-amber-800">{postTitle}</span> 留下了留言{' '}
-              <span className="font-medium text-stone-700">{formattedComment}</span>
+              在您的{' '}
+              <span className="font-semibold text-amber-800 dark:text-amber-300">
+                {parsed.shareTitle}
+              </span>{' '}
+              留言：
+              <span className="font-medium text-stone-800 dark:text-stone-200">
+                「{parsed.comment}」
+              </span>
             </>
           );
         }
         return (
           <>
-            在您的 <span className="font-semibold text-amber-800">{item.targetTitle}</span> 留下了留言
+            在您的{' '}
+            <span className="font-semibold text-amber-800 dark:text-amber-300">
+              {parsed.shareTitle}
+            </span>{' '}
+            留下了留言
           </>
         );
       }
+      case 'post_pray':
+        return (
+          <>
+            為您的{' '}
+            <span className="font-semibold text-amber-800 dark:text-amber-300">
+              {item.targetTitle || '亮光分享'}
+            </span>{' '}
+            同心代禱
+          </>
+        );
       default:
         return item.targetTitle;
     }
@@ -189,10 +277,10 @@ export const Header: React.FC<HeaderProps> = ({
                       onMarkAllNotificationsRead();
                     }
                   }}
-                  className="relative p-2 rounded-full border border-stone-200 bg-stone-50/70 hover:bg-amber-50 hover:border-amber-300 text-stone-700 transition-colors"
+                  className="relative p-2 rounded-full border border-stone-200 dark:border-stone-700 bg-stone-50/70 dark:bg-stone-800/70 hover:bg-amber-50 dark:hover:bg-amber-950/60 hover:border-amber-300 dark:hover:border-amber-600 text-stone-700 dark:text-stone-300 transition-colors"
                   title="查看同伴阿們與留言提醒"
                 >
-                  <Bell className="w-4 h-4 text-amber-600" />
+                  <Bell className="w-4 h-4 text-amber-600 dark:text-amber-400" />
                   {unreadCount > 0 && (
                     <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-rose-500 text-white text-[10px] font-bold flex items-center justify-center shadow-2xs">
                       {unreadCount}
@@ -202,14 +290,14 @@ export const Header: React.FC<HeaderProps> = ({
 
                 {/* Notification Popover */}
                 {isBellOpen && (
-                  <div className="absolute right-0 mt-2 w-80 sm:w-96 rounded-2xl bg-white border border-stone-200 shadow-2xl p-4 z-50 animate-in fade-in zoom-in-95 duration-150">
-                    <div className="flex items-center justify-between pb-2.5 mb-2.5 border-b border-stone-100">
+                  <div className="absolute right-0 mt-2 w-80 sm:w-96 rounded-2xl bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 shadow-2xl p-4 z-50 animate-in fade-in zoom-in-95 duration-150">
+                    <div className="flex items-center justify-between pb-2.5 mb-2.5 border-b border-stone-100 dark:border-stone-800">
                       <div className="flex items-center gap-1.5">
-                        <Sparkles className="w-4 h-4 text-amber-500" />
-                        <span className="text-xs font-bold text-stone-900">
+                        <Sparkles className="w-4 h-4 text-amber-500 dark:text-amber-400" />
+                        <span className="text-xs font-bold text-stone-900 dark:text-stone-100">
                           同伴阿們與互動提醒
                         </span>
-                        <span className="text-[10px] bg-amber-100 text-amber-800 font-semibold px-1.5 py-0.2 rounded-full">
+                        <span className="text-[10px] bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 font-semibold px-1.5 py-0.2 rounded-full">
                           {notifications.length} 則
                         </span>
                       </div>
@@ -217,7 +305,7 @@ export const Header: React.FC<HeaderProps> = ({
                         <button
                           type="button"
                           onClick={onClearNotifications}
-                          className="text-[11px] text-stone-400 hover:text-rose-600 flex items-center gap-0.5 transition-colors"
+                          className="text-[11px] text-stone-400 dark:text-stone-500 hover:text-rose-600 dark:hover:text-rose-400 flex items-center gap-0.5 transition-colors"
                         >
                           <Trash2 className="w-3 h-3" />
                           <span>清空</span>
@@ -226,10 +314,10 @@ export const Header: React.FC<HeaderProps> = ({
                     </div>
 
                     {notifications.length === 0 ? (
-                      <div className="py-8 text-center text-xs text-stone-400 space-y-1">
+                      <div className="py-8 text-center text-xs text-stone-400 dark:text-stone-500 space-y-1">
                         <div className="text-xl mb-1">🔔</div>
-                        <p className="font-medium text-stone-600">目前尚無新的阿們或互動提醒</p>
-                        <p className="text-[11px] text-stone-400">
+                        <p className="font-medium text-stone-600 dark:text-stone-300">目前尚無新的阿們或互動提醒</p>
+                        <p className="text-[11px] text-stone-400 dark:text-stone-500">
                           當共同追求主題內的同伴為您的分享或晨興帳幕按「阿們」時，會在此處顯示！
                         </p>
                       </div>
@@ -238,17 +326,17 @@ export const Header: React.FC<HeaderProps> = ({
                         {notifications.map((item) => (
                           <div
                             key={item.id}
-                            className="p-2.5 rounded-xl bg-amber-50/40 border border-amber-100 hover:border-amber-200 flex items-start gap-2.5 text-xs transition-colors"
+                            className="p-2.5 rounded-xl bg-amber-50/40 dark:bg-stone-800/60 border border-amber-100 dark:border-stone-700/80 hover:border-amber-200 dark:hover:border-stone-600 flex items-start gap-2.5 text-xs transition-colors"
                           >
-                            <div className="w-8 h-8 rounded-xl bg-white border border-amber-200 flex items-center justify-center text-base flex-shrink-0 shadow-2xs">
+                            <div className="w-8 h-8 rounded-xl bg-white dark:bg-stone-700 border border-amber-200 dark:border-stone-600 flex items-center justify-center text-base flex-shrink-0 shadow-2xs">
                               {item.actorAvatar}
                             </div>
                             <div className="flex-1 min-w-0">
-                              <p className="text-stone-700 leading-snug">
-                                <span className="font-bold text-stone-900">{item.actorName}</span>{' '}
+                              <p className="text-stone-700 dark:text-stone-300 leading-snug">
+                                <span className="font-bold text-stone-900 dark:text-stone-100">{item.actorName}</span>{' '}
                                 {getNotificationLabel(item)}
                               </p>
-                              <span className="text-[10px] text-stone-400 block mt-0.5">
+                              <span className="text-[10px] text-stone-400 dark:text-stone-500 block mt-0.5">
                                 {item.createdAt}
                               </span>
                             </div>

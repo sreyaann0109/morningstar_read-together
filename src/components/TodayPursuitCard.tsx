@@ -52,7 +52,7 @@ interface TodayPursuitCardProps {
   onOpenShareModal: () => void;
   onOpenPlanSelector: () => void;
   onOpenEditModal: () => void;
-  onCopyInvite: (code: string, title: string) => void;
+  onCopyInvite?: (code: string, title: string) => void;
   onOpenJoinByCode?: () => void;
   isAdmin?: boolean;
   siteSettings?: SiteSettings;
@@ -137,11 +137,23 @@ export const TodayPursuitCard: React.FC<TodayPursuitCardProps> = ({
 
   const [showNTSchedule, setShowNTSchedule] = useState(false);
 
+  // Location & Schedule helpers for Half-Year Reading
+  const lastFinishedLocation = isNTHalfYear && plan.completedUnits > 0 ? getNTChapterLocation(plan.completedUnits) : null;
+  const nextLocation = isNTHalfYear ? getNTChapterLocation(Math.min(TOTAL_NT_CHAPTERS, plan.completedUnits + 1)) : null;
   const ntScheduleInfo = isNTHalfYear ? getTodayNTSchedule(plan.completedUnits) : null;
   const nextDayNT =
     isNTHalfYear && ntScheduleInfo
       ? getNTDaySchedule(Math.min(TOTAL_NT_DAYS, ntScheduleInfo.dayNumber + 1))
       : null;
+  const nextReadScheduleText = ntScheduleInfo?.schedule.displayText || nextLocation?.displayText || '馬太福音 第 1 章';
+
+  // Location helpers for Speed Reading
+  const speedFinishedLocation = isNTSpeed && speedPace && speedPace.currentRoundUnits > 0
+    ? getNTChapterLocation(speedPace.currentRoundUnits)
+    : null;
+  const speedNextLocation = isNTSpeed && speedPace
+    ? getNTChapterLocation(Math.min(TOTAL_NT_CHAPTERS, speedPace.currentRoundUnits + 1))
+    : null;
 
   // Category label helper
   const getCategoryLabel = (category: string) => {
@@ -194,49 +206,48 @@ export const TodayPursuitCard: React.FC<TodayPursuitCardProps> = ({
         </div>
       )}
 
-      {/* Top Tag & Switch / Edit Plan Links */}
-      <div className="flex items-center justify-between mb-4 relative z-10 flex-wrap gap-2">
-        <div className="flex items-center gap-2 flex-wrap">
-          <div className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-500 text-white shadow-sm">
-            <Sparkles className="w-3 h-3" />
-            <span>當前追求主題</span>
+      {/* Top Header styled consistently with other section blocks */}
+      <div className="flex items-center justify-between mb-4 pb-3.5 border-b border-stone-200/70 dark:border-stone-700/60 relative z-10 flex-wrap gap-2.5">
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-xl bg-amber-100/80 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 flex items-center justify-center flex-shrink-0 shadow-2xs">
+            <Sparkles className="w-4 h-4" />
           </div>
-          <span className="text-xs font-semibold text-amber-900/80 bg-amber-100/70 px-2 py-0.5 rounded-full">
-            {getCategoryLabel(plan.category)}
-          </span>
-
-          {/* 6-Emoji Invite Code Pill with Copy */}
-          {plan.inviteCode && (
-            <button
-              onClick={() => onCopyInvite(plan.inviteCode, plan.title)}
-              className="inline-flex items-center gap-1.5 text-xs font-semibold text-amber-900 bg-amber-100/90 hover:bg-amber-200 border border-amber-300 px-2.5 py-0.5 rounded-full transition-all shadow-2xs"
-              title="點擊複製 6-Emoji 邀請碼"
-            >
-              <span className="tracking-wide text-sm">{plan.inviteCode}</span>
-              <span className="text-[10px] text-amber-700 bg-white/70 px-1 py-0.2 rounded font-sans">複製</span>
-            </button>
-          )}
+          <div>
+            <div className="flex items-center gap-2 flex-wrap">
+              <h3 className="font-bold text-sm sm:text-base text-stone-900 dark:text-stone-100">
+                當前追求主題
+              </h3>
+              <span className="text-[11px] font-semibold text-amber-900 dark:text-amber-300 bg-amber-100/70 dark:bg-amber-950/60 px-2 py-0.5 rounded-full border border-amber-200/60 dark:border-amber-800">
+                {getCategoryLabel(plan.category)}
+              </span>
+            </div>
+            <p className="text-[11px] text-stone-500 dark:text-stone-400">
+              同那清心呼求主的人，同心合意竭力追求主話
+            </p>
+          </div>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2.5 flex-wrap">
+
+
           {/* Custom Edit button only for admin */}
           {isAdmin && (
             <button
               onClick={onOpenEditModal}
-              className="text-xs text-stone-600 hover:text-amber-800 font-medium flex items-center gap-1 hover:underline"
+              className="text-xs text-stone-600 dark:text-stone-400 hover:text-amber-800 dark:hover:text-amber-300 font-medium flex items-center gap-1 hover:underline"
               title="管理員自訂追求主題的書名、進度與篇目"
             >
-              <Edit3 className="w-3 h-3 text-amber-600" />
+              <Edit3 className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
               <span>編輯追求主題</span>
             </button>
           )}
 
           <button
             onClick={onOpenPlanSelector}
-            className="text-xs text-amber-800 hover:text-amber-900 font-medium flex items-center gap-1 hover:underline"
+            className="text-xs text-amber-800 dark:text-amber-400 hover:text-amber-950 dark:hover:text-amber-300 font-medium flex items-center gap-1 hover:underline"
           >
             <span>切換追求主題</span>
-            <ArrowRight className="w-3 h-3" />
+            <ArrowRight className="w-3.5 h-3.5" />
           </button>
         </div>
       </div>
@@ -298,18 +309,23 @@ export const TodayPursuitCard: React.FC<TodayPursuitCardProps> = ({
           )}
         </div>
 
-        <div className="flex items-center gap-2 mb-2 flex-wrap">
-          {isNTSpeed && speedPace ? (
+        {/* Top Progress Pill & Set Progress Button */}
+        <div className="flex items-center gap-2 mb-3 flex-wrap">
+          {isNTHalfYear ? (
+            <span className="text-xs sm:text-sm font-bold text-amber-900 dark:text-amber-200 bg-amber-100/70 dark:bg-amber-950/60 border border-amber-200/60 dark:border-amber-800 px-3 py-1 rounded-xl">
+              目前進度：{lastFinishedLocation ? `已讀至【${lastFinishedLocation.displayText}】` : '尚未開始追求'}
+            </span>
+          ) : isNTSpeed && speedPace ? (
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-sm font-bold text-amber-900 bg-amber-100/70 border border-amber-200/60 px-3 py-1 rounded-xl">
-                第 {speedPace.currentRound} 遍追求中 · 第 {Math.min(260, speedPace.currentRoundUnits + 1)} 章 / 共 260 章
+              <span className="text-xs sm:text-sm font-bold text-amber-900 dark:text-amber-200 bg-amber-100/70 dark:bg-amber-950/60 border border-amber-200/60 dark:border-amber-800 px-3 py-1 rounded-xl">
+                目前進度：{speedFinishedLocation ? `已讀至【${speedFinishedLocation.displayText}】` : '尚未開始'}（第 {speedPace.currentRound} 遍）
               </span>
-              <span className="text-xs font-bold text-emerald-800 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-xl">
+              <span className="text-xs font-bold text-emerald-800 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 px-2.5 py-1 rounded-xl">
                 累計已完成 {speedPace.completedRounds} 遍全書
               </span>
             </div>
           ) : (
-            <span className="text-sm font-bold text-amber-900 bg-amber-100/70 border border-amber-200/60 px-3 py-1 rounded-xl">
+            <span className="text-xs sm:text-sm font-bold text-amber-900 dark:text-amber-200 bg-amber-100/70 dark:bg-amber-950/60 border border-amber-200/60 dark:border-amber-800 px-3 py-1 rounded-xl">
               當前進度：第 {Math.min(plan.completedUnits + 1, plan.totalUnits)} {unit} / 共 {plan.totalUnits} {unit}
             </span>
           )}
@@ -319,8 +335,8 @@ export const TodayPursuitCard: React.FC<TodayPursuitCardProps> = ({
             <button
               type="button"
               onClick={onOpenSetProgress}
-              className="inline-flex items-center gap-1.5 text-xs font-semibold text-amber-900 bg-white/90 hover:bg-amber-100/90 border border-amber-300 px-2.5 py-1 rounded-xl transition-all shadow-2xs active:scale-95"
-              title={`一次設定讀到第幾${unit}`}
+              className="inline-flex items-center gap-1.5 text-xs font-semibold text-amber-900 dark:text-amber-200 bg-white/90 dark:bg-stone-800 hover:bg-amber-100/90 dark:hover:bg-amber-900/50 border border-amber-300 dark:border-amber-700 px-2.5 py-1 rounded-xl transition-all shadow-2xs active:scale-95"
+              title="一次設定進度"
             >
               <Sliders className="w-3.5 h-3.5 text-amber-600" />
               <span>一次設定進度</span>
@@ -328,309 +344,283 @@ export const TodayPursuitCard: React.FC<TodayPursuitCardProps> = ({
           )}
         </div>
 
-        {/* New Testament Speed Reading Dedicated Pace & Catch-up Card */}
-        {isNTSpeed && speedPace && (
-          <div
-            className={`my-3.5 rounded-2xl p-4 border-2 shadow-xs space-y-3 transition-all ${
-              speedPace.paceStatus === 'ahead'
-                ? 'bg-gradient-to-r from-emerald-500/10 via-emerald-500/15 to-emerald-500/10 border-emerald-400/80'
-                : speedPace.paceStatus === 'behind'
-                ? 'bg-gradient-to-r from-rose-500/10 via-rose-500/15 to-rose-500/10 border-rose-400/80'
-                : 'bg-gradient-to-r from-amber-500/10 via-amber-500/15 to-amber-500/10 border-amber-400/80'
-            }`}
-          >
-            {/* Speed Reading Title & Pace Badges */}
-            <div className="flex items-center justify-between flex-wrap gap-2">
-              <div className="flex items-center gap-2 flex-wrap">
-                <div
-                  className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold text-white shadow-xs ${
-                    speedPace.paceStatus === 'ahead'
-                      ? 'bg-emerald-600'
-                      : speedPace.paceStatus === 'behind'
-                      ? 'bg-rose-600'
-                      : 'bg-amber-500'
-                  }`}
-                >
-                  <Flame className="w-3.5 h-3.5 text-white" />
-                  <span>⚡ 新約速讀專案（目標 {speedPace.totalDays} 天 · 約 {speedPace.dailyTargetChapters} 章/天）</span>
-                </div>
-                <span className="text-xs font-extrabold px-2.5 py-0.5 rounded-full bg-amber-100/90 text-amber-900 border border-amber-300">
-                  🏅 第 {speedPace.currentRound} 遍追求中 · 累計已圓滿完成 {speedPace.completedRounds} 遍
-                </span>
-              </div>
-              <span
-                className={`text-xs font-bold px-2.5 py-1 rounded-xl border flex items-center gap-1 ${
-                  speedPace.paceStatus === 'ahead'
-                    ? 'bg-emerald-100 text-emerald-900 border-emerald-300'
-                    : speedPace.paceStatus === 'behind'
-                    ? 'bg-rose-100 text-rose-900 border-rose-300 animate-pulse font-extrabold'
-                    : 'bg-amber-100 text-amber-900 border-amber-300'
-                }`}
-              >
-                {speedPace.paceStatus === 'ahead' && `🔥 進度超前 ${speedPace.paceDelta} 章`}
-                {speedPace.paceStatus === 'on-track' && `✨ 穩健跟上進度`}
-                {speedPace.paceStatus === 'behind' && `⚠️ 進度落後 ${Math.abs(speedPace.paceDelta)} 章`}
-              </span>
-            </div>
-
-            {/* Reading pace check reminder banner */}
-            <div
-              className={`p-3.5 rounded-xl border text-xs leading-relaxed font-medium flex items-start gap-2.5 ${
-                speedPace.paceStatus === 'ahead'
-                  ? 'bg-white/85 border-emerald-200 text-emerald-950'
-                  : speedPace.paceStatus === 'behind'
-                  ? 'bg-white/95 border-rose-300 text-rose-950 font-semibold shadow-xs'
-                  : 'bg-white/85 border-amber-200 text-amber-950'
-              }`}
-            >
-              <div className="flex-shrink-0 text-base mt-0.5">
-                {speedPace.paceStatus === 'ahead' ? '🔥' : speedPace.paceStatus === 'behind' ? '⚠️' : '✨'}
-              </div>
-              <div className="space-y-1">
-                <p className="text-xs sm:text-sm">{speedPace.statusMessage}</p>
-                <div className="flex items-center gap-3 text-[11px] text-stone-500 pt-0.5 flex-wrap">
-                  <span>
-                    期程：{plan.startDate} ~ {plan.endDate || '未設定'}
+        {/* Core Progress Dashboard: Clear distinction between "My Current Progress" vs "Today's Target Schedule" */}
+        {isNTHalfYear && halfYearPace ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 my-3">
+            {/* Left Card: My Personal Progress */}
+            <div className="bg-white/90 dark:bg-stone-900/60 rounded-2xl p-4 border border-amber-200/80 dark:border-stone-700 shadow-xs flex flex-col justify-between">
+              <div>
+                <div className="flex items-center justify-between mb-2 flex-wrap gap-1">
+                  <span className="text-xs font-bold text-amber-800 dark:text-amber-300 flex items-center gap-1.5">
+                    <BookOpen className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+                    <span>我目前進度</span>
                   </span>
-                  <span>·</span>
-                  <span>
-                    今日為第 {speedPace.daysElapsed} 天（剩餘 {speedPace.daysRemaining} 天）
-                  </span>
-                  <span>·</span>
-                  <span>
-                    今日預定章數：第 {speedPace.expectedChaptersToday} 章【{speedPace.expectedLocation.displayText}】
+                  <span
+                    className={`text-[11px] font-bold px-2 py-0.5 rounded-full border ${
+                      halfYearPace.paceStatus === 'ahead'
+                        ? 'bg-emerald-50 text-emerald-700 border-emerald-300 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-700'
+                        : halfYearPace.paceStatus === 'behind'
+                        ? 'bg-rose-50 text-rose-700 border-rose-300 dark:bg-rose-950/60 dark:text-rose-300 dark:border-rose-700'
+                        : 'bg-amber-50 text-amber-700 border-amber-300 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-700'
+                    }`}
+                  >
+                    {halfYearPace.paceStatus === 'ahead' && `🔥 超前 ${halfYearPace.paceDelta} 章`}
+                    {halfYearPace.paceStatus === 'on-track' && `✨ 穩健跟上`}
+                    {halfYearPace.paceStatus === 'behind' && `⚠️ 落後 ${halfYearPace.behindDays} 天（${halfYearPace.behindChapters} 章）`}
                   </span>
                 </div>
-              </div>
-            </div>
-
-            {/* If behind speed reading schedule, render 1-click catch-up */}
-            {speedPace.paceStatus === 'behind' && onCatchUpProgress && speedPace.expectedChaptersToday > speedPace.currentRoundUnits && (
-              <div className="p-3 bg-rose-50/90 border border-rose-300 rounded-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-2xs">
-                <div className="flex items-center gap-2">
-                  <div className="w-7 h-7 rounded-lg bg-rose-600 text-white flex items-center justify-center flex-shrink-0">
-                    <Zap className="w-3.5 h-3.5 fill-white text-white animate-pulse" />
-                  </div>
-                  <div>
-                    <div className="text-xs font-bold text-rose-950">
-                      ⚡ 追進度提醒：今日應讀至第 {speedPace.expectedChaptersToday} 章【{speedPace.expectedLocation.displayText}】
-                    </div>
-                    <div className="text-[11px] text-stone-600">
-                      目前第 {speedPace.currentRoundUnits} 章，尚差 {speedPace.expectedChaptersToday - speedPace.currentRoundUnits} 章
-                    </div>
-                  </div>
+                <div className="text-lg sm:text-xl font-extrabold text-stone-900 dark:text-stone-100 tracking-tight my-1">
+                  {lastFinishedLocation ? `已讀至：${lastFinishedLocation.displayText}` : '尚未開始追求'}
                 </div>
-                <button
-                  type="button"
-                  onClick={() => onCatchUpProgress(speedPace.completedRounds * 260 + speedPace.expectedChaptersToday)}
-                  className="w-full sm:w-auto px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-rose-600 to-amber-600 hover:from-rose-700 hover:to-amber-700 active:scale-95 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-xs transition-all flex-shrink-0"
-                >
-                  <Zap className="w-3.5 h-3.5 fill-white text-white" />
-                  <span>一鍵追上今日進度（第 {speedPace.expectedChaptersToday} 章）</span>
-                </button>
               </div>
-            )}
-
-            {/* Round progress bar */}
-            <div className="space-y-1">
-              <div className="flex justify-between text-[11px] font-bold text-stone-600">
+              <div className="pt-2.5 mt-2 border-t border-stone-100 dark:border-stone-800 text-xs text-stone-600 dark:text-stone-400 flex items-center justify-between flex-wrap gap-1">
                 <span>
-                  當前第 {speedPace.currentRound} 遍進度：第 {speedPace.currentRoundUnits} 章 / 全 260 章（{speedPace.currentLocation.displayText}）
+                  下一期待讀：<strong className="text-amber-800 dark:text-amber-300">{nextReadScheduleText}</strong>
                 </span>
-                <span>{Math.round((speedPace.currentRoundUnits / 260) * 100)}%</span>
-              </div>
-              <div className="w-full h-2.5 bg-stone-200/80 rounded-full overflow-hidden p-0.5">
-                <div
-                  className={`h-full rounded-full transition-all duration-500 ${
-                    speedPace.paceStatus === 'ahead'
-                      ? 'bg-gradient-to-r from-emerald-500 to-teal-500'
-                      : speedPace.paceStatus === 'behind'
-                      ? 'bg-gradient-to-r from-amber-500 to-rose-500'
-                      : 'bg-gradient-to-r from-amber-400 to-amber-500'
-                  }`}
-                  style={{
-                    width: `${Math.min(100, Math.round((speedPace.currentRoundUnits / 260) * 100))}%`,
-                  }}
-                />
+                <span className="text-[11px] text-stone-400">
+                  已讀 {Math.floor(plan.completedUnits / 2)} 天 / 全 130 天
+                </span>
               </div>
             </div>
-          </div>
-        )}
 
-        {/* New Testament Half-Year Dedicated Schedule Card with Pace & Catch-up */}
-        {isNTHalfYear && halfYearPace && (
-          <div
-            className={`my-3.5 rounded-2xl p-4 border-2 shadow-xs space-y-3 transition-all ${
-              halfYearPace.paceStatus === 'ahead'
-                ? 'bg-gradient-to-r from-emerald-500/10 via-emerald-500/15 to-emerald-500/10 border-emerald-400/80'
-                : halfYearPace.paceStatus === 'behind'
-                ? 'bg-gradient-to-r from-rose-500/10 via-rose-500/15 to-rose-500/10 border-rose-400/80'
-                : 'bg-gradient-to-r from-amber-500/10 via-amber-500/15 to-amber-500/10 border-amber-400/80'
-            }`}
-          >
-            {/* Header: Title & Pace Status Badge */}
-            <div className="flex items-center justify-between flex-wrap gap-2">
-              <div className="flex items-center gap-2 flex-wrap">
-                <div
-                  className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold text-white shadow-xs ${
-                    halfYearPace.paceStatus === 'ahead'
-                      ? 'bg-emerald-600'
-                      : halfYearPace.paceStatus === 'behind'
-                      ? 'bg-rose-600'
-                      : 'bg-amber-500'
-                  }`}
-                >
-                  <Calendar className="w-3.5 h-3.5 text-white" />
-                  <span>半年新約讀經進度（一天兩章 · 全 130 天）</span>
+            {/* Right Card: Today's Scheduled Target */}
+            <div className="bg-white/90 dark:bg-stone-900/60 rounded-2xl p-4 border border-amber-200/80 dark:border-stone-700 shadow-xs flex flex-col justify-between">
+              <div>
+                <div className="flex items-center justify-between mb-2 flex-wrap gap-1">
+                  <span className="text-xs font-bold text-amber-800 dark:text-amber-300 flex items-center gap-1.5">
+                    <Calendar className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+                    <span>今日表定進度</span>
+                  </span>
+                  <span className="text-[11px] font-semibold text-stone-600 dark:text-stone-300 bg-stone-100 dark:bg-stone-800 px-2 py-0.5 rounded-full">
+                    第 {halfYearPace.expectedDayToday} 天 / 共 130 天
+                  </span>
                 </div>
-                <span className="text-xs font-extrabold px-2.5 py-0.5 rounded-full bg-amber-100/90 text-amber-900 border border-amber-300">
-                  🗓️ 今日為第 {halfYearPace.expectedDayToday} 天進度（剩餘 {halfYearPace.daysRemaining} 天）
-                </span>
+                <div className="text-lg sm:text-xl font-extrabold text-amber-900 dark:text-amber-200 tracking-tight my-1">
+                  {halfYearPace.expectedSchedule.displayText}
+                </div>
               </div>
-
-              <div className="flex items-center gap-2">
-                <span
-                  className={`text-xs font-bold px-2.5 py-1 rounded-xl border flex items-center gap-1 ${
-                    halfYearPace.paceStatus === 'ahead'
-                      ? 'bg-emerald-100 text-emerald-900 border-emerald-300'
-                      : halfYearPace.paceStatus === 'behind'
-                      ? 'bg-rose-100 text-rose-900 border-rose-300 animate-pulse font-extrabold'
-                      : 'bg-amber-100 text-amber-900 border-amber-300'
-                  }`}
-                >
-                  {halfYearPace.paceStatus === 'ahead' && `🔥 進度超前 ${halfYearPace.paceDelta} 章`}
-                  {halfYearPace.paceStatus === 'on-track' && `✨ 穩健跟上進度`}
-                  {halfYearPace.paceStatus === 'behind' && `⚠️ 進度落後 ${halfYearPace.behindChapters} 章（需追進度）`}
+              <div className="pt-2.5 mt-2 border-t border-stone-100 dark:border-stone-800 text-xs text-stone-600 dark:text-stone-400 flex items-center justify-between flex-wrap gap-1">
+                <span>
+                  期程剩餘：<strong className="text-stone-800 dark:text-stone-200">{halfYearPace.daysRemaining} 天</strong>
                 </span>
                 <button
                   type="button"
                   onClick={() => setShowNTSchedule(!showNTSchedule)}
-                  className="text-xs font-semibold text-amber-800 hover:text-amber-950 flex items-center gap-1 hover:underline transition-colors"
+                  className="text-[11px] font-semibold text-amber-700 dark:text-amber-400 hover:underline flex items-center gap-0.5"
                 >
-                  <span>{showNTSchedule ? '收合' : '130天對照表'}</span>
-                  <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showNTSchedule ? 'rotate-180' : ''}`} />
+                  <span>{showNTSchedule ? '收合對照表' : '130天對照表'}</span>
+                  <ChevronDown className={`w-3 h-3 transition-transform ${showNTSchedule ? 'rotate-180' : ''}`} />
                 </button>
               </div>
             </div>
-
-            {/* Reading pace check reminder & status message */}
-            <div
-              className={`p-3.5 rounded-xl border text-xs leading-relaxed font-medium flex items-start gap-2.5 ${
-                halfYearPace.paceStatus === 'ahead'
-                  ? 'bg-white/85 border-emerald-200 text-emerald-950'
-                  : halfYearPace.paceStatus === 'behind'
-                  ? 'bg-white/95 border-rose-300 text-rose-950 font-semibold shadow-xs'
-                  : 'bg-white/85 border-amber-200 text-amber-950'
-              }`}
-            >
-              <div className="flex-shrink-0 text-base mt-0.5">
-                {halfYearPace.paceStatus === 'ahead' ? '🔥' : halfYearPace.paceStatus === 'behind' ? '⚠️' : '✨'}
-              </div>
-              <div className="space-y-1.5 flex-1">
-                <p className="text-xs sm:text-sm">{halfYearPace.statusMessage}</p>
-                <div className="flex items-center gap-3 text-[11px] text-stone-500 pt-0.5 flex-wrap">
-                  <span>
-                    開始日期：{plan.startDate || '未設定'}
-                  </span>
-                  <span>·</span>
-                  <span>
-                    今日表定：第 {halfYearPace.expectedDayToday} 天【{halfYearPace.expectedSchedule.displayText}】（應累計至第 {halfYearPace.expectedChaptersToday} 章）
-                  </span>
-                  <span>·</span>
-                  <span>
-                    個人目前累計：{plan.completedUnits} 章 / 全 260 章（下一待讀：{halfYearPace.currentLocation.displayText}）
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* If behind schedule, render prominent One-Click Catch Up Action Card */}
-            {halfYearPace.paceStatus === 'behind' && onCatchUpProgress && (
-              <div className="p-3 bg-gradient-to-r from-rose-500/15 via-amber-500/20 to-rose-500/15 border-2 border-rose-400/80 rounded-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs animate-in fade-in">
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-lg bg-rose-600 text-white flex items-center justify-center flex-shrink-0 shadow-2xs">
-                    <Zap className="w-4 h-4 fill-white text-white animate-pulse" />
-                  </div>
-                  <div>
-                    <div className="text-xs sm:text-sm font-extrabold text-rose-950">
-                      ⚡ 把握時間追進度！今日應讀至第 {halfYearPace.expectedDayToday} 天【{halfYearPace.expectedSchedule.shortDisplayText}】
-                    </div>
-                    <div className="text-[11px] text-stone-600">
-                      點擊可一鍵將個人進度補讀至今日第 {halfYearPace.expectedChaptersToday} 章（補讀 {halfYearPace.behindChapters} 章，10 秒內隨時可復原）
-                    </div>
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => onCatchUpProgress(halfYearPace.expectedChaptersToday)}
-                  className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-gradient-to-r from-rose-600 to-amber-600 hover:from-rose-700 hover:to-amber-700 active:scale-95 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-sm transition-all flex-shrink-0"
-                >
-                  <Zap className="w-3.5 h-3.5 fill-white text-white" />
-                  <span>一鍵追進度：補讀至今日（第 {halfYearPace.expectedChaptersToday} 章）</span>
-                </button>
-              </div>
-            )}
-
-            {/* Today Schedule Highlight Box */}
-            <div className="bg-white/80 rounded-xl p-3 border border-amber-200/70 flex items-baseline justify-between flex-wrap gap-2">
+          </div>
+        ) : isNTSpeed && speedPace ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 my-3">
+            {/* Speed Left Card */}
+            <div className="bg-white/90 dark:bg-stone-900/60 rounded-2xl p-4 border border-amber-200/80 dark:border-stone-700 shadow-xs flex flex-col justify-between">
               <div>
-                <span className="text-xs text-stone-500 font-semibold block">
-                  今日指定進度（第 {halfYearPace.expectedDayToday} 天 / 共 130 天）：
-                </span>
-                <span className="text-lg sm:text-xl font-extrabold text-amber-900 tracking-tight">
-                  {halfYearPace.expectedSchedule.displayText}
-                </span>
+                <div className="flex items-center justify-between mb-2 flex-wrap gap-1">
+                  <span className="text-xs font-bold text-amber-800 dark:text-amber-300 flex items-center gap-1.5">
+                    <BookOpen className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+                    <span>我目前進度</span>
+                  </span>
+                  <span
+                    className={`text-[11px] font-bold px-2 py-0.5 rounded-full border ${
+                      speedPace.paceStatus === 'ahead'
+                        ? 'bg-emerald-50 text-emerald-700 border-emerald-300 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-700'
+                        : speedPace.paceStatus === 'behind'
+                        ? 'bg-rose-50 text-rose-700 border-rose-300 dark:bg-rose-950/60 dark:text-rose-300 dark:border-rose-700'
+                        : 'bg-amber-50 text-amber-700 border-amber-300 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-700'
+                    }`}
+                  >
+                    {speedPace.paceStatus === 'ahead' && `🔥 超前 ${speedPace.paceDelta} 章`}
+                    {speedPace.paceStatus === 'on-track' && `✨ 穩健跟上`}
+                    {speedPace.paceStatus === 'behind' && `⚠️ 落後 ${Math.abs(speedPace.paceDelta)} 章`}
+                  </span>
+                </div>
+                <div className="text-lg sm:text-xl font-extrabold text-stone-900 dark:text-stone-100 tracking-tight my-1">
+                  {speedFinishedLocation ? `已讀至：${speedFinishedLocation.displayText}` : '尚未開始速讀'}
+                </div>
               </div>
-              <div className="text-right">
-                <span className="text-[11px] text-stone-500 font-medium block">新約累計章數目標</span>
-                <span className="text-xs sm:text-sm font-bold text-stone-700">
-                  第 {halfYearPace.expectedSchedule.startChapter} ～ {halfYearPace.expectedSchedule.endChapter} 章 / 全 260 章
+              <div className="pt-2.5 mt-2 border-t border-stone-100 dark:border-stone-800 text-xs text-stone-600 dark:text-stone-400 flex items-center justify-between flex-wrap gap-1">
+                <span>
+                  下一待讀：<strong className="text-amber-800 dark:text-amber-300">{speedNextLocation?.displayText || ''}</strong>
+                </span>
+                <span className="text-[11px] text-stone-400">
+                  第 {speedPace.currentRound} 遍追求中
                 </span>
               </div>
             </div>
 
-            {/* Collapsible 130 Days Schedule Table */}
-            {showNTSchedule && (
-              <div className="mt-3 pt-3 border-t border-amber-200/80 max-h-64 overflow-y-auto space-y-1.5 pr-1">
-                <div className="flex items-center justify-between text-[11px] text-stone-500 mb-1 px-1">
-                  <span>從馬太福音第一章讀至啟示錄二十二章（每日兩章）：</span>
-                  <span className="font-semibold text-amber-800">今日表定：第 {halfYearPace.expectedDayToday} 天</span>
+            {/* Speed Right Card */}
+            <div className="bg-white/90 dark:bg-stone-900/60 rounded-2xl p-4 border border-amber-200/80 dark:border-stone-700 shadow-xs flex flex-col justify-between">
+              <div>
+                <div className="flex items-center justify-between mb-2 flex-wrap gap-1">
+                  <span className="text-xs font-bold text-amber-800 dark:text-amber-300 flex items-center gap-1.5">
+                    <Calendar className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+                    <span>今日表定進度</span>
+                  </span>
+                  <span className="text-[11px] font-semibold text-stone-600 dark:text-stone-300 bg-stone-100 dark:bg-stone-800 px-2 py-0.5 rounded-full">
+                    第 {speedPace.daysElapsed} 天 / 共 {speedPace.totalDays} 天
+                  </span>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 text-xs">
-                  {FULL_130_DAYS_SCHEDULE.map((s) => {
-                    const isTodayRow = s.dayNumber === halfYearPace.expectedDayToday;
-                    const isPast = s.endChapter <= plan.completedUnits;
-                    return (
-                      <div
-                        key={s.dayNumber}
-                        className={`px-2.5 py-1.5 rounded-xl border flex items-center justify-between transition-all ${
-                          isTodayRow
-                            ? 'bg-amber-500 text-white font-bold border-amber-500 shadow-xs ring-2 ring-amber-300'
-                            : isPast
-                            ? 'bg-amber-50/50 text-stone-400 border-amber-100/70 line-through'
-                            : 'bg-white/80 text-stone-700 border-stone-200/80'
-                        }`}
-                      >
-                        <div className="flex items-center gap-1.5 min-w-0">
-                          <span className={`text-[11px] flex-shrink-0 ${isTodayRow ? 'text-white' : 'text-stone-400'}`}>
-                            第{s.dayNumber}天
-                          </span>
-                          <span className="truncate">{s.displayText}</span>
-                        </div>
-                        <span className={`text-[10px] flex-shrink-0 font-medium ${isTodayRow ? 'text-amber-100' : 'text-stone-400'}`}>
-                          {isTodayRow ? '今日指定' : isPast ? '已讀' : `第${s.startChapter}~${s.endChapter}章`}
-                        </span>
-                      </div>
-                    );
-                  })}
+                <div className="text-lg sm:text-xl font-extrabold text-amber-900 dark:text-amber-200 tracking-tight my-1">
+                  {speedPace.expectedLocation.displayText}
                 </div>
               </div>
-            )}
+              <div className="pt-2.5 mt-2 border-t border-stone-100 dark:border-stone-800 text-xs text-stone-600 dark:text-stone-400 flex items-center justify-between flex-wrap gap-1">
+                <span>
+                  每日目標：約 <strong className="text-stone-800 dark:text-stone-200">{speedPace.dailyTargetChapters} 章</strong>
+                </span>
+                <span className="text-[11px] text-stone-400">
+                  剩餘 {speedPace.daysRemaining} 天
+                </span>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 my-3">
+            {/* Regular Plan Left Card */}
+            <div className="bg-white/90 dark:bg-stone-900/60 rounded-2xl p-4 border border-amber-200/80 dark:border-stone-700 shadow-xs flex flex-col justify-between">
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-bold text-amber-800 dark:text-amber-300 flex items-center gap-1.5">
+                    <BookOpen className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+                    <span>我目前進度</span>
+                  </span>
+                  <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-300 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-700">
+                    {percent}% 完成
+                  </span>
+                </div>
+                <div className="text-lg sm:text-xl font-extrabold text-stone-900 dark:text-stone-100 tracking-tight my-1">
+                  已完成第 {plan.completedUnits} {unit}
+                </div>
+              </div>
+              <div className="pt-2.5 mt-2 border-t border-stone-100 dark:border-stone-800 text-xs text-stone-600 dark:text-stone-400 flex items-center justify-between flex-wrap gap-1">
+                <span>
+                  下一篇目：<strong className="text-amber-800 dark:text-amber-300">第 {Math.min(plan.totalUnits, plan.completedUnits + 1)} {unit}</strong>
+                </span>
+                <span className="text-[11px] text-stone-400">
+                  共 {plan.totalUnits} {unit}
+                </span>
+              </div>
+            </div>
+
+            {/* Regular Plan Right Card */}
+            <div className="bg-white/90 dark:bg-stone-900/60 rounded-2xl p-4 border border-amber-200/80 dark:border-stone-700 shadow-xs flex flex-col justify-between">
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-bold text-amber-800 dark:text-amber-300 flex items-center gap-1.5">
+                    <Calendar className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+                    <span>當前追求篇目</span>
+                  </span>
+                </div>
+                <div className="text-lg sm:text-xl font-extrabold text-amber-900 dark:text-amber-200 tracking-tight my-1">
+                  {plan.currentUnitTitle || `第 ${Math.min(plan.totalUnits, plan.completedUnits + 1)} ${unit}`}
+                </div>
+              </div>
+              <div className="pt-2.5 mt-2 border-t border-stone-100 dark:border-stone-800 text-xs text-stone-600 dark:text-stone-400 flex items-center justify-between flex-wrap gap-1">
+                <span className="truncate max-w-[240px]">
+                  {plan.currentVerses ? `經文：${plan.currentVerses}` : plan.summary || '按部就班，一同追求'}
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Single Elegant Catch-Up Strip (Only shown when behind schedule - NO DUPLICATE BUTTONS) */}
+        {isNTHalfYear && halfYearPace?.paceStatus === 'behind' && onCatchUpProgress && (
+          <div className="my-3 p-3.5 rounded-2xl bg-gradient-to-r from-amber-500/10 via-amber-500/15 to-amber-500/10 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-700/80 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-xl bg-amber-500 text-white flex items-center justify-center flex-shrink-0 shadow-2xs">
+                <Zap className="w-4 h-4 fill-white text-white" />
+              </div>
+              <div>
+                <div className="text-xs sm:text-sm font-bold text-stone-900 dark:text-stone-100">
+                  進度落後約 {halfYearPace.behindDays} 天（今日表定至【{halfYearPace.expectedSchedule.displayText}】）
+                </div>
+                <div className="text-[11px] text-stone-500 dark:text-stone-400">
+                  點擊可一鍵將個人進度補齊至今日（10 秒內隨時可復原）
+                </div>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => onCatchUpProgress(halfYearPace.expectedChaptersToday)}
+              className="w-full sm:w-auto px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 active:scale-95 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-sm transition-all flex-shrink-0"
+            >
+              <Zap className="w-3.5 h-3.5 fill-white text-white" />
+              <span>⚡ 一鍵追上今日進度</span>
+            </button>
+          </div>
+        )}
+
+        {isNTSpeed && speedPace?.paceStatus === 'behind' && onCatchUpProgress && speedPace.expectedChaptersToday > speedPace.currentRoundUnits && (
+          <div className="my-3 p-3.5 rounded-2xl bg-gradient-to-r from-amber-500/10 via-amber-500/15 to-amber-500/10 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-700/80 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-xl bg-amber-500 text-white flex items-center justify-center flex-shrink-0 shadow-2xs">
+                <Zap className="w-4 h-4 fill-white text-white" />
+              </div>
+              <div>
+                <div className="text-xs sm:text-sm font-bold text-stone-900 dark:text-stone-100">
+                  進度落後約 {Math.abs(speedPace.paceDelta)} 章（今日表定讀至【{speedPace.expectedLocation.displayText}】）
+                </div>
+                <div className="text-[11px] text-stone-500 dark:text-stone-400">
+                  點擊可一鍵補齊進度至今日（10 秒內隨時可復原）
+                </div>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => onCatchUpProgress(speedPace.completedRounds * 260 + speedPace.expectedChaptersToday)}
+              className="w-full sm:w-auto px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 active:scale-95 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-sm transition-all flex-shrink-0"
+            >
+              <Zap className="w-3.5 h-3.5 fill-white text-white" />
+              <span>⚡ 一鍵追上今日進度</span>
+            </button>
+          </div>
+        )}
+
+        {/* Collapsible 130 Days Schedule Table */}
+        {isNTHalfYear && halfYearPace && showNTSchedule && (
+          <div className="my-3 p-3.5 bg-white/90 dark:bg-stone-900/80 rounded-2xl border border-amber-200/80 dark:border-stone-700 max-h-64 overflow-y-auto space-y-1.5 pr-1 shadow-xs animate-in fade-in">
+            <div className="flex items-center justify-between text-xs text-stone-500 dark:text-stone-400 mb-2 px-1">
+              <span>從馬太福音第一章讀至啟示錄二十二章（每日兩章）：</span>
+              <span className="font-bold text-amber-800 dark:text-amber-300">今日表定：第 {halfYearPace.expectedDayToday} 天</span>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 text-xs">
+              {FULL_130_DAYS_SCHEDULE.map((s) => {
+                const isTodayRow = s.dayNumber === halfYearPace.expectedDayToday;
+                const isPast = s.endChapter <= plan.completedUnits;
+                return (
+                  <div
+                    key={s.dayNumber}
+                    className={`px-3 py-1.5 rounded-xl border flex items-center justify-between transition-all ${
+                      isTodayRow
+                        ? 'bg-amber-500 text-white font-bold border-amber-500 shadow-xs ring-2 ring-amber-300'
+                        : isPast
+                        ? 'bg-amber-50/50 dark:bg-stone-800/40 text-stone-400 border-amber-100/70 dark:border-stone-800 line-through'
+                        : 'bg-white/80 dark:bg-stone-800 text-stone-700 dark:text-stone-300 border-stone-200/80 dark:border-stone-700'
+                    }`}
+                  >
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      <span className={`text-[11px] flex-shrink-0 ${isTodayRow ? 'text-white' : 'text-stone-400'}`}>
+                        第 {s.dayNumber} 天
+                      </span>
+                      <span className="truncate">{s.displayText}</span>
+                    </div>
+                    <span className={`text-[10px] flex-shrink-0 font-medium ${isTodayRow ? 'text-amber-100' : 'text-stone-400'}`}>
+                      {isTodayRow ? '今日指定' : isPast ? '已讀' : '未讀'}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         )}
 
         {plan.currentVerses && !isNTHalfYear && !isNTSpeed && (
-          <p className="text-xs sm:text-sm font-medium text-stone-600 mb-3 flex items-center gap-1.5">
+          <p className="text-xs sm:text-sm font-medium text-stone-600 dark:text-stone-400 mb-3 flex items-center gap-1.5">
             <BookOpen className="w-4 h-4 text-amber-600 inline-block flex-shrink-0" />
             <span>進度經文：{plan.currentVerses}</span>
           </p>
@@ -638,68 +628,37 @@ export const TodayPursuitCard: React.FC<TodayPursuitCardProps> = ({
 
         {/* Scripture / Summary Quote Box */}
         {plan.summary && (
-          <div className="my-4 bg-white/80 backdrop-blur-sm rounded-2xl p-4 border border-amber-100/80 shadow-xs scripture-quote">
-            <p className="text-sm sm:text-base text-stone-700 leading-relaxed font-serif">
+          <div className="my-3 bg-white/80 dark:bg-stone-900/60 backdrop-blur-sm rounded-2xl p-4 border border-amber-100/80 dark:border-stone-800 shadow-xs scripture-quote">
+            <p className="text-sm sm:text-base text-stone-700 dark:text-stone-200 leading-relaxed font-serif">
               {plan.summary}
             </p>
           </div>
         )}
 
         {/* Progress Bar */}
-        <div className="mt-4 mb-5">
-          <div className="flex justify-between text-xs text-stone-500 font-medium mb-1.5">
+        <div className="mt-4 mb-4">
+          <div className="flex justify-between text-xs text-stone-500 dark:text-stone-400 font-medium mb-1.5">
             <span>
-              {isNTSpeed && speedPace ? (
-                <>
-                  新約速讀統計：已圓滿讀完 {speedPace.completedRounds} 遍（目前第 {speedPace.currentRound} 遍第 {speedPace.currentRoundUnits} / 260 章）
-                </>
+              {isNTHalfYear ? (
+                <>追求全貌：已讀至【{lastFinishedLocation ? lastFinishedLocation.displayText : '馬太福音起點'}】（全新約 27 卷書）</>
+              ) : isNTSpeed && speedPace ? (
+                <>速讀追求：已讀至【{speedFinishedLocation ? speedFinishedLocation.displayText : '馬太福音起點'}】（第 {speedPace.currentRound} 遍）</>
               ) : (
-                <>
-                  追求進度：{plan.completedUnits} / {plan.totalUnits} {unit}
-                  {isNTHalfYear && `（第 ${Math.min(TOTAL_NT_DAYS, Math.floor(plan.completedUnits / 2))} / ${TOTAL_NT_DAYS} 天）`}
-                </>
+                <>追求全貌：已完成第 {plan.completedUnits} / {plan.totalUnits} {unit}</>
               )}
             </span>
-            <span>{percent}% 完成</span>
+            <span className="font-bold text-amber-700 dark:text-amber-400">{percent}% 完成</span>
           </div>
-          <div className="w-full h-2.5 bg-stone-200/80 rounded-full overflow-hidden p-0.5">
+          <div className="w-full h-2.5 bg-stone-200/80 dark:bg-stone-700 rounded-full overflow-hidden p-0.5">
             <div
-              className={`h-full rounded-full transition-all duration-500 ease-out shadow-xs ${
-                isNTSpeed && speedPace?.paceStatus === 'ahead'
-                  ? 'bg-gradient-to-r from-emerald-400 to-teal-500'
-                  : 'bg-gradient-to-r from-amber-400 to-amber-500'
-              }`}
+              className="h-full rounded-full transition-all duration-500 ease-out shadow-xs bg-gradient-to-r from-amber-400 to-amber-500"
               style={{ width: `${percent}%` }}
             />
           </div>
         </div>
 
         {/* Action Buttons */}
-        <div className="space-y-2.5 pt-2">
-          {/* Quick Catch Up Action Button for Half-Year or Speed Reading when behind */}
-          {((isNTHalfYear && halfYearPace?.paceStatus === 'behind') || (isNTSpeed && speedPace?.paceStatus === 'behind')) && onCatchUpProgress && (
-            <button
-              type="button"
-              onClick={() => {
-                if (isNTHalfYear && halfYearPace) {
-                  onCatchUpProgress(halfYearPace.expectedChaptersToday);
-                } else if (isNTSpeed && speedPace) {
-                  onCatchUpProgress(speedPace.completedRounds * 260 + speedPace.expectedChaptersToday);
-                }
-              }}
-              className="w-full flex items-center justify-center gap-2 px-5 py-3 rounded-2xl font-bold text-sm bg-gradient-to-r from-rose-600 via-amber-600 to-rose-600 hover:from-rose-700 hover:to-amber-700 text-white shadow-md active:scale-[0.98] transition-all"
-            >
-              <Zap className="w-4 h-4 text-amber-200 fill-amber-200 animate-pulse" />
-              <span>
-                {isNTHalfYear && halfYearPace
-                  ? `⚡ 一鍵追進度：補讀至今日第 ${halfYearPace.expectedDayToday} 天進度（第 ${halfYearPace.expectedChaptersToday} 章【${halfYearPace.expectedSchedule.shortDisplayText}】）`
-                  : isNTSpeed && speedPace
-                  ? `⚡ 一鍵追進度：補讀至今日預定進度（第 ${speedPace.expectedChaptersToday} 章【${speedPace.expectedLocation.displayText}】）`
-                  : '⚡ 一鍵追進度'}
-              </span>
-            </button>
-          )}
-
+        <div className="space-y-2.5 pt-1">
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
             {isCompletedToday ? (
               <>
@@ -708,22 +667,22 @@ export const TodayPursuitCard: React.FC<TodayPursuitCardProps> = ({
                   <button
                     type="button"
                     onClick={onAdvanceProgress}
-                    className="flex-1 flex items-center justify-center gap-2 px-5 py-3 rounded-2xl font-semibold text-sm bg-amber-500 hover:bg-amber-600 text-white shadow-sm shadow-amber-500/25 active:scale-[0.98] transition-all"
-                    title={`今日若有感動多讀，點擊推進進度`}
+                    className="flex-1 flex items-center justify-center gap-2 px-5 py-3 rounded-2xl font-semibold text-sm bg-amber-500 hover:bg-amber-600 active:scale-[0.98] text-white shadow-sm shadow-amber-500/25 transition-all"
+                    title="今日若有感動多讀，點擊推進進度"
                   >
                     <BookOpen className="w-4 h-4 text-white" />
                     <span>
                       {isNTHalfYear
-                        ? `📖 多讀一天（2 章，推進至第 ${Math.min(TOTAL_NT_DAYS, ntScheduleInfo?.dayNumber ? ntScheduleInfo.dayNumber + 1 : 1)} 天 · ${nextDayNT?.displayText || ''}）`
+                        ? `📖 多讀一天（推進至【${nextDayNT?.displayText || nextReadScheduleText}】）`
                         : isNTSpeed && speedPace
-                        ? `📖 多讀 1 章（推進至第 ${Math.min(260, speedPace.currentRoundUnits + 1)} 章 · ${speedPace.currentLocation.displayText}）`
+                        ? `📖 多讀 1 章（推進至【${speedNextLocation?.displayText || ''}】）`
                         : `📖 多讀一${unit}（完成第 ${Math.min(plan.completedUnits + 1, plan.totalUnits)} ${unit}）`}
                     </span>
                   </button>
                 ) : (
                   <div className="flex-1 flex items-center justify-center gap-2 px-5 py-3 rounded-2xl font-semibold text-sm bg-emerald-600 text-white shadow-sm">
                     <CheckCircle2 className="w-5 h-5 text-white" />
-                    <span>🎉 本主題全數篇目圓滿完成！</span>
+                    <span>🎉 本追求主題全數篇目圓滿完成！</span>
                   </div>
                 )}
 
@@ -731,7 +690,7 @@ export const TodayPursuitCard: React.FC<TodayPursuitCardProps> = ({
                 <button
                   type="button"
                   onClick={onToggleComplete}
-                  className="px-4 py-3 rounded-2xl font-medium text-xs bg-stone-100 hover:bg-rose-50 hover:text-rose-700 hover:border-rose-200 text-stone-600 border border-stone-200/80 transition-all flex items-center justify-center gap-1.5 active:scale-[0.98]"
+                  className="px-4 py-3 rounded-2xl font-medium text-xs bg-stone-100 dark:bg-stone-800 hover:bg-rose-50 dark:hover:bg-rose-950/50 hover:text-rose-700 dark:hover:text-rose-300 text-stone-600 dark:text-stone-300 border border-stone-200/80 dark:border-stone-700 transition-all flex items-center justify-center gap-1.5 active:scale-[0.98]"
                   title="若誤按勾選今日追求，點此取消打卡狀態"
                 >
                   <RotateCcw className="w-3.5 h-3.5" />
@@ -747,21 +706,20 @@ export const TodayPursuitCard: React.FC<TodayPursuitCardProps> = ({
                 <Circle className="w-5 h-5 text-amber-100" />
                 <span>
                   {isNTHalfYear && ntScheduleInfo
-                    ? `勾選今日已追求（完成 2 章：${ntScheduleInfo.schedule.displayText}）`
+                    ? `勾選今日已追求（${ntScheduleInfo.schedule.displayText}）`
                     : isNTSpeed && speedPace
-                    ? `勾選今日已追求（推進 ${Math.max(1, Math.round(speedPace.dailyTargetChapters))} 章 · 至【${getNTChapterLocation(Math.min(260, plan.completedUnits + Math.max(1, Math.round(speedPace.dailyTargetChapters)))).displayText}】）`
+                    ? `勾選今日已追求（推進至【${getNTChapterLocation(Math.min(260, plan.completedUnits + Math.max(1, Math.round(speedPace.dailyTargetChapters)))).displayText}】）`
                     : '勾選今日已追求'}
                 </span>
               </button>
             )}
-
 
             {/* Share Light button */}
             {canSharePosts && (
               <button
                 type="button"
                 onClick={onOpenShareModal}
-                className="flex items-center justify-center gap-2 px-5 py-3 rounded-2xl font-semibold text-sm bg-white border border-stone-200 text-stone-700 hover:border-amber-300 hover:text-amber-800 hover:bg-amber-50/50 transition-all shadow-xs active:scale-[0.98]"
+                className="flex items-center justify-center gap-2 px-5 py-3 rounded-2xl font-semibold text-sm bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 text-stone-700 dark:text-stone-200 hover:border-amber-300 hover:text-amber-800 hover:bg-amber-50/50 dark:hover:bg-amber-950/30 transition-all shadow-xs active:scale-[0.98]"
               >
                 <PenSquare className="w-4 h-4 text-amber-600" />
                 <span>分享今日摸著與亮光</span>
@@ -770,7 +728,7 @@ export const TodayPursuitCard: React.FC<TodayPursuitCardProps> = ({
           </div>
 
           {isCompletedToday && (
-            <p className="text-[11px] text-emerald-700 font-medium flex items-center gap-1.5 px-1">
+            <p className="text-[11px] text-emerald-700 dark:text-emerald-400 font-medium flex items-center gap-1.5 px-1">
               <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 flex-shrink-0" />
               <span>今日追求已打卡。若有多讀可點擊「多讀一篇」繼續推進；若為誤按可點擊「取消今日完成」。</span>
             </p>
