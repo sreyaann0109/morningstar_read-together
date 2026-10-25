@@ -1,6 +1,6 @@
 # 《晨星共行 Morning Star Companions》產品規格與系統架構書 (spec.md)
 
-> **當前系統版本**：`v1.1.2`  
+> **當前系統版本**：`v1.1.1`  
 > **正式站點 (Production)**：[https://morningstar-read-together.vercel.app/](https://morningstar-read-together.vercel.app/)（對應 `main` 分支）  
 > **核心資料庫架構**：100% Pure Cloud Supabase PostgreSQL (Zero-Mock Clean Schema，徹底棄用本地 SQLite 與檔案持久化)  
 > 
@@ -43,7 +43,7 @@
 
 ### 2.2 單一主分支部署策略 (Single-Branch Strategy: `main`)
 * **`main` 分支（Production & Main Development）**：
-  * 當前版本標籤：`v1.1.2`
+  * 當前版本標籤：`v1.1.1`
   * 綁定線上生產環境網域：`https://morningstar-read-together.vercel.app/`
   * 全站所有新功能開發、測試驗證、UI 微調、修復與版本發布一律直接在 `main` 主分支作業。
   * 保持「本機驗證無誤 ➔ Conventional Commit ➔ 使用者確認 push ➔ Vercel 自動部署」之簡潔流暢工作流。
@@ -327,8 +327,6 @@ npm run build
   * **全站標準化 UTC+8 (Asia/Taipei) 計時**：期程進度、表定天數、速讀計算與換日判定全面綁定台灣時間，杜絕清晨追求時段跨日失準。
   * **浮動彈窗外層遮罩點擊關閉 (Backdrop Click-to-Dismiss)**：全站 12 組彈窗全面落實外層點擊即時退出與內部防冒泡，操作手感大幅提升。
   * **「多讀一天」天數與章節精準標記**：修正跳日與起始顯示問題、導入 0 進度防呆機制（嚴禁未追求即顯示多讀一天），並支援 UTC+8 跨日自動重設打卡狀態。
-
-* **v1.1.2 (2026-10-25)**：
   * **控制台主題與聖徒管理常態化**：恢復為控制台主畫面專用板塊（非覆蓋式浮層），左側專題目錄垂直切換流暢直覺。
   * **聖徒名冊卡片式管理與浮動設定彈窗 (User Settings Modal)**：名冊清單維持乾淨簡潔，點選任意聖徒卡片即以獨立浮層彈窗展現個人追求生活數據、各主題參與及退出/加入管理、10 位臨時密碼核發、權限轉換與重設進度。
   * **管理模式切換按鈕收攏為一**：全面移除首頁 Banner、頁尾 Footer 與控制台頂部多餘之切換按鈕，全站嚴格僅保留導覽列（Header）右上角單一切換模式按鈕。
