@@ -60,6 +60,7 @@ import {
   clearNotificationsFromBackend,
   isMutatingOrInCooldown,
   getLastMutationTimestamp,
+  markMutationStart,
 } from '../lib/api';
 import { hashPasswordWeb, generateRandomTempPassword } from '../lib/password';
 import { getUTC8DateString, addDaysUTC8 } from '../lib/dateUtils';
@@ -92,15 +93,13 @@ const loadUserData = (targetUser: UserProfile, sourcePlansOverride?: PursuitPlan
     if (savedProfileStr) {
       const parsed = JSON.parse(savedProfileStr);
       const safeSanctuary =
-        targetUser.sanctuary && Object.keys(targetUser.sanctuary).length > 0
-          ? targetUser.sanctuary
-          : parsed.sanctuary && Object.keys(parsed.sanctuary).length > 0
+        parsed.sanctuary && Object.keys(parsed.sanctuary).length > 0
           ? parsed.sanctuary
-          : undefined;
+          : (targetUser.sanctuary && Object.keys(targetUser.sanctuary).length > 0 ? targetUser.sanctuary : undefined);
 
       const safePlanSanctuaries = {
-        ...(parsed.planSanctuaries || {}),
         ...(targetUser.planSanctuaries || {}),
+        ...(parsed.planSanctuaries || {}),
       };
 
       const safeDailyHistory = {
@@ -477,6 +476,7 @@ export default function Home() {
 
         // Load scoped data for this user
         const { activeProfile, activeJoinedIds, completedToday } = loadUserData(initialUser);
+        userRef.current = activeProfile;
         setUser(activeProfile);
         setJoinedPlanIds(activeJoinedIds);
         const loadedDailyHistory = loadUserDailyHistory(activeProfile);
@@ -583,17 +583,17 @@ export default function Home() {
           const mergedUsers = backendData.users.map((u) => {
             if (u.id === currentUid || u.email.toLowerCase() === currentEmail) {
               const safeSanctuary =
-                u.sanctuary && Object.keys(u.sanctuary).length > 0
-                  ? u.sanctuary
-                  : userRef.current.sanctuary;
+                userRef.current.sanctuary && Object.keys(userRef.current.sanctuary).length > 0
+                  ? userRef.current.sanctuary
+                  : (u.sanctuary && Object.keys(u.sanctuary).length > 0 ? u.sanctuary : undefined);
               const safePlanSanctuaries = {
-                ...(userRef.current.planSanctuaries || {}),
                 ...(u.planSanctuaries || {}),
+                ...(userRef.current.planSanctuaries || {}),
               };
               const safeDailyHistory =
-                u.dailyHistory && Object.keys(u.dailyHistory).length > 0
-                  ? u.dailyHistory
-                  : userRef.current.dailyHistory;
+                userRef.current.dailyHistory && Object.keys(userRef.current.dailyHistory).length > 0
+                  ? userRef.current.dailyHistory
+                  : u.dailyHistory;
               return {
                 ...u,
                 sanctuary: safeSanctuary,
@@ -620,20 +620,20 @@ export default function Home() {
                   ? remote.dailyHistory
                   : currentUser.dailyHistory;
 
-              const remoteSanctuary =
-                remote.sanctuary && typeof remote.sanctuary === 'object' && Object.keys(remote.sanctuary).length > 0
-                  ? remote.sanctuary
-                  : currentUser.sanctuary;
+              const authoritativeSanctuary =
+                currentUser.sanctuary && Object.keys(currentUser.sanctuary).length > 0
+                  ? currentUser.sanctuary
+                  : (remote.sanctuary && Object.keys(remote.sanctuary).length > 0 ? remote.sanctuary : undefined);
 
               const mergedPlanSanctuaries = {
-                ...(currentUser.planSanctuaries || {}),
                 ...(remote.planSanctuaries || {}),
+                ...(currentUser.planSanctuaries || {}),
               };
 
               const updated: UserProfile = {
                 ...currentUser,
                 ...remote,
-                sanctuary: remoteSanctuary,
+                sanctuary: authoritativeSanctuary,
                 planSanctuaries: Object.keys(mergedPlanSanctuaries).length > 0 ? mergedPlanSanctuaries : undefined,
                 dailyHistory: remoteDailyHistory,
                 role: remote.role || currentUser.role,
@@ -646,10 +646,11 @@ export default function Home() {
                 } catch (e) {}
               }
 
-              // Auto-sync missing sanctuary / planSanctuaries / dailyHistory to Supabase Cloud
+              // Auto-sync missing or newer local sanctuary to Supabase Cloud
               const remoteNeedsSanctuarySync =
                 (!remote.sanctuary && updated.sanctuary) ||
-                (updated.planSanctuaries && (!remote.planSanctuaries || Object.keys(updated.planSanctuaries).length > Object.keys(remote.planSanctuaries || {}).length));
+                JSON.stringify(remote.sanctuary) !== JSON.stringify(updated.sanctuary) ||
+                JSON.stringify(remote.planSanctuaries) !== JSON.stringify(updated.planSanctuaries);
 
               const remoteNeedsDailyHistorySync =
                 (!remote.dailyHistory || Object.keys(remote.dailyHistory).length === 0) &&
@@ -723,17 +724,17 @@ export default function Home() {
           const mergedUsers = backendData.users.map((u) => {
             if (u.id === currentUid || u.email.toLowerCase() === currentEmail) {
               const safeSanctuary =
-                u.sanctuary && Object.keys(u.sanctuary).length > 0
-                  ? u.sanctuary
-                  : userRef.current.sanctuary;
+                userRef.current.sanctuary && Object.keys(userRef.current.sanctuary).length > 0
+                  ? userRef.current.sanctuary
+                  : (u.sanctuary && Object.keys(u.sanctuary).length > 0 ? u.sanctuary : undefined);
               const safePlanSanctuaries = {
-                ...(userRef.current.planSanctuaries || {}),
                 ...(u.planSanctuaries || {}),
+                ...(userRef.current.planSanctuaries || {}),
               };
               const safeDailyHistory =
-                u.dailyHistory && Object.keys(u.dailyHistory).length > 0
-                  ? u.dailyHistory
-                  : userRef.current.dailyHistory;
+                userRef.current.dailyHistory && Object.keys(userRef.current.dailyHistory).length > 0
+                  ? userRef.current.dailyHistory
+                  : u.dailyHistory;
               return {
                 ...u,
                 sanctuary: safeSanctuary,
@@ -760,20 +761,20 @@ export default function Home() {
                   ? remote.dailyHistory
                   : currentUser.dailyHistory;
 
-              const remoteSanctuary =
-                remote.sanctuary && typeof remote.sanctuary === 'object' && Object.keys(remote.sanctuary).length > 0
-                  ? remote.sanctuary
-                  : currentUser.sanctuary;
+              const authoritativeSanctuary =
+                currentUser.sanctuary && Object.keys(currentUser.sanctuary).length > 0
+                  ? currentUser.sanctuary
+                  : (remote.sanctuary && Object.keys(remote.sanctuary).length > 0 ? remote.sanctuary : undefined);
 
               const mergedPlanSanctuaries = {
-                ...(currentUser.planSanctuaries || {}),
                 ...(remote.planSanctuaries || {}),
+                ...(currentUser.planSanctuaries || {}),
               };
 
               const updated: UserProfile = {
                 ...currentUser,
                 ...remote,
-                sanctuary: remoteSanctuary,
+                sanctuary: authoritativeSanctuary,
                 planSanctuaries: Object.keys(mergedPlanSanctuaries).length > 0 ? mergedPlanSanctuaries : undefined,
                 dailyHistory: remoteDailyHistory,
                 role: remote.role || currentUser.role,
@@ -786,10 +787,11 @@ export default function Home() {
                 } catch (e) {}
               }
 
-              // Auto-sync missing sanctuary / planSanctuaries / dailyHistory to Supabase Cloud
+              // Auto-sync missing or newer local sanctuary to Supabase Cloud
               const remoteNeedsSanctuarySync =
                 (!remote.sanctuary && updated.sanctuary) ||
-                (updated.planSanctuaries && (!remote.planSanctuaries || Object.keys(updated.planSanctuaries).length > Object.keys(remote.planSanctuaries || {}).length));
+                JSON.stringify(remote.sanctuary) !== JSON.stringify(updated.sanctuary) ||
+                JSON.stringify(remote.planSanctuaries) !== JSON.stringify(updated.planSanctuaries);
 
               const remoteNeedsDailyHistorySync =
                 (!remote.dailyHistory || Object.keys(remote.dailyHistory).length === 0) &&
@@ -2872,6 +2874,7 @@ export default function Home() {
   };
 
   const handleSaveSanctuary = (newConfig: SanctuaryConfig) => {
+    markMutationStart();
     try {
       localStorage.setItem(getUserStorageKey(user.id, 'sanctuary'), JSON.stringify(newConfig));
       if (currentPlan?.id) {
@@ -2961,11 +2964,11 @@ export default function Home() {
   });
 
   const activePlanConfig = currentPlan?.id ? user.planSanctuaries?.[currentPlan.id] : undefined;
-  const currentSanctuaryConfig: SanctuaryConfig = {
+  const currentSanctuaryConfig: SanctuaryConfig = useMemo(() => ({
     theme: activePlanConfig?.theme || user.sanctuary?.theme || DEFAULT_SANCTUARY_CONFIG.theme,
     motto: activePlanConfig?.motto || user.sanctuary?.motto || DEFAULT_SANCTUARY_CONFIG.motto,
     placedRelicIds: activePlanConfig?.placedRelicIds ?? user.sanctuary?.placedRelicIds ?? DEFAULT_SANCTUARY_CONFIG.placedRelicIds,
-  };
+  }), [activePlanConfig, user.sanctuary]);
 
   const viewingCompanionUser = viewingCompanion
     ? allUsers.find((u) => u.id === viewingCompanion.id) || {

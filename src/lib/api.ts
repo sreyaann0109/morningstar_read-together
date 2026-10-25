@@ -138,6 +138,7 @@ export async function deletePostFromBackend(postId: string) {
 }
 
 const rawSyncUsers = async (users: UserProfile[]) => {
+  markMutationStart();
   try {
     const res = await fetch('/api/users', {
       method: 'POST',
@@ -149,6 +150,8 @@ const rawSyncUsers = async (users: UserProfile[]) => {
     }
   } catch (e) {
     console.error('Network error syncing users to backend:', e);
+  } finally {
+    markMutationEnd();
   }
 };
 

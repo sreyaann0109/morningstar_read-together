@@ -64,12 +64,15 @@ export const SanctuaryCustomizeModal: React.FC<SanctuaryCustomizeModalProps> = (
     currentConfig?.placedRelicIds || []
   );
 
+  const prevIsOpenRef = React.useRef(isOpen);
+
   React.useEffect(() => {
-    if (isOpen) {
+    if (isOpen && !prevIsOpenRef.current) {
       setTheme(currentConfig?.theme || 'dawn');
       setMotto(currentConfig?.motto || PRESET_MOTTOS[0]);
       setSelectedRelicIds(currentConfig?.placedRelicIds || []);
     }
+    prevIsOpenRef.current = isOpen;
   }, [isOpen, currentConfig]);
 
   if (!isOpen) return null;
