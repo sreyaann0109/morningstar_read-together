@@ -1,6 +1,6 @@
 # 《晨星共行 Morning Star Companions》產品規格與系統架構書 (spec.md)
 
-> **當前系統版本**：`v1.1.1`  
+> **當前系統版本**：`v1.1.2`  
 > **正式站點 (Production)**：[https://morningstar-read-together.vercel.app/](https://morningstar-read-together.vercel.app/)（對應 `main` 分支）  
 > **核心資料庫架構**：100% Pure Cloud Supabase PostgreSQL (Zero-Mock Clean Schema，徹底棄用本地 SQLite 與檔案持久化)  
 > 
@@ -43,7 +43,7 @@
 
 ### 2.2 單一主分支部署策略 (Single-Branch Strategy: `main`)
 * **`main` 分支（Production & Main Development）**：
-  * 當前版本標籤：`v1.1.1`
+  * 當前版本標籤：`v1.1.2`
   * 綁定線上生產環境網域：`https://morningstar-read-together.vercel.app/`
   * 全站所有新功能開發、測試驗證、UI 微調、修復與版本發布一律直接在 `main` 主分支作業。
   * 保持「本機驗證無誤 ➔ Conventional Commit ➔ 使用者確認 push ➔ Vercel 自動部署」之簡潔流暢工作流。
@@ -387,6 +387,7 @@ npm run build
     * **跨裝置無縫一致**：聖徒在手機、電腦、平板等任何裝置上打卡、多讀、補讀或復原進度，追求地圖即時透過 Supabase PostgreSQL 雙向同步，在所有登入裝置上展示 100% 一致之完整熱力地圖。
     * **同伴帳幕互訪真實呈現**：聖徒點擊同伴頭像造訪同伴追求帳幕時，袖珍追求地圖直接由雲端資料庫拉取同伴真實歷史紀錄，不再因跨裝置而顯示空方格或預設假資料。
 
+* **v1.1.2 (2026-10-26)**：
   * **追求帳幕自訂佈置零回溯雲端持久化 (Sanctuary Customization Zero-Rollback Cloud Persistence)**：
     * **徹底根治自訂回溯（Rollback）四大連鎖病因**：
       1. **彈窗狀態被背景輪詢強制重置**：`currentSanctuaryConfig` 原先在每次主層重新渲染時生成新物件引用，觸發彈窗內部 `useEffect` 在聖徒編輯時無預警將表單重置回舊設定。
