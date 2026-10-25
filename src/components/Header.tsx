@@ -27,6 +27,8 @@ interface HeaderProps {
   onOpenStats: () => void;
   onOpenPlanSelector: () => void;
   onOpenDrawer?: () => void;
+  onToggleDrawer?: () => void;
+  isDrawerOpen?: boolean;
   onOpenAuth: () => void;
   onLogout?: () => void;
   notifications?: AppNotification[];
@@ -44,6 +46,8 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenJoinByCode,
   onOpenStats,
   onOpenDrawer,
+  onToggleDrawer,
+  isDrawerOpen = false,
   onOpenAuth,
   onLogout,
   notifications = [],
@@ -55,6 +59,13 @@ export const Header: React.FC<HeaderProps> = ({
   const [isBellOpen, setIsBellOpen] = useState(false);
   const bellRef = useRef<HTMLDivElement>(null);
   const unreadCount = notifications.filter((n) => !n.read).length;
+
+  // 當側邊欄開啟時，自動收合提醒彈窗
+  useEffect(() => {
+    if (isDrawerOpen) {
+      setIsBellOpen(false);
+    }
+  }, [isDrawerOpen]);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -205,19 +216,31 @@ export const Header: React.FC<HeaderProps> = ({
   };
 
   return (
-    <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-stone-200/80 transition-all">
+    <header className="sticky top-0 z-[60] bg-white/95 backdrop-blur-md border-b border-stone-200/80 transition-all">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-3">
         {/* Left: Menu Toggle & Logo & Subtitle */}
         <div className="flex items-center gap-2 sm:gap-3">
-          {onOpenDrawer && (
+          {(onToggleDrawer || onOpenDrawer) && (
             <button
               type="button"
-              onClick={onOpenDrawer}
-              className="p-1.5 sm:p-2 -ml-1 sm:ml-0 rounded-xl border border-stone-200 dark:border-stone-700 bg-stone-50/80 dark:bg-stone-800/80 hover:bg-amber-50 dark:hover:bg-amber-950/60 hover:border-amber-300 dark:hover:border-amber-600 text-stone-700 dark:text-stone-300 transition-colors flex items-center gap-1.5 shadow-2xs group"
-              title="開啟追求主題列表與邀請碼選單"
+              onClick={onToggleDrawer || onOpenDrawer}
+              className={`p-1.5 sm:p-2 -ml-1 sm:ml-0 rounded-xl border transition-colors flex items-center gap-1.5 shadow-2xs group ${
+                isDrawerOpen
+                  ? 'border-amber-400 bg-amber-100/90 text-amber-950 dark:bg-amber-950/80 dark:border-amber-700 dark:text-amber-300 ring-2 ring-amber-400/40'
+                  : 'border-stone-200 dark:border-stone-700 bg-stone-50/80 dark:bg-stone-800/80 hover:bg-amber-50 dark:hover:bg-amber-950/60 hover:border-amber-300 dark:hover:border-amber-600 text-stone-700 dark:text-stone-300'
+              }`}
+              title={isDrawerOpen ? '關閉追求主題選單（再次點擊關閉）' : '開啟追求主題列表與邀請碼選單'}
             >
-              <Menu className="w-4 h-4 sm:w-5 sm:h-5 text-stone-600 dark:text-stone-300 group-hover:text-amber-700 dark:group-hover:text-amber-400" />
-              <span className="hidden md:inline text-xs font-semibold text-stone-700 dark:text-stone-200 group-hover:text-amber-800 dark:group-hover:text-amber-300">
+              <Menu className={`w-4 h-4 sm:w-5 sm:h-5 transition-transform duration-200 ${
+                isDrawerOpen
+                  ? 'text-amber-800 dark:text-amber-300'
+                  : 'text-stone-600 dark:text-stone-300 group-hover:text-amber-700 dark:group-hover:text-amber-400'
+              }`} />
+              <span className={`hidden md:inline text-xs font-semibold ${
+                isDrawerOpen
+                  ? 'text-amber-900 dark:text-amber-200'
+                  : 'text-stone-700 dark:text-stone-200 group-hover:text-amber-800 dark:group-hover:text-amber-300'
+              }`}>
                 追求主題
               </span>
             </button>

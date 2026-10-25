@@ -346,9 +346,6 @@ export const CompanionsFeed: React.FC<CompanionsFeedProps> = ({
                         <span className="font-bold text-sm text-stone-900">
                           {post.authorName}
                         </span>
-                        <span className="text-[10px] bg-stone-100 text-stone-600 px-1.5 py-0.2 rounded-md font-medium flex-shrink-0">
-                          同伴
-                        </span>
                         <span className="text-[11px] text-stone-400 font-mono font-medium flex-shrink-0">
                           · {formatRelativeTime(post.createdAt, post.id)}
                         </span>

@@ -53,8 +53,6 @@ export const ThemesDrawer: React.FC<ThemesDrawerProps> = ({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, onClose]);
 
-  if (!isOpen) return null;
-
   const getCategoryLabel = (cat: PlanCategory) => {
     switch (cat) {
       case 'nt-half-year':
@@ -81,18 +79,27 @@ export const ThemesDrawer: React.FC<ThemesDrawerProps> = ({
   const otherPlans = plans.filter((p) => !joinedIds.has(p.id));
 
   return (
-    <div className="fixed inset-0 z-50 overflow-hidden animate-in fade-in duration-200">
-      {/* 遮罩背景 (Backdrop) */}
+    <div
+      className={`fixed inset-0 top-16 z-40 overflow-hidden transition-all duration-300 ${
+        isOpen ? 'pointer-events-auto' : 'pointer-events-none'
+      }`}
+      aria-hidden={!isOpen}
+    >
+      {/* 遮罩背景 (Backdrop) - 自 top-16 開始，保留頂部導覽列三條線可隨時點擊 */}
       <div
         onClick={onClose}
-        className="fixed inset-0 bg-stone-900/50 backdrop-blur-xs transition-opacity"
+        className={`fixed inset-0 top-16 bg-stone-900/50 backdrop-blur-xs transition-opacity duration-300 ease-in-out ${
+          isOpen ? 'opacity-100' : 'opacity-0'
+        }`}
         aria-hidden="true"
       />
 
-      {/* 左側滑出抽屜 (Slide-out Sidebar Drawer) */}
+      {/* 左側滑出抽屜 (Slide-out Sidebar Drawer) - 支援完整的滑入與滑出動畫 */}
       <div
         onClick={(e) => e.stopPropagation()}
-        className="fixed inset-y-0 left-0 w-84 sm:w-96 max-w-[85vw] bg-white dark:bg-stone-900 shadow-2xl border-r border-stone-200 dark:border-stone-800 flex flex-col z-50 animate-in slide-in-from-left duration-250 ease-out"
+        className={`fixed top-16 bottom-0 left-0 w-84 sm:w-96 max-w-[85vw] bg-white dark:bg-stone-900 shadow-2xl border-r border-stone-200 dark:border-stone-800 flex flex-col z-50 transition-transform duration-300 ease-in-out transform ${
+          isOpen ? 'translate-x-0' : '-translate-x-full'
+        }`}
       >
         {/* 抽屜頂部 Header */}
         <div className="p-4 sm:p-5 border-b border-stone-100 dark:border-stone-800 flex items-center justify-between bg-stone-50/60 dark:bg-stone-900/80">

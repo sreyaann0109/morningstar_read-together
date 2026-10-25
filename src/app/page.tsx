@@ -2784,6 +2784,8 @@ export default function Home() {
         onOpenStats={() => setIsStatsModalOpen(true)}
         onOpenPlanSelector={() => setIsThemesDrawerOpen(true)}
         onOpenDrawer={() => setIsThemesDrawerOpen(true)}
+        onToggleDrawer={() => setIsThemesDrawerOpen((prev) => !prev)}
+        isDrawerOpen={isThemesDrawerOpen}
         onOpenAuth={() => setIsAuthModalOpen(true)}
         onLogout={handleLogout}
       />
