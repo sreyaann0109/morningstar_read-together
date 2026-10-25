@@ -167,7 +167,6 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   const [newUserName, setNewUserName] = useState('');
   const [newUserEmail, setNewUserEmail] = useState('');
   const [newUserPassword, setNewUserPassword] = useState('');
-  const [newUserLocality, setNewUserLocality] = useState('');
   const [newUserAvatar, setNewUserAvatar] = useState('🌱');
   const [userFormError, setUserFormError] = useState<string | null>(null);
 
@@ -245,7 +244,6 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
         name: newUserName.trim(),
         email: newUserEmail.trim().toLowerCase(),
         password: hashedPassword,
-        locality: newUserLocality.trim() || undefined,
         streakDays: 0,
         totalChaptersRead: 0,
         totalSharesCount: 0,
@@ -263,7 +261,6 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
       setNewUserName('');
       setNewUserEmail('');
       setNewUserPassword('');
-      setNewUserLocality('');
       setIsAddingUser(false);
     }
   };
@@ -276,8 +273,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
       const q = userSearch.trim().toLowerCase();
       return (
         u.name.toLowerCase().includes(q) ||
-        u.email.toLowerCase().includes(q) ||
-        (u.locality || '').toLowerCase().includes(q)
+        u.email.toLowerCase().includes(q)
       );
     }
     return true;
@@ -1097,7 +1093,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                     type="text"
                     value={userSearch}
                     onChange={(e) => setUserSearch(e.target.value)}
-                    placeholder="搜尋聖徒姓名、信箱或聚會所在地..."
+                    placeholder="搜尋聖徒姓名或信箱..."
                     className="w-full pl-9 pr-3 py-2 text-xs rounded-xl border border-stone-200 bg-stone-50 focus:bg-white focus:outline-none focus:border-amber-500 transition-colors"
                   />
                 </div>
@@ -1193,7 +1189,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
                     <div>
                       <label className="block text-[11px] font-semibold text-stone-600 mb-1">
                         聖徒姓名
@@ -1231,18 +1227,6 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                         value={newUserPassword}
                         onChange={(e) => setNewUserPassword(e.target.value)}
                         placeholder="請設定密碼（至少 6 碼）"
-                        className="w-full text-xs rounded-xl border border-stone-200 bg-white px-3 py-2 focus:outline-none focus:border-amber-500"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-[11px] font-semibold text-stone-600 mb-1">
-                        所在地 / 召會會所 (可選)
-                      </label>
-                      <input
-                        type="text"
-                        value={newUserLocality}
-                        onChange={(e) => setNewUserLocality(e.target.value)}
-                        placeholder="例如：台北市召會、新竹市召會"
                         className="w-full text-xs rounded-xl border border-stone-200 bg-white px-3 py-2 focus:outline-none focus:border-amber-500"
                       />
                     </div>
@@ -1498,11 +1482,6 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                               </div>
                               <div className="text-xs text-stone-400 font-mono flex items-center gap-1 mt-0.5 truncate">
                                 <span>{u.email}</span>
-                                {u.locality && (
-                                  <span className="text-[11px] text-stone-400 font-sans">
-                                    · 📍{u.locality}
-                                  </span>
-                                )}
                               </div>
                             </div>
                           </div>
@@ -1573,22 +1552,13 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                                   {u.totalChaptersRead} 篇
                                 </span>
                               </div>
-                              <div className="flex items-center justify-between text-xs py-1 border-b border-stone-200/50">
+                              <div className="flex items-center justify-between text-xs py-1">
                                 <span className="text-stone-500 flex items-center gap-1.5 font-medium">
                                   <Sparkles className="w-3.5 h-3.5 text-amber-500" />
                                   動態亮光分享
                                 </span>
                                 <span className="font-extrabold text-stone-900">
                                   {u.totalSharesCount} 則
-                                </span>
-                              </div>
-                              <div className="flex items-center justify-between text-xs py-1">
-                                <span className="text-stone-500 flex items-center gap-1.5 font-medium">
-                                  <HeartHandshake className="w-3.5 h-3.5 text-rose-500" />
-                                  獲得阿們祝福
-                                </span>
-                                <span className="font-extrabold text-stone-900">
-                                  {u.totalAmenReceived} 次
                                 </span>
                               </div>
                             </div>
@@ -2147,18 +2117,18 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
 
                 <div className="bg-white rounded-2xl p-3.5 border border-stone-200 shadow-2xs flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-xl bg-rose-50 text-rose-500 flex items-center justify-center text-base">
-                      <HeartHandshake className="w-4.5 h-4.5" />
+                    <div className="w-9 h-9 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center text-base">
+                      <Sparkles className="w-4.5 h-4.5" />
                     </div>
                     <div>
-                      <span className="text-xs font-bold text-stone-500 block">聖徒相調互動總計</span>
+                      <span className="text-xs font-bold text-stone-500 block">亮光分享總計</span>
                       <span className="text-lg font-extrabold text-stone-900">
-                        {totalShares + totalAmen} 次
+                        {totalShares} 則
                       </span>
                     </div>
                   </div>
                   <span className="text-xs text-stone-500">
-                    亮光分享 {totalShares} 則 · 獲得阿們 {totalAmen} 次
+                    同伴靈中摸著交通
                   </span>
                 </div>
               </div>

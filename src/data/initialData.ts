@@ -6,7 +6,6 @@ export const demoUsers: UserProfile[] = [
     name: '管理同工',
     email: 'admin@morningstar',
     password: 'sha256$fixedsaltforadmin111111$70bab25006d54c8cfe5a9be6dcb7035c7b938687a5077dc9125ddff6edd06a96',
-    locality: '全召會服事處',
     streakDays: 0,
     totalChaptersRead: 0,
     totalSharesCount: 0,

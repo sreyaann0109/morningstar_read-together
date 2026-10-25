@@ -65,31 +65,25 @@ export const StatsModal: React.FC<StatsModalProps> = ({ isOpen, onClose, user })
           </div>
         </div>
 
-        {/* 4 Stat Cards */}
-        <div className="grid grid-cols-2 gap-3 mb-6">
-          <div className="bg-amber-50/60 border border-amber-200/60 rounded-2xl p-3.5 text-center">
-            <span className="block text-2xl font-bold text-amber-800">
+        {/* 3 Stat Cards */}
+        <div className="grid grid-cols-3 gap-2.5 sm:gap-3 mb-6">
+          <div className="bg-amber-50/60 border border-amber-200/60 rounded-2xl p-3 sm:p-3.5 text-center">
+            <span className="block text-xl sm:text-2xl font-bold text-amber-800">
               {user.streakDays}
             </span>
-            <span className="text-xs text-amber-900/70 font-medium">連續天數 (Days)</span>
+            <span className="text-[11px] sm:text-xs text-amber-900/70 font-medium">連續追求天數</span>
           </div>
-          <div className="bg-stone-50 border border-stone-200/60 rounded-2xl p-3.5 text-center">
-            <span className="block text-2xl font-bold text-stone-800">
+          <div className="bg-stone-50 border border-stone-200/60 rounded-2xl p-3 sm:p-3.5 text-center">
+            <span className="block text-xl sm:text-2xl font-bold text-stone-800">
               {user.totalChaptersRead}
             </span>
-            <span className="text-xs text-stone-500 font-medium">累積追求篇數</span>
+            <span className="text-[11px] sm:text-xs text-stone-500 font-medium">累積追求篇數</span>
           </div>
-          <div className="bg-stone-50 border border-stone-200/60 rounded-2xl p-3.5 text-center">
-            <span className="block text-2xl font-bold text-stone-800">
+          <div className="bg-stone-50 border border-stone-200/60 rounded-2xl p-3 sm:p-3.5 text-center">
+            <span className="block text-xl sm:text-2xl font-bold text-stone-800">
               {user.totalSharesCount}
             </span>
-            <span className="text-xs text-stone-500 font-medium">分享亮光心得</span>
-          </div>
-          <div className="bg-rose-50/60 border border-rose-200/60 rounded-2xl p-3.5 text-center">
-            <span className="block text-2xl font-bold text-rose-700">
-              {user.totalAmenReceived}
-            </span>
-            <span className="text-xs text-rose-800/70 font-medium">同伴阿們激勵</span>
+            <span className="text-[11px] sm:text-xs text-stone-500 font-medium">分享亮光心得</span>
           </div>
         </div>
 

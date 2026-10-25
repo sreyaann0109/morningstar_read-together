@@ -134,7 +134,7 @@ export const ALL_SPIRITUAL_RELICS: SpiritualRelic[] = [
     emoji: '🎻',
     category: 'praise',
     categoryLabel: '讚美系列',
-    requirement: '累計同伴阿們 15 次',
+    requirement: '累計分享亮光 10 則',
     verseQuote: '「你們應當彈琴稱謝耶和華，用十弦瑟向祂歌頌。」（詩三三2）',
     meaning: '心被恩感向主歌唱，同伴在愛中彼此建造',
   },
@@ -191,7 +191,7 @@ export function isRelicUnlocked(relicId: string, stats: UserStatsCriteria): bool
     case 'relic-grape':
       return stats.totalChaptersRead >= 20;
     case 'relic-harp':
-      return stats.totalAmenReceived >= 15;
+      return stats.totalSharesCount >= 10;
     case 'relic-crown':
       return stats.totalChaptersRead >= 50 || !!stats.planCompleted;
     default:

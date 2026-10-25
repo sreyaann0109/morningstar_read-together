@@ -68,8 +68,15 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   const [settingsSavedMsg, setSettingsSavedMsg] = useState<string | null>(null);
   const [settingsError, setSettingsError] = useState<string | null>(null);
 
+  // Track open state and user ID so that 3.5s background polling of currentUser doesn't wipe active form inputs
+  const prevIsOpenRef = React.useRef(false);
+  const prevUserIdRef = React.useRef(currentUser.id);
+
   useEffect(() => {
-    if (isOpen && isLoggedIn) {
+    const justOpened = isOpen && !prevIsOpenRef.current;
+    const userSwitched = currentUser.id !== prevUserIdRef.current;
+
+    if (isOpen && isLoggedIn && (justOpened || userSwitched)) {
       setEditName(currentUser.name);
       setEditEmail(currentUser.email);
       setEditAvatar(currentUser.avatar);
@@ -79,7 +86,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       setSettingsSavedMsg(null);
       setSettingsError(null);
     }
-  }, [isOpen, isLoggedIn, currentUser]);
+    prevIsOpenRef.current = isOpen;
+    prevUserIdRef.current = currentUser.id;
+  }, [isOpen, isLoggedIn, currentUser.id, currentUser.name, currentUser.email, currentUser.avatar, currentUser.displayMode]);
 
   if (!isOpen) return null;
 

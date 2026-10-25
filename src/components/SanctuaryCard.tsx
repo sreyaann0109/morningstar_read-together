@@ -170,7 +170,7 @@ export const SanctuaryCard: React.FC<SanctuaryCardProps> = ({
           </div>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center text-xs">
+        <div className="grid grid-cols-3 gap-2 text-center text-xs">
           <div className="p-1.5 rounded-xl bg-amber-50/50 dark:bg-slate-800/80 border border-amber-100 dark:border-transparent">
             <span className="text-[10px] text-stone-500 block">連續追求天數</span>
             <div className="font-extrabold text-stone-800 flex items-center justify-center gap-1 mt-0.5">
@@ -192,14 +192,6 @@ export const SanctuaryCard: React.FC<SanctuaryCardProps> = ({
             <div className="font-extrabold text-stone-800 flex items-center justify-center gap-1 mt-0.5">
               <Sparkles className="w-3.5 h-3.5 text-amber-500" />
               <span>{planStats.totalSharesCount} 則</span>
-            </div>
-          </div>
-
-          <div className="p-1.5 rounded-xl bg-rose-50/50 dark:bg-slate-800/80 border border-rose-100 dark:border-transparent">
-            <span className="text-[10px] text-stone-500 block">獲得阿們祝福</span>
-            <div className="font-extrabold text-stone-800 flex items-center justify-center gap-1 mt-0.5">
-              <HeartHandshake className="w-3.5 h-3.5 text-rose-500" />
-              <span>{planStats.totalAmenReceived} 次</span>
             </div>
           </div>
         </div>
