@@ -3,7 +3,6 @@
 import React, { useState, useEffect } from 'react';
 import { X, Sparkles, Check, AlertCircle, Users, Delete, RotateCcw, ClipboardPaste } from 'lucide-react';
 import { PursuitPlan } from '../types';
-import { useBodyScrollLock } from '../lib/scrollLock';
 
 interface JoinByCodeModalProps {
   isOpen: boolean;
@@ -209,9 +208,6 @@ export const JoinByCodeModal: React.FC<JoinByCodeModalProps> = ({
     setPasteInput('');
     onClose();
   };
-
-  useBodyScrollLock(isOpen);
-  if (!isOpen) return null;
 
   return (
     <div

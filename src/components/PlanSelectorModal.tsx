@@ -3,7 +3,6 @@
 import React from 'react';
 import { X, BookOpen, Check, Plus } from 'lucide-react';
 import { PursuitPlan, PlanCategory } from '../types';
-import { useBodyScrollLock } from '../lib/scrollLock';
 
 interface PlanSelectorModalProps {
   isOpen: boolean;
@@ -28,7 +27,6 @@ export const PlanSelectorModal: React.FC<PlanSelectorModalProps> = ({
   onOpenJoinByCode,
   allowJoinByInviteCode = true,
 }) => {
-  useBodyScrollLock(isOpen);
   if (!isOpen) return null;
 
   const getCategoryBadge = (cat: PlanCategory) => {

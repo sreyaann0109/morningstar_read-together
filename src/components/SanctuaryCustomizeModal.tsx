@@ -10,7 +10,6 @@ import {
   getSanctuaryMaxSlots,
   getPlanRelicStats,
 } from '../data/relicsData';
-import { useBodyScrollLock } from '../lib/scrollLock';
 
 interface SanctuaryCustomizeModalProps {
   isOpen: boolean;
@@ -105,9 +104,6 @@ export const SanctuaryCustomizeModal: React.FC<SanctuaryCustomizeModalProps> = (
     });
     onClose();
   };
-
-  useBodyScrollLock(isOpen);
-  if (!isOpen) return null;
 
   return (
     <div

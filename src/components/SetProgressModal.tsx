@@ -10,7 +10,6 @@ import {
   TOTAL_NT_DAYS,
   TOTAL_NT_CHAPTERS,
 } from '../data/ntBibleData';
-import { useBodyScrollLock } from '../lib/scrollLock';
 
 interface SetProgressModalProps {
   isOpen: boolean;
@@ -61,9 +60,6 @@ export const SetProgressModal: React.FC<SetProgressModalProps> = ({
     onConfirmSetProgress(targetUnit);
     onClose();
   };
-
-  useBodyScrollLock(isOpen);
-  if (!isOpen) return null;
 
   return (
     <div

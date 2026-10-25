@@ -4,7 +4,6 @@ import React from 'react';
 import { X, Flame, Trophy, Calendar } from 'lucide-react';
 import { UserProfile } from '../types';
 import { getUTC8DateString, addDaysUTC8 } from '../lib/dateUtils';
-import { useBodyScrollLock } from '../lib/scrollLock';
 
 interface StatsModalProps {
   isOpen: boolean;
@@ -15,7 +14,6 @@ interface StatsModalProps {
 const WEEKDAY_NAMES = ['日', '一', '二', '三', '四', '五', '六'];
 
 export const StatsModal: React.FC<StatsModalProps> = ({ isOpen, onClose, user }) => {
-  useBodyScrollLock(isOpen);
   if (!isOpen) return null;
 
   // Dynamically generate the exact last 7 calendar days ending today in UTC+8

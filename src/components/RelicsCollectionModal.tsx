@@ -9,7 +9,6 @@ import {
   getPlanRelicStats,
   getPlanUnlockedRelics,
 } from '../data/relicsData';
-import { useBodyScrollLock } from '../lib/scrollLock';
 
 interface RelicsCollectionModalProps {
   isOpen: boolean;
@@ -92,9 +91,6 @@ export const RelicsCollectionModal: React.FC<RelicsCollectionModalProps> = ({
     selectedCategory === 'all'
       ? ALL_SPIRITUAL_RELICS
       : ALL_SPIRITUAL_RELICS.filter((r) => r.category === selectedCategory);
-
-  useBodyScrollLock(isOpen);
-  if (!isOpen) return null;
 
   return (
     <div

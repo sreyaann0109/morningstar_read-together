@@ -17,7 +17,6 @@ import {
 import { UserProfile, DisplayMode } from '../types';
 import { demoUsers } from '../data/initialData';
 import { hashPasswordWeb, verifyPasswordWeb } from '../lib/password';
-import { useBodyScrollLock } from '../lib/scrollLock';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -276,9 +275,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     onLogin(newUser);
     onClose();
   };
-
-  useBodyScrollLock(isOpen);
-  if (!isOpen) return null;
 
   return (
     <div

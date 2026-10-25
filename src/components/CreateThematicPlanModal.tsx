@@ -5,7 +5,6 @@ import { X, PlusCircle, RefreshCw, Sparkles, KeyRound, Check } from 'lucide-reac
 import { PursuitPlan, PlanCategory, UserProfile } from '../types';
 import { CODE_EMOJIS } from './JoinByCodeModal';
 import { getUTC8DateString, addDaysUTC8, diffDaysUTC8 } from '../lib/dateUtils';
-import { useBodyScrollLock } from '../lib/scrollLock';
 
 interface CreateThematicPlanModalProps {
   isOpen: boolean;
@@ -127,9 +126,6 @@ export const CreateThematicPlanModal: React.FC<CreateThematicPlanModalProps> = (
     onCreateThematicPlan(newPlan);
     onClose();
   };
-
-  useBodyScrollLock(isOpen);
-  if (!isOpen) return null;
 
   return (
     <div

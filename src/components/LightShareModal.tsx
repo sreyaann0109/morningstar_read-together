@@ -3,7 +3,6 @@
 import React, { useState, useEffect } from 'react';
 import { X, Sparkles, Send, BookOpen, Edit2 } from 'lucide-react';
 import { PursuitPlan, SharingPost } from '../types';
-import { useBodyScrollLock } from '../lib/scrollLock';
 
 import { getTodayNTSchedule, getNTDaySchedule, getNTChapterLocation, TOTAL_NT_DAYS, TOTAL_NT_CHAPTERS } from '../data/ntBibleData';
 
@@ -95,9 +94,6 @@ export const LightShareModal: React.FC<LightShareModalProps> = ({
     setReflection('');
     onClose();
   };
-
-  useBodyScrollLock(isOpen);
-  if (!isOpen) return null;
 
   return (
     <div

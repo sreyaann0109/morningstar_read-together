@@ -9,7 +9,6 @@ import {
   SANCTUARY_THEMES,
 } from '../data/relicsData';
 import { PursuitMap } from './PursuitMap';
-import { useBodyScrollLock } from '../lib/scrollLock';
 
 interface CompanionSanctuaryModalProps {
   isOpen: boolean;
@@ -34,7 +33,6 @@ export const CompanionSanctuaryModal: React.FC<CompanionSanctuaryModalProps> = (
 }) => {
   const [isSpiritualMeaningExpanded, setIsSpiritualMeaningExpanded] = React.useState(false);
 
-  useBodyScrollLock(isOpen);
   if (!isOpen || !companion) return null;
 
   const themeMeta = SANCTUARY_THEMES[companionSanctuary.theme] || SANCTUARY_THEMES.dawn;

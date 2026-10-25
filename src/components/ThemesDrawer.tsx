@@ -14,7 +14,6 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { PursuitPlan, PlanCategory } from '../types';
-import { useBodyScrollLock } from '../lib/scrollLock';
 
 interface ThemesDrawerProps {
   isOpen: boolean;
@@ -41,9 +40,6 @@ export const ThemesDrawer: React.FC<ThemesDrawerProps> = ({
   isAdmin = false,
   allowJoinByInviteCode = true,
 }) => {
-  // 當抽屜開啟時鎖定全站背景滾動
-  useBodyScrollLock(isOpen);
-
   // ESC 鍵關閉滑出欄
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {

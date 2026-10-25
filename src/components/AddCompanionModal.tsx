@@ -3,7 +3,6 @@
 import React, { useState } from 'react';
 import { X, UserPlus, Users } from 'lucide-react';
 import { Companion } from '../types';
-import { useBodyScrollLock } from '../lib/scrollLock';
 
 interface AddCompanionModalProps {
   isOpen: boolean;
@@ -23,7 +22,6 @@ export const AddCompanionModal: React.FC<AddCompanionModalProps> = ({
   const [avatar, setAvatar] = useState('🌱');
   const [planTitle, setPlanTitle] = useState('羅馬書生命讀經');
 
-  useBodyScrollLock(isOpen);
   if (!isOpen) return null;
 
   const handleSubmit = (e: React.FormEvent) => {

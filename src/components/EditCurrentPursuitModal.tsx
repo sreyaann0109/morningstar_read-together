@@ -5,7 +5,6 @@ import { X, Edit3, BookOpen, Sparkles, Check, Bookmark, RefreshCw, KeyRound } fr
 import { PursuitPlan, PlanCategory } from '../types';
 import { CODE_EMOJIS } from './JoinByCodeModal';
 import { getUTC8DateString, addDaysUTC8, diffDaysUTC8 } from '../lib/dateUtils';
-import { useBodyScrollLock } from '../lib/scrollLock';
 
 interface EditCurrentPursuitModalProps {
   isOpen: boolean;
@@ -111,9 +110,6 @@ export const EditCurrentPursuitModal: React.FC<EditCurrentPursuitModalProps> = (
 
     onClose();
   };
-
-  useBodyScrollLock(isOpen);
-  if (!isOpen) return null;
 
   return (
     <div
