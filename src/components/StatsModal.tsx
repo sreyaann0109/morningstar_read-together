@@ -62,7 +62,7 @@ export const StatsModal: React.FC<StatsModalProps> = ({ isOpen, onClose, user })
             <p className="text-xs text-stone-500">{user.email || '同伴同行'}</p>
             <div className="flex items-center gap-1.5 mt-1 text-xs font-semibold text-amber-700">
               <Flame className="w-4 h-4 fill-amber-500 text-amber-600" />
-              <span>已連續晨興追求 {user.streakDays} 天</span>
+              <span>已連續追求 {user.streakDays} 天</span>
             </div>
           </div>
         </div>
@@ -194,7 +194,7 @@ export const StatsModal: React.FC<StatsModalProps> = ({ isOpen, onClose, user })
                     </span>
                   )}
                 </div>
-                <p className="text-[11px] text-stone-500">連續追求 14 天晨興生活</p>
+                <p className="text-[11px] text-stone-500">連續追求 14 天屬靈生活</p>
               </div>
             </div>
 

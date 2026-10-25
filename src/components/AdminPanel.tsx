@@ -2287,7 +2287,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                   <div className="flex items-center justify-between gap-4">
                     <div>
                       <span className="text-xs font-bold text-stone-800 block">聖徒發表今日摸著與亮光</span>
-                      <span className="text-[11px] text-stone-500 block">允許聖徒在晨興追求後寫下摸著經節與心得亮光分享至今日亮光牆</span>
+                      <span className="text-[11px] text-stone-500 block">允許聖徒在每日追求後寫下摸著經節與心得亮光分享至今日亮光牆</span>
                     </div>
                     <button
                       type="button"
@@ -2350,13 +2350,13 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
               <div className="bg-white rounded-2xl p-4 border border-stone-200 shadow-2xs space-y-3">
                 <div className="flex items-center gap-2 pb-2 border-b border-stone-100">
                   <HeartHandshake className="w-4 h-4 text-amber-600" />
-                  <span className="text-xs font-bold text-stone-800">晨興帳幕與同伴生活</span>
+                  <span className="text-xs font-bold text-stone-800">追求帳幕與同伴生活</span>
                 </div>
                 <div className="space-y-3">
                   <div className="flex items-center justify-between gap-4">
                     <div>
-                      <span className="text-xs font-bold text-stone-800 block">同伴互訪晨興帳幕</span>
-                      <span className="text-[11px] text-stone-500 block">允許聖徒進入同伴個人陳設的晨興帳幕，觀看屬靈信物與立志座右銘</span>
+                      <span className="text-xs font-bold text-stone-800 block">同伴互訪追求帳幕</span>
+                      <span className="text-[11px] text-stone-500 block">允許聖徒進入同伴個人陳設的追求帳幕，觀看屬靈信物與立志座右銘</span>
                     </div>
                     <button
                       type="button"

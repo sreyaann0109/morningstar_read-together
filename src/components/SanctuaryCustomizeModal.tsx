@@ -128,7 +128,7 @@ export const SanctuaryCustomizeModal: React.FC<SanctuaryCustomizeModalProps> = (
             <Palette className="w-5 h-5" />
           </div>
           <div>
-            <h3 className="text-lg font-bold text-stone-900">佈置我的晨興帳幕</h3>
+            <h3 className="text-lg font-bold text-stone-900">佈置我的追求帳幕</h3>
             <p className="text-xs text-stone-500">
               選擇專屬氛圍主題、陳設您喜愛的屬靈信物與經節座右銘
             </p>

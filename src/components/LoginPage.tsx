@@ -492,7 +492,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ allUsers, onLoginSuccess, 
                 Morning Star Companions
               </span>
             </div>
-            <p className="text-xs text-stone-500">召會生活・聖徒主題共讀與晨興追求平台</p>
+            <p className="text-xs text-stone-500">召會生活・聖徒主題共讀與屬靈追求平台</p>
           </div>
         </div>
       </header>
@@ -546,7 +546,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ allUsers, onLoginSuccess, 
                 <div className="w-8 h-8 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center mb-2.5">
                   <HeartHandshake className="w-4 h-4" />
                 </div>
-                <div className="text-xs font-bold text-stone-800 mb-1">個人晨興帳幕陳設</div>
+                <div className="text-xs font-bold text-stone-800 mb-1">個人追求帳幕陳設</div>
                 <p className="text-[11px] text-stone-500 leading-relaxed">
                   隨追求天數與篇數解鎖屬靈信物，陳設架由外院至新耶路撒冷漸進擴充。
                 </p>

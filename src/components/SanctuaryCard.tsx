@@ -98,7 +98,7 @@ export const SanctuaryCard: React.FC<SanctuaryCardProps> = ({
           <div>
             <div className="flex items-center gap-1.5 flex-wrap">
               <h3 className={`text-base font-bold tracking-tight ${themeMeta.accentColor}`}>
-                我的晨興帳幕
+                我的追求帳幕
               </h3>
               {currentPlan && (
                 <span

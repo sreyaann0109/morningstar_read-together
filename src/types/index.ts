@@ -116,7 +116,7 @@ export interface UserProfile {
   role?: UserRole;
   displayMode?: DisplayMode; // 個人顯示模式設定
   joinedInviteCodes?: string[]; // 已加入主題之 6-Emoji 邀請碼
-  sanctuary?: SanctuaryConfig; // 個人晨興帳幕自訂陳設
+  sanctuary?: SanctuaryConfig; // 個人追求帳幕自訂陳設
   passwordResetRequested?: boolean; // 是否送出了忘記密碼申請 (待管理員一鍵重設)
   mustChangePassword?: boolean; // 是否需強制更改密碼後方可進入
   tempPassword?: string; // 系統產生的 10 位臨時密碼，直到使用者重設完成後清除
@@ -148,7 +148,7 @@ export interface SiteSettings {
   allowSharingPosts: boolean; // 開放聖徒發表今日摸著與亮光
   allowComments: boolean; // 開放動態留言回應與交通
   allowMutualAmens: boolean; // 開放同聲阿們與禱告互動
-  allowSanctuaryVisit: boolean; // 開放同伴互訪晨興帳幕
+  allowSanctuaryVisit: boolean; // 開放同伴互訪追求帳幕
   allowJoinByInviteCode: boolean; // 開放以 6-Emoji 邀請碼自主加入追求主題
 }
 

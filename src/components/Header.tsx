@@ -171,7 +171,7 @@ export const Header: React.FC<HeaderProps> = ({
       case 'sanctuary_amen':
         return (
           <>
-            {item.targetTitle || '造訪您的「晨興帳幕」並按了「✨ 阿們」互勉'}
+            {item.targetTitle || '造訪您的「追求帳幕」並按了「✨ 阿們」互勉'}
           </>
         );
       case 'post_comment': {
@@ -354,7 +354,7 @@ export const Header: React.FC<HeaderProps> = ({
                         <div className="text-xl mb-1">🔔</div>
                         <p className="font-medium text-stone-600 dark:text-stone-300">目前尚無新的阿們或互動提醒</p>
                         <p className="text-[11px] text-stone-400 dark:text-stone-500">
-                          當共同追求主題內的同伴為您的分享或晨興帳幕按「阿們」時，會在此處顯示！
+                          當共同追求主題內的同伴為您的分享或追求帳幕按「阿們」時，會在此處顯示！
                         </p>
                       </div>
                     ) : (

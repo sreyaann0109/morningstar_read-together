@@ -1956,7 +1956,7 @@ export default function Home() {
         streakDays: prev.streakDays + 1,
         totalChaptersRead: prev.totalChaptersRead + (chapterDelta || 1),
       }));
-      showToast('✨ 今日追求完成！晨星在心裡出現，晨興帳幕已累積屬靈信物！');
+      showToast('✨ 今日追求完成！晨星在心裡出現，追求帳幕已累積屬靈信物！');
     } else {
       updateCurrentUserAndSync((prev) => ({
         ...prev,
@@ -2647,7 +2647,7 @@ export default function Home() {
       ...prev,
       sanctuary: newConfig,
     }));
-    showToast('✨ 晨興帳幕佈置已更新！已保存至您的專屬天地。');
+    showToast('✨ 追求帳幕佈置已更新！已保存至您的專屬天地。');
   };
 
   const handleAmenCompanion = (companionId: string, companionName: string) => {
@@ -2664,7 +2664,7 @@ export default function Home() {
         actorName: user.name,
         actorAvatar: user.avatar,
         recipientUserId: companionId,
-        targetTitle: '造訪了您的「晨興帳幕」並按了「✨ 阿們」互勉',
+        targetTitle: '造訪了您的「追求帳幕」並按了「✨ 阿們」互勉',
         planId: selectedPlanId || undefined,
         createdAt: new Date().toISOString(),
         read: false,
@@ -2672,7 +2672,7 @@ export default function Home() {
       saveNotifications([newNotif, ...notificationsRef.current]);
     }
 
-    showToast(`🕊️ 已為 ${companionName} 的晨興追求阿們！同心在主愛中奔跑！`);
+    showToast(`🕊️ 已為 ${companionName} 的追求生活阿們！同心在主愛中奔跑！`);
   };
 
   const handleMarkAllNotificationsRead = () => {
@@ -2974,7 +2974,7 @@ export default function Home() {
                     siteSettings={siteSettings}
                   />
 
-                  {/* Personal Morning Watch Sanctuary (個人晨興帳幕) */}
+                  {/* Personal Pursuit Sanctuary (個人追求帳幕) */}
                   <SanctuaryCard
                     user={user}
                     sanctuaryConfig={user.sanctuary || DEFAULT_SANCTUARY_CONFIG}
@@ -3034,7 +3034,7 @@ export default function Home() {
                     }}
                     onViewSanctuary={(comp) => {
                       if (!siteSettings.allowSanctuaryVisit) {
-                        showToast('🔒 目前全站同伴晨興帳幕互訪功能已關閉');
+                        showToast('🔒 目前全站同伴追求帳幕互訪功能已關閉');
                         return;
                       }
                       setViewingCompanion(comp);

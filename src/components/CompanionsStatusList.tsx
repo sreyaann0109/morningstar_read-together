@@ -96,7 +96,7 @@ export const CompanionsStatusList: React.FC<CompanionsStatusListProps> = ({
               className={`flex items-start sm:items-center gap-3 group flex-1 min-w-0 ${
                 allowSanctuaryVisit ? 'cursor-pointer' : 'cursor-default'
               }`}
-              title={isSelf ? '點擊查看我的晨興帳幕' : allowSanctuaryVisit ? '點擊造訪他的晨興帳幕' : undefined}
+              title={isSelf ? '點擊查看我的追求帳幕' : allowSanctuaryVisit ? '點擊造訪他的追求帳幕' : undefined}
             >
               <div className="relative flex-shrink-0 mt-0.5 sm:mt-0">
                 <div className={`w-9 h-9 rounded-xl border group-hover:scale-105 transition-all flex items-center justify-center text-base shadow-2xs ${

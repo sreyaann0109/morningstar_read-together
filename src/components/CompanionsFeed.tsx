@@ -201,10 +201,10 @@ export const CompanionsFeed: React.FC<CompanionsFeedProps> = ({
             </h3>
             <p className="text-xs text-stone-500 dark:text-stone-400">
               {selectedPlanId === 'all'
-                ? '展示您已加入之全部追求主題內同伴每日晨興與追求的摸著與亮光，彼此激勵、同聲阿們'
+                ? '展示您已加入之全部追求主題內同伴每日追求的摸著與亮光，彼此激勵、同聲阿們'
                 : displayTitle
-                ? `動態牆展示主題【${displayTitle.replace(/^主題：/, '')}】，展示此主題內同伴每日晨興與追求的摸著與亮光`
-                : '展示追求主題內同伴每日晨興與追求的亮光點滴，彼此激勵、同聲阿們'}
+                ? `動態牆展示主題【${displayTitle.replace(/^主題：/, '')}】，展示此主題內同伴每日追求的摸著與亮光`
+                : '展示追求主題內同伴每日追求的亮光點滴，彼此激勵、同聲阿們'}
             </p>
           </div>
         </div>

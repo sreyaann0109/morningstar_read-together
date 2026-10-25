@@ -66,7 +66,7 @@ export const CompanionSanctuaryModal: React.FC<CompanionSanctuaryModalProps> = (
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h3 className="text-base font-bold text-stone-900 dark:text-stone-100">{companion.name} 的晨興帳幕</h3>
+              <h3 className="text-base font-bold text-stone-900 dark:text-stone-100">{companion.name} 的追求帳幕</h3>
               <span className="text-[10px] bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 font-semibold px-2 py-0.5 rounded-full">
                 {companion.role}
               </span>
