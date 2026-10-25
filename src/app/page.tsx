@@ -2159,7 +2159,7 @@ export default function Home() {
       ...newPostData,
       authorId: user.id,
       id: `post-${Date.now()}`,
-      createdAt: '剛剛',
+      createdAt: new Date().toISOString(),
       reactions: {
         amenCount: 0,
         amenUserIds: [],
@@ -2328,7 +2328,7 @@ export default function Home() {
           recipientUserId: authorUserId,
           targetTitle: targetDesc,
           planId: postObj.planId,
-          createdAt: '剛剛',
+          createdAt: new Date().toISOString(),
           read: false,
         };
         saveNotifications([newNotif, ...notificationsRef.current]);
@@ -2356,7 +2356,7 @@ export default function Home() {
               authorName: user.name,
               authorAvatar: user.avatar,
               content,
-              timestamp: '剛剛',
+              timestamp: new Date().toISOString(),
             },
           ],
         };
@@ -2398,7 +2398,7 @@ export default function Home() {
           recipientUserId: recipientId,
           targetTitle: `${targetDesc}：「${snippet}」`,
           planId: postObj.planId,
-          createdAt: '剛剛',
+          createdAt: new Date().toISOString(),
           read: false,
         };
         saveNotifications([newNotif, ...notificationsRef.current]);
@@ -2645,7 +2645,7 @@ export default function Home() {
         recipientUserId: companionId,
         targetTitle: '造訪了您的「晨興帳幕」並按了「✨ 阿們」互勉',
         planId: selectedPlanId || undefined,
-        createdAt: '剛剛',
+        createdAt: new Date().toISOString(),
         read: false,
       };
       saveNotifications([newNotif, ...notificationsRef.current]);

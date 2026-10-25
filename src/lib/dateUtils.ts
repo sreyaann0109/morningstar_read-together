@@ -44,3 +44,59 @@ export function addDaysUTC8(dateStr: string, days: number): string {
   const ms = parseDateToUTC8Ms(dateStr) + days * 86400000;
   return getUTC8DateString(new Date(ms));
 }
+
+/**
+ * 將貼文或通知的時間字串轉為簡潔動態相對時間 (m, h, d, w)
+ * 例如: 1m, 15m, 2h, 3d, 1w
+ * 若舊資料無有效時間字串，嘗試自 ID 解析時間戳（如 post-1729864234567）
+ */
+export function formatRelativeTime(timeStr?: string, entityId?: string): string {
+  let timeMs: number | null = null;
+
+  if (timeStr && timeStr !== '剛剛') {
+    const parsed = Date.parse(timeStr);
+    if (!isNaN(parsed) && parsed > 0) {
+      timeMs = parsed;
+    }
+  }
+
+  // Fallback: 嘗試自 ID 解析時間戳（如 post-1729864234567、c-1729864234567、notif-1729864234567）
+  if (!timeMs && entityId) {
+    const match = entityId.match(/\d{12,14}/);
+    if (match) {
+      const parsedNum = parseInt(match[0], 10);
+      if (!isNaN(parsedNum) && parsedNum > 1600000000000) {
+        timeMs = parsedNum;
+      }
+    }
+  }
+
+  if (!timeMs) {
+    return '1m';
+  }
+
+  const now = Date.now();
+  const diffSec = Math.max(0, Math.floor((now - timeMs) / 1000));
+
+  if (diffSec < 60) {
+    return '1m';
+  }
+
+  const diffMin = Math.floor(diffSec / 60);
+  if (diffMin < 60) {
+    return `${diffMin}m`;
+  }
+
+  const diffHours = Math.floor(diffMin / 60);
+  if (diffHours < 24) {
+    return `${diffHours}h`;
+  }
+
+  const diffDays = Math.floor(diffHours / 24);
+  if (diffDays < 7) {
+    return `${diffDays}d`;
+  }
+
+  const diffWeeks = Math.floor(diffDays / 7);
+  return `${diffWeeks}w`;
+}

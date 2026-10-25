@@ -16,6 +16,7 @@ import {
   ChevronDown,
 } from 'lucide-react';
 import { SharingPost, Comment, SiteSettings, PursuitPlan } from '../types';
+import { formatRelativeTime } from '../lib/dateUtils';
 
 export interface DeletedCommentRecord {
   postId: string;
@@ -79,6 +80,13 @@ export const CompanionsFeed: React.FC<CompanionsFeedProps> = ({
       setSelectedPlanId(activePlanId);
     }
   }, [activePlanId]);
+
+  // 定時刷新相對時間顯示 (1m -> 2m ...)
+  const [, setTimeTick] = useState(0);
+  useEffect(() => {
+    const timer = setInterval(() => setTimeTick((t) => t + 1), 30000);
+    return () => clearInterval(timer);
+  }, []);
 
   // Filtering State: Author filter (all vs mine)
   const [authorFilter, setAuthorFilter] = useState<'all' | 'mine'>('all');
@@ -326,35 +334,30 @@ export const CompanionsFeed: React.FC<CompanionsFeedProps> = ({
                 key={post.id}
                 className="bg-white rounded-2xl border border-stone-200/80 p-4 sm:p-5 shadow-xs hover:border-amber-200 transition-all min-w-0 overflow-hidden"
               >
-                {/* Author Info */}
-                <div className="flex items-start justify-between mb-3 gap-2">
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-10 h-10 rounded-2xl bg-amber-50 border border-amber-100 flex items-center justify-center text-lg shadow-inner flex-shrink-0">
-                      {post.authorAvatar}
-                    </div>
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className="font-semibold text-sm text-stone-900 truncate">
+                {/* Author Info & Pursuit Header: Responsive layout, author and pursuit are not squeezed into a single hbox */}
+                <div className="mb-3 space-y-2">
+                  {/* Top row: Avatar, Name, Role badge, relative time, and Action buttons */}
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-amber-50 border border-amber-100 flex items-center justify-center text-base sm:text-lg shadow-inner flex-shrink-0">
+                        {post.authorAvatar}
+                      </div>
+                      <div className="flex items-center gap-1.5 flex-wrap min-w-0">
+                        <span className="font-bold text-sm text-stone-900">
                           {post.authorName}
                         </span>
-                        <span className="text-[11px] bg-stone-100 text-stone-600 px-1.5 py-0.5 rounded-md font-medium flex-shrink-0">
+                        <span className="text-[10px] bg-stone-100 text-stone-600 px-1.5 py-0.2 rounded-md font-medium flex-shrink-0">
                           同伴
                         </span>
+                        <span className="text-[11px] text-stone-400 font-mono font-medium flex-shrink-0">
+                          · {formatRelativeTime(post.createdAt, post.id)}
+                        </span>
                       </div>
-                      <p className="text-[11px] text-stone-400 truncate">
-                        {post.createdAt} · 追求：{post.planTitle}
-                      </p>
                     </div>
-                  </div>
-
-                  <div className="flex items-center gap-1.5 flex-wrap justify-end flex-shrink-0">
-                    <span className="text-xs text-amber-800 font-medium bg-amber-50 px-2 py-0.5 rounded-md">
-                      {post.unitTitle}
-                    </span>
 
                     {/* Edit & Delete buttons: Author can edit/delete; Admin can delete any post */}
                     {!isEditingThisPost && (
-                      <div className="flex items-center gap-1">
+                      <div className="flex items-center gap-1 flex-shrink-0">
                         {ownPost && onEditPost && (
                           <button
                             type="button"
@@ -379,6 +382,17 @@ export const CompanionsFeed: React.FC<CompanionsFeedProps> = ({
                         )}
                       </div>
                     )}
+                  </div>
+
+                  {/* Second row: Pursuit theme & Unit Chapter (Dedicated row on mobile, never clips author name) */}
+                  <div className="flex items-center gap-1.5 flex-wrap pl-0 sm:pl-11.5">
+                    <span className="text-xs font-semibold text-stone-600 bg-stone-100/90 px-2 py-0.5 rounded-md flex items-center gap-1 max-w-full">
+                      <BookOpen className="w-3 h-3 text-stone-400 flex-shrink-0" />
+                      <span className="truncate">追求：{post.planTitle.replace(/^主題：/, '')}</span>
+                    </span>
+                    <span className="text-xs text-amber-900 font-bold bg-amber-50 border border-amber-200/70 px-2 py-0.5 rounded-md flex-shrink-0">
+                      {post.unitTitle}
+                    </span>
                   </div>
                 </div>
 
@@ -542,8 +556,8 @@ export const CompanionsFeed: React.FC<CompanionsFeedProps> = ({
                                     <span className="font-semibold text-stone-800">
                                       {comment.authorName}
                                     </span>
-                                    <span className="text-[10px] text-stone-400">
-                                      {comment.timestamp}
+                                    <span className="text-[10px] text-stone-400 font-mono">
+                                      {formatRelativeTime(comment.timestamp, comment.id)}
                                     </span>
                                   </div>
 
