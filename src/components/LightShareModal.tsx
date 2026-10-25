@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { X, Sparkles, Send, BookOpen, Edit2 } from 'lucide-react';
 import { PursuitPlan, SharingPost } from '../types';
 
-import { getTodayNTSchedule, getNTDaySchedule, TOTAL_NT_DAYS } from '../data/ntBibleData';
+import { getTodayNTSchedule, getNTDaySchedule, getNTChapterLocation, TOTAL_NT_DAYS, TOTAL_NT_CHAPTERS } from '../data/ntBibleData';
 
 interface LightShareModalProps {
   isOpen: boolean;
@@ -28,28 +28,38 @@ export const LightShareModal: React.FC<LightShareModalProps> = ({
   onPublish,
 }) => {
   const isNTHalfYear = currentPlan.category === 'nt-half-year';
-  const planUnit = currentPlan.unitName || (currentPlan.category === 'bible' || isNTHalfYear ? '章' : '篇');
+  const isNTSpeed = currentPlan.category === 'nt-speed-reading';
+  const isNTPlan = isNTHalfYear || isNTSpeed;
+  const planUnit = currentPlan.unitName || (currentPlan.category === 'bible' || isNTPlan ? '章' : '篇');
   const [reflection, setReflection] = useState('');
   const [unitTitle, setUnitTitle] = useState(currentPlan.currentUnitTitle || `第 1 ${planUnit}`);
   const [isCustomUnit, setIsCustomUnit] = useState(false);
 
   // Determine default unit:
+  // If completed today: default to what was completed today (今日已完成章節)
   // If not completed today: default to current pursuit unit (當前篇數/章數/書卷)
-  // If completed today: default to next unit (推薦下一篇/章)
   useEffect(() => {
     if (isOpen) {
       let defaultTitle: string;
       if (isNTHalfYear) {
-        if (isCompletedToday) {
-          const nextDayNum = Math.min(TOTAL_NT_DAYS, Math.floor(currentPlan.completedUnits / 2) + 1);
-          defaultTitle = getNTDaySchedule(nextDayNum).displayText;
+        if (isCompletedToday && currentPlan.completedUnits > 0) {
+          const todayDayNum = Math.max(1, Math.min(TOTAL_NT_DAYS, Math.ceil(currentPlan.completedUnits / 2)));
+          defaultTitle = getNTDaySchedule(todayDayNum).displayText;
         } else {
           defaultTitle = getTodayNTSchedule(currentPlan.completedUnits).schedule.displayText;
         }
+      } else if (isNTSpeed) {
+        if (isCompletedToday && currentPlan.completedUnits > 0) {
+          const ch = ((currentPlan.completedUnits - 1) % TOTAL_NT_CHAPTERS) + 1;
+          defaultTitle = getNTChapterLocation(ch).displayText;
+        } else {
+          const ch = (currentPlan.completedUnits % TOTAL_NT_CHAPTERS) + 1;
+          defaultTitle = getNTChapterLocation(ch).displayText;
+        }
       } else {
         let targetNum: number;
-        if (isCompletedToday) {
-          targetNum = Math.min(currentPlan.completedUnits + 1, currentPlan.totalUnits);
+        if (isCompletedToday && currentPlan.completedUnits > 0) {
+          targetNum = currentPlan.completedUnits;
         } else {
           targetNum = Math.min(Math.max(1, currentPlan.completedUnits + 1), currentPlan.totalUnits);
         }
@@ -59,7 +69,7 @@ export const LightShareModal: React.FC<LightShareModalProps> = ({
       setReflection('');
       setIsCustomUnit(false);
     }
-  }, [isOpen, currentPlan.id, currentPlan.completedUnits, currentPlan.totalUnits, isCompletedToday, planUnit, isNTHalfYear]);
+  }, [isOpen, currentPlan.id, currentPlan.completedUnits, currentPlan.totalUnits, isCompletedToday, planUnit, isNTHalfYear, isNTSpeed]);
 
   if (!isOpen) return null;
 
@@ -123,9 +133,9 @@ export const LightShareModal: React.FC<LightShareModalProps> = ({
               <label className="text-xs font-semibold text-amber-900 flex items-center gap-1.5">
                 <BookOpen className="w-3.5 h-3.5 text-amber-600" />
                 <span>
-                  {isCompletedToday
-                    ? '分享之篇數進度（今日已完成，預設下一篇，可自行修改）'
-                    : '分享之篇數進度（未勾選今日追求，篇數為當前篇數，可自行修改）'}
+                  {isNTPlan
+                    ? (isCompletedToday ? '分享今日摸著之書卷章節（預設今日已完成章節，可自行調整）' : '分享之書卷章節（可自行選擇或切換自訂）')
+                    : (isCompletedToday ? '分享今日摸著之進度（預設今日已完成篇數，可自行調整）' : '分享之進度篇數（可自行選擇或切換自訂）')}
                 </span>
               </label>
               <button
@@ -143,45 +153,66 @@ export const LightShareModal: React.FC<LightShareModalProps> = ({
                 type="text"
                 value={unitTitle}
                 onChange={(e) => setUnitTitle(e.target.value)}
-                placeholder="例如：第 3 篇 或 自訂篇名"
+                placeholder={isNTPlan ? '例如：馬太福音 第 1 章 或 自訂章節' : '例如：第 3 篇 或 自訂篇名'}
                 className="w-full text-sm rounded-xl border border-amber-300 bg-white px-3 py-2 text-stone-800 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"
               />
             ) : (
-              <div className="flex items-center gap-2">
-                <select
-                  value={unitTitle}
-                  onChange={(e) => setUnitTitle(e.target.value)}
-                  className="flex-1 text-sm rounded-xl border border-amber-300 bg-white px-3 py-2 text-stone-800 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"
-                >
-                  {Array.from({ length: Math.max(currentPlan.totalUnits, 1) }, (_, i) => i + 1).map((num) => {
+              <select
+                value={unitTitle}
+                onChange={(e) => setUnitTitle(e.target.value)}
+                className="w-full text-sm rounded-xl border border-amber-300 bg-white px-3 py-2 text-stone-800 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"
+              >
+                {isNTSpeed ? (
+                  Array.from({ length: TOTAL_NT_CHAPTERS }, (_, i) => i + 1).map((chNum) => {
+                    const loc = getNTChapterLocation(chNum);
+                    let badge = '';
+                    const activeCh = isCompletedToday && currentPlan.completedUnits > 0
+                      ? ((currentPlan.completedUnits - 1) % TOTAL_NT_CHAPTERS) + 1
+                      : (currentPlan.completedUnits % TOTAL_NT_CHAPTERS) + 1;
+                    if (chNum === activeCh) {
+                      badge = isCompletedToday ? '（今日已完成）' : '（今日追求）';
+                    }
+                    return (
+                      <option key={chNum} value={loc.displayText}>
+                        {loc.displayText} {badge}
+                      </option>
+                    );
+                  })
+                ) : isNTHalfYear ? (
+                  Array.from({ length: TOTAL_NT_DAYS }, (_, i) => i + 1).map((dayNum) => {
+                    const sch = getNTDaySchedule(dayNum);
+                    let badge = '';
+                    const activeDay = isCompletedToday && currentPlan.completedUnits > 0
+                      ? Math.max(1, Math.min(TOTAL_NT_DAYS, Math.ceil(currentPlan.completedUnits / 2)))
+                      : Math.max(1, Math.min(TOTAL_NT_DAYS, Math.floor(currentPlan.completedUnits / 2) + 1));
+                    if (dayNum === activeDay) {
+                      badge = isCompletedToday ? '（今日已完成）' : '（今日追求）';
+                    }
+                    return (
+                      <option key={dayNum} value={sch.displayText}>
+                        第 {dayNum} 天 · {sch.displayText} {badge}
+                      </option>
+                    );
+                  })
+                ) : (
+                  Array.from({ length: Math.max(currentPlan.totalUnits, 1) }, (_, i) => i + 1).map((num) => {
                     let badge = '';
                     if (!isCompletedToday && num === Math.min(currentPlan.completedUnits + 1, currentPlan.totalUnits)) {
                       badge = `（當前${planUnit}數）`;
-                    } else if (isCompletedToday) {
-                      if (num === Math.min(currentPlan.completedUnits + 1, currentPlan.totalUnits)) {
-                        badge = `（推薦下一${planUnit}）`;
-                      } else if (num === currentPlan.completedUnits) {
-                        badge = '（今日已完成）';
-                      }
+                    } else if (isCompletedToday && num === currentPlan.completedUnits) {
+                      badge = '（今日已完成）';
                     }
                     return (
                       <option key={num} value={`第 ${num} ${planUnit}`}>
                         第 {num} {planUnit} {badge}
                       </option>
                     );
-                  })}
-                </select>
-                <input
-                  type="text"
-                  value={unitTitle}
-                  onChange={(e) => setUnitTitle(e.target.value)}
-                  className="w-28 text-sm rounded-xl border border-amber-300 bg-white px-2.5 py-2 text-stone-800 text-center"
-                  title="或直接修改篇數字樣"
-                />
-              </div>
+                  })
+                )}
+              </select>
             )}
             <p className="text-[10px] text-amber-700/80 mt-1">
-              💡 分享篇數將與追求進度同步；若欲調整篇數，可保留自訂輸入或切換選單隨意編輯。
+              💡 分享章節將與追求進度同步；若欲分享其他經文或亮光，可點選「自訂輸入」或由選單切換。
             </p>
           </div>
 

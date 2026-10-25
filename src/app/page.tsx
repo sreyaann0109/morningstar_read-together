@@ -2179,18 +2179,35 @@ export default function Home() {
     if (newPostData.planId) {
       const updatedPlans = plansRef.current.map((p) => {
         if (p.id === newPostData.planId) {
+          const isNT = p.category === 'nt-half-year';
+          const isNTSpeed = p.category === 'nt-speed-reading';
+          const pUnit = p.unitName || (p.category === 'bible' || isNT || isNTSpeed ? '章' : '篇');
           const currentMemberUnits = getUserPlan(p, user.id).completedUnits;
           const nextCompleted = sharedUnitNum !== null
-            ? Math.min(Math.max(currentMemberUnits, sharedUnitNum), p.totalUnits)
-            : Math.min(currentMemberUnits + 1, p.totalUnits);
-          const nextUnitNum = Math.min(nextCompleted + 1, p.totalUnits);
+            ? (isNTSpeed ? Math.max(currentMemberUnits, sharedUnitNum) : Math.min(Math.max(currentMemberUnits, sharedUnitNum), p.totalUnits))
+            : (isNTSpeed ? currentMemberUnits : Math.min(currentMemberUnits, p.totalUnits));
+          const nextUnitNum = isNTSpeed
+            ? (nextCompleted % 260) + 1
+            : Math.min(nextCompleted + 1, p.totalUnits);
+          let calculatedUnitTitle = `第 ${nextUnitNum} ${pUnit}`;
+          let calculatedVerses = p.currentVerses;
+          if (isNT) {
+            calculatedUnitTitle = getTodayNTSchedule(nextCompleted).schedule.displayText;
+            calculatedVerses = calculatedUnitTitle;
+          } else if (isNTSpeed) {
+            const loc = getNTChapterLocation((nextCompleted % 260) + 1);
+            calculatedUnitTitle = `第 ${Math.floor(nextCompleted / 260) + 1} 遍 · ${loc.displayText}`;
+            calculatedVerses = loc.displayText;
+          }
+
           let updatedMembers = (p.members || []).map((m) =>
             m.userId === user.id
               ? {
                   ...m,
                   todayCompleted: true,
                   completedUnits: nextCompleted,
-                  currentUnitTitle: `第 ${nextUnitNum} 篇`,
+                  currentUnitTitle: calculatedUnitTitle,
+                  currentVerses: calculatedVerses,
                   lastActive: '今日 剛剛',
                 }
               : m
@@ -2207,7 +2224,8 @@ export default function Home() {
               lastActive: '今日 剛剛',
               encouragedToday: false,
               completedUnits: nextCompleted,
-              currentUnitTitle: `第 ${nextUnitNum} 篇`,
+              currentUnitTitle: calculatedUnitTitle,
+              currentVerses: calculatedVerses,
             });
           }
           try {
@@ -2418,15 +2436,34 @@ export default function Home() {
       if (editedUnitNum !== null && targetPlanId) {
         const updatedPlans = plansRef.current.map((p) => {
           if (p.id === targetPlanId) {
+            const isNT = p.category === 'nt-half-year';
+            const isNTSpeed = p.category === 'nt-speed-reading';
+            const pUnit = p.unitName || (p.category === 'bible' || isNT || isNTSpeed ? '章' : '篇');
             const currentMemberUnits = getUserPlan(p, authorId).completedUnits;
-            const nextCompleted = Math.min(Math.max(currentMemberUnits, editedUnitNum), p.totalUnits);
-            const nextUnitNum = Math.min(nextCompleted + 1, p.totalUnits);
+            const nextCompleted = isNTSpeed
+              ? Math.max(currentMemberUnits, editedUnitNum)
+              : Math.min(Math.max(currentMemberUnits, editedUnitNum), p.totalUnits);
+            const nextUnitNum = isNTSpeed
+              ? (nextCompleted % 260) + 1
+              : Math.min(nextCompleted + 1, p.totalUnits);
+            let calculatedUnitTitle = `第 ${nextUnitNum} ${pUnit}`;
+            let calculatedVerses = p.currentVerses;
+            if (isNT) {
+              calculatedUnitTitle = getTodayNTSchedule(nextCompleted).schedule.displayText;
+              calculatedVerses = calculatedUnitTitle;
+            } else if (isNTSpeed) {
+              const loc = getNTChapterLocation((nextCompleted % 260) + 1);
+              calculatedUnitTitle = `第 ${Math.floor(nextCompleted / 260) + 1} 遍 · ${loc.displayText}`;
+              calculatedVerses = loc.displayText;
+            }
+
             const updatedMembers = (p.members || []).map((m) =>
               m.userId === authorId
                 ? {
                     ...m,
                     completedUnits: nextCompleted,
-                    currentUnitTitle: `第 ${nextUnitNum} 篇`,
+                    currentUnitTitle: calculatedUnitTitle,
+                    currentVerses: calculatedVerses,
                   }
                 : m
             );
