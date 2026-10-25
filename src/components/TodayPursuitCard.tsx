@@ -19,6 +19,7 @@ import {
   Calendar,
   Flame,
   Zap,
+  Compass,
 } from 'lucide-react';
 import { PursuitPlan, SiteSettings } from '../types';
 import {
@@ -178,30 +179,6 @@ export const TodayPursuitCard: React.FC<TodayPursuitCardProps> = ({
       {/* Decorative background glow */}
       <div className="absolute top-0 right-0 w-64 h-64 bg-amber-200/20 dark:hidden rounded-full blur-3xl pointer-events-none -mr-20 -mt-20" />
 
-      {/* Integrated Pursuit Theme Switcher (追求計畫與追求主題合併) */}
-      {joinedPlans.length > 1 && onSelectPlan && (
-        <div className="mb-4 relative z-10 flex items-center gap-1.5 flex-wrap">
-          <span className="text-[11px] font-bold text-stone-500 mr-1">我的追求主題：</span>
-          {joinedPlans.map((jp) => {
-            const active = jp.id === plan.id;
-            return (
-              <button
-                key={jp.id}
-                type="button"
-                onClick={() => onSelectPlan(jp.id)}
-                className={`text-xs px-3 py-1 rounded-full font-semibold transition-all ${
-                  active
-                    ? 'bg-amber-500 text-white shadow-2xs'
-                    : 'bg-white/80 hover:bg-amber-100/70 text-stone-700 border border-amber-200/70'
-                }`}
-              >
-                {jp.title}
-              </button>
-            );
-          })}
-        </div>
-      )}
-
       {/* Top Header styled consistently with other section blocks */}
       <div className="flex items-center justify-between mb-4 pb-3.5 border-b border-stone-200/70 dark:border-stone-700/60 relative z-10 flex-wrap gap-2.5">
         <div className="flex items-center gap-2.5">
@@ -224,8 +201,6 @@ export const TodayPursuitCard: React.FC<TodayPursuitCardProps> = ({
         </div>
 
         <div className="flex items-center gap-2.5 flex-wrap">
-
-
           {/* Custom Edit button only for admin */}
           {isAdmin && (
             <button
@@ -238,13 +213,16 @@ export const TodayPursuitCard: React.FC<TodayPursuitCardProps> = ({
             </button>
           )}
 
-          <button
-            onClick={onOpenPlanSelector}
-            className="text-xs text-amber-800 dark:text-amber-400 hover:text-amber-950 dark:hover:text-amber-300 font-medium flex items-center gap-1 hover:underline"
-          >
-            <span>切換追求主題</span>
-            <ArrowRight className="w-3.5 h-3.5" />
-          </button>
+          {onOpenPlanSelector && (
+            <button
+              onClick={onOpenPlanSelector}
+              className="text-xs text-amber-800 dark:text-amber-400 hover:text-amber-950 dark:hover:text-amber-300 font-medium flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 hover:bg-amber-100 transition-colors"
+              title="開啟左側追求主題選單"
+            >
+              <Compass className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+              <span>所有主題</span>
+            </button>
+          )}
         </div>
       </div>
 

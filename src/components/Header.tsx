@@ -12,6 +12,7 @@ import {
   Sparkles,
   CheckCheck,
   Trash2,
+  Menu,
 } from 'lucide-react';
 import { UserProfile, AppNotification } from '../types';
 import { formatRelativeTime } from '../lib/dateUtils';
@@ -25,6 +26,7 @@ interface HeaderProps {
   onOpenJoinByCode: () => void;
   onOpenStats: () => void;
   onOpenPlanSelector: () => void;
+  onOpenDrawer?: () => void;
   onOpenAuth: () => void;
   onLogout?: () => void;
   notifications?: AppNotification[];
@@ -41,6 +43,7 @@ export const Header: React.FC<HeaderProps> = ({
   onToggleAdminMode,
   onOpenJoinByCode,
   onOpenStats,
+  onOpenDrawer,
   onOpenAuth,
   onLogout,
   notifications = [],
@@ -204,8 +207,22 @@ export const Header: React.FC<HeaderProps> = ({
   return (
     <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-stone-200/80 transition-all">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-3">
-        {/* Left: Logo & Subtitle */}
-        <div className="flex items-center gap-3">
+        {/* Left: Menu Toggle & Logo & Subtitle */}
+        <div className="flex items-center gap-2 sm:gap-3">
+          {onOpenDrawer && (
+            <button
+              type="button"
+              onClick={onOpenDrawer}
+              className="p-1.5 sm:p-2 -ml-1 sm:ml-0 rounded-xl border border-stone-200 dark:border-stone-700 bg-stone-50/80 dark:bg-stone-800/80 hover:bg-amber-50 dark:hover:bg-amber-950/60 hover:border-amber-300 dark:hover:border-amber-600 text-stone-700 dark:text-stone-300 transition-colors flex items-center gap-1.5 shadow-2xs group"
+              title="開啟追求主題列表與邀請碼選單"
+            >
+              <Menu className="w-4 h-4 sm:w-5 sm:h-5 text-stone-600 dark:text-stone-300 group-hover:text-amber-700 dark:group-hover:text-amber-400" />
+              <span className="hidden md:inline text-xs font-semibold text-stone-700 dark:text-stone-200 group-hover:text-amber-800 dark:group-hover:text-amber-300">
+                追求主題
+              </span>
+            </button>
+          )}
+
           <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-amber-500 to-amber-300 flex items-center justify-center shadow-md shadow-amber-500/20 text-white font-bold text-xl">
             ✨
           </div>
@@ -251,18 +268,6 @@ export const Header: React.FC<HeaderProps> = ({
 
           {!isAdminMode && (
             <>
-              {/* Join by 6-Emoji Code Button (Only for general companions who have already joined plans; hidden for admins or when on centered join page) */}
-              {user.role !== 'admin' && hasJoinedPlans && allowJoinByInviteCode && (
-                <button
-                  onClick={onOpenJoinByCode}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-amber-300 bg-amber-50/70 hover:bg-amber-100 text-amber-900 transition-colors text-xs font-semibold shadow-2xs"
-                  title="點選或貼上 6-Emoji 邀請碼加入追求主題"
-                >
-                  <KeyRound className="w-3.5 h-3.5 text-amber-600" />
-                  <span className="hidden sm:inline">輸入 6-Emoji 邀請碼</span>
-                  <span className="sm:hidden">邀請碼</span>
-                </button>
-              )}
 
               {/* Streak pill */}
               <button

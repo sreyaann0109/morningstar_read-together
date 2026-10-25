@@ -7,6 +7,7 @@ import { CompanionsFeed } from '../components/CompanionsFeed';
 import { CompanionsStatusList } from '../components/CompanionsStatusList';
 import { LightShareModal } from '../components/LightShareModal';
 import { PlanSelectorModal } from '../components/PlanSelectorModal';
+import { ThemesDrawer } from '../components/ThemesDrawer';
 import { EditCurrentPursuitModal } from '../components/EditCurrentPursuitModal';
 import { CreateThematicPlanModal } from '../components/CreateThematicPlanModal';
 import { AdminPanel } from '../components/AdminPanel';
@@ -260,6 +261,7 @@ export default function Home() {
 
   // Modals & Navigation
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [isThemesDrawerOpen, setIsThemesDrawerOpen] = useState(false);
   const [isPlanSelectorOpen, setIsPlanSelectorOpen] = useState(false);
   const [isEditPursuitOpen, setIsEditPursuitOpen] = useState(false);
   const [editingPlan, setEditingPlan] = useState<PursuitPlan | null>(null);
@@ -2780,7 +2782,8 @@ export default function Home() {
         onToggleAdminMode={() => setIsAdminMode((prev) => !prev)}
         onOpenJoinByCode={() => setIsJoinByCodeOpen(true)}
         onOpenStats={() => setIsStatsModalOpen(true)}
-        onOpenPlanSelector={() => setIsPlanSelectorOpen(true)}
+        onOpenPlanSelector={() => setIsThemesDrawerOpen(true)}
+        onOpenDrawer={() => setIsThemesDrawerOpen(true)}
         onOpenAuth={() => setIsAuthModalOpen(true)}
         onLogout={handleLogout}
       />
@@ -2891,25 +2894,16 @@ export default function Home() {
               </div>
 
               <div className="flex items-center gap-2 self-start sm:self-auto flex-wrap">
-                {user.role !== 'admin' && siteSettings.allowJoinByInviteCode && (
-                  <button
-                    onClick={() => setIsJoinByCodeOpen(true)}
-                    className="text-xs font-semibold px-3 py-1.5 rounded-xl border border-amber-300 text-amber-900 bg-amber-50 hover:bg-amber-100 transition-all shadow-2xs flex items-center gap-1.5"
-                  >
-                    <KeyRound className="w-3.5 h-3.5 text-amber-600" />
-                    <span>輸入 6-Emoji 邀請碼</span>
-                  </button>
-                )}
                 {siteSettings.allowSharingPosts && (
                   <button
                     onClick={() => {
                       if (!currentPlan) {
                         if (user.role === 'admin') {
-                          showToast('💡 請先在上方「切換追求主題」開啟或選擇專題，即可發表摸著！');
-                          setIsPlanSelectorOpen(true);
+                          showToast('💡 請先在左側「追求主題」開啟或選擇專題，即可發表摸著！');
+                          setIsThemesDrawerOpen(true);
                         } else {
-                          showToast('💡 請先點選「輸入 6-Emoji 邀請碼」加入主題小組，即可發表摸著！');
-                          setIsJoinByCodeOpen(true);
+                          showToast('💡 請先在左側選單點選「輸入 6-Emoji 邀請碼」加入追求小組，即可發表摸著！');
+                          setIsThemesDrawerOpen(true);
                         }
                       } else {
                         setIsShareModalOpen(true);
@@ -2946,7 +2940,7 @@ export default function Home() {
                     progressUndo={progressUndo}
                     onUndoProgress={() => handleUndoProgress()}
                     onOpenShareModal={() => setIsShareModalOpen(true)}
-                    onOpenPlanSelector={() => setIsPlanSelectorOpen(true)}
+                    onOpenPlanSelector={() => setIsThemesDrawerOpen(true)}
                     onOpenEditModal={() => {
                       setEditingPlan(rawCurrentPlan || currentPlan);
                       setIsEditPursuitOpen(true);
@@ -3177,6 +3171,20 @@ export default function Home() {
           onPublish={handlePublishLight}
         />
       )}
+
+      {/* Left Slide-out Themes Drawer (追求主題與邀請碼滑出欄) */}
+      <ThemesDrawer
+        isOpen={isThemesDrawerOpen}
+        onClose={() => setIsThemesDrawerOpen(false)}
+        plans={plans}
+        joinedPlans={userJoinedPlans}
+        currentPlanId={selectedPlanId}
+        onSelectPlan={(id) => setSelectedPlanId(id)}
+        onOpenJoinByCode={() => setIsJoinByCodeOpen(true)}
+        onOpenCreatePlan={() => setIsCreatePlanOpen(true)}
+        isAdmin={isLoggedIn && user.role === 'admin'}
+        allowJoinByInviteCode={siteSettings.allowJoinByInviteCode}
+      />
 
       <PlanSelectorModal
         isOpen={isPlanSelectorOpen}
