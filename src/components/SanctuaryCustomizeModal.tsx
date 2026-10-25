@@ -58,39 +58,36 @@ export const SanctuaryCustomizeModal: React.FC<SanctuaryCustomizeModalProps> = (
     : [];
   const unlockedIds = new Set(unlockedRelics.map((r) => r.id));
 
-  const [theme, setTheme] = useState<SanctuaryTheme>(currentConfig.theme || 'dawn');
-  const [motto, setMotto] = useState<string>(currentConfig.motto || PRESET_MOTTOS[0]);
+  const [theme, setTheme] = useState<SanctuaryTheme>(currentConfig?.theme || 'dawn');
+  const [motto, setMotto] = useState<string>(currentConfig?.motto || PRESET_MOTTOS[0]);
   const [selectedRelicIds, setSelectedRelicIds] = useState<string[]>(
-    (currentConfig.placedRelicIds || []).filter((id) => unlockedIds.has(id))
+    currentConfig?.placedRelicIds || []
   );
 
   React.useEffect(() => {
     if (isOpen) {
-      setTheme(currentConfig.theme || 'dawn');
-      setMotto(currentConfig.motto || PRESET_MOTTOS[0]);
-      setSelectedRelicIds(
-        (currentConfig.placedRelicIds || []).filter((id) => unlockedIds.has(id))
-      );
+      setTheme(currentConfig?.theme || 'dawn');
+      setMotto(currentConfig?.motto || PRESET_MOTTOS[0]);
+      setSelectedRelicIds(currentConfig?.placedRelicIds || []);
     }
-  }, [isOpen, currentConfig, stats.totalChaptersRead, stats.streakDays]);
+  }, [isOpen, currentConfig]);
 
   if (!isOpen) return null;
 
   const { maxSlots, currentTier, nextTier } = getSanctuaryMaxSlots(stats);
-  const validSelectedRelicIds = selectedRelicIds.filter((id) => unlockedIds.has(id));
 
   const toggleRelic = (relicId: string) => {
     if (!unlockedIds.has(relicId)) return;
-    if (validSelectedRelicIds.includes(relicId)) {
+    if (selectedRelicIds.includes(relicId)) {
       // remove
-      setSelectedRelicIds(validSelectedRelicIds.filter((id) => id !== relicId));
+      setSelectedRelicIds(selectedRelicIds.filter((id) => id !== relicId));
     } else {
       // add up to dynamic maxSlots
-      if (validSelectedRelicIds.length < maxSlots) {
-        setSelectedRelicIds([...validSelectedRelicIds, relicId]);
+      if (selectedRelicIds.length < maxSlots) {
+        setSelectedRelicIds([...selectedRelicIds, relicId]);
       } else {
         // replace the oldest one
-        setSelectedRelicIds([...validSelectedRelicIds.slice(1), relicId]);
+        setSelectedRelicIds([...selectedRelicIds.slice(1), relicId]);
       }
     }
   };
@@ -99,8 +96,8 @@ export const SanctuaryCustomizeModal: React.FC<SanctuaryCustomizeModalProps> = (
     e.preventDefault();
     onSaveConfig({
       theme,
-      motto: motto.trim() || PRESET_MOTTOS[0],
-      placedRelicIds: validSelectedRelicIds,
+      motto: (motto || '').trim() || PRESET_MOTTOS[0],
+      placedRelicIds: selectedRelicIds,
     });
     onClose();
   };

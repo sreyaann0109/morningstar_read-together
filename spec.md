@@ -387,6 +387,16 @@ npm run build
     * **跨裝置無縫一致**：聖徒在手機、電腦、平板等任何裝置上打卡、多讀、補讀或復原進度，追求地圖即時透過 Supabase PostgreSQL 雙向同步，在所有登入裝置上展示 100% 一致之完整熱力地圖。
     * **同伴帳幕互訪真實呈現**：聖徒點擊同伴頭像造訪同伴追求帳幕時，袖珍追求地圖直接由雲端資料庫拉取同伴真實歷史紀錄，不再因跨裝置而顯示空方格或預設假資料。
 
+  * **追求帳幕自訂佈置零回溯雲端持久化 (Sanctuary Customization Zero-Rollback Cloud Persistence)**：
+    * **徹底根治自訂回溯（Rollback）病因**：先前因背景定時輪詢（Polling）及初次頁面加載時，若雲端回傳之使用者物件未帶有 `sanctuary` 或各主題 `planSanctuaries`，物件展開運算子（`...remote`）會以 `undefined` 覆寫當前聖徒已精心佈置之帳幕設定，致使氛圍、座右銘與擺放信物在數秒內回溯至預設值。
+    * **嚴格安全合併防覆寫 (Safe Null-Resilient Merge)**：
+      * 於頁面載入（`loadUserData`）、初始 API 同步與 2.5 秒定時輪詢（`syncFromDatabaseAndStorage`）中，全面實裝 `safeSanctuary` 與 `mergedPlanSanctuaries` 雙向保護，禁止遠端空值抹除本地自訂。
+      * 實裝自動修補機制（Auto-Sync Missing Sanctuary）：若偵測到本地有帳幕陳設但 Supabase 尚未補全，系統立即自動雙向推送到 Supabase PostgreSQL，永久保存於雲端權威庫。
+    * **專屬本機備援持久化 (Dedicated Storage Fallback)**：
+      * 每次更新帳幕時，除寫入全域 Profile 與 Supabase 雲端外，額外將設定原子化寫入專屬本地鍵（`getUserStorageKey(uid, 'sanctuary')` 與 `getUserStorageKey(uid, 'plan_sanctuaries')`），確保即使快取遭清除仍可即時無損復原。
+    * **自訂彈窗信物陳設防禦 (SanctuaryCustomizeModal Slot Preservation)**：
+      * 佈置彈窗開闔時，完整保留已配置之信物清單（`placedRelicIds`），不再因組件重新渲染或解鎖進度計算時差而誤將信物重設為空陣列。
+
 ---
 
 *規格書制定維護：晨星共行同工服事組*  

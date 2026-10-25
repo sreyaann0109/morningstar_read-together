@@ -91,15 +91,66 @@ const loadUserData = (targetUser: UserProfile, sourcePlansOverride?: PursuitPlan
     const savedProfileStr = localStorage.getItem(getUserStorageKey(targetUser.id, 'profile'));
     if (savedProfileStr) {
       const parsed = JSON.parse(savedProfileStr);
+      const safeSanctuary =
+        targetUser.sanctuary && Object.keys(targetUser.sanctuary).length > 0
+          ? targetUser.sanctuary
+          : parsed.sanctuary && Object.keys(parsed.sanctuary).length > 0
+          ? parsed.sanctuary
+          : undefined;
+
+      const safePlanSanctuaries = {
+        ...(parsed.planSanctuaries || {}),
+        ...(targetUser.planSanctuaries || {}),
+      };
+
+      const safeDailyHistory = {
+        ...(parsed.dailyHistory || {}),
+        ...(targetUser.dailyHistory || {}),
+      };
+
       activeProfile = {
         ...parsed,
         ...targetUser,
+        sanctuary: safeSanctuary,
+        planSanctuaries: Object.keys(safePlanSanctuaries).length > 0 ? safePlanSanctuaries : undefined,
+        dailyHistory: Object.keys(safeDailyHistory).length > 0 ? safeDailyHistory : undefined,
         role: targetUser.role || parsed.role || 'user',
       };
     }
 
+    // Direct fallback from dedicated sanctuary and plan_sanctuaries localStorage keys
+    if (!activeProfile.sanctuary) {
+      const savedSanctuaryStr = localStorage.getItem(getUserStorageKey(targetUser.id, 'sanctuary'));
+      if (savedSanctuaryStr) {
+        try {
+          const parsedSanctuary = JSON.parse(savedSanctuaryStr);
+          if (parsedSanctuary && typeof parsedSanctuary === 'object' && Object.keys(parsedSanctuary).length > 0) {
+            activeProfile.sanctuary = parsedSanctuary;
+          }
+        } catch (e) {}
+      }
+    }
+    const savedPlanSanctuariesStr = localStorage.getItem(getUserStorageKey(targetUser.id, 'plan_sanctuaries'));
+    if (savedPlanSanctuariesStr) {
+      try {
+        const parsedPlanSanctuaries = JSON.parse(savedPlanSanctuariesStr);
+        if (parsedPlanSanctuaries && typeof parsedPlanSanctuaries === 'object') {
+          activeProfile.planSanctuaries = {
+            ...(activeProfile.planSanctuaries || {}),
+            ...parsedPlanSanctuaries,
+          };
+        }
+      } catch (e) {}
+    }
+
     try {
       localStorage.setItem(getUserStorageKey(targetUser.id, 'profile'), JSON.stringify(activeProfile));
+      if (activeProfile.sanctuary) {
+        localStorage.setItem(getUserStorageKey(targetUser.id, 'sanctuary'), JSON.stringify(activeProfile.sanctuary));
+      }
+      if (activeProfile.planSanctuaries) {
+        localStorage.setItem(getUserStorageKey(targetUser.id, 'plan_sanctuaries'), JSON.stringify(activeProfile.planSanctuaries));
+      }
     } catch (e) {}
 
     // 2. Joined Plans — strictly derived from plan.members authority
@@ -526,10 +577,37 @@ export default function Home() {
           });
         }
         if (Array.isArray(backendData.users) && backendData.users.length > 0) {
-          allUsersRef.current = backendData.users;
-          setAllUsers(backendData.users);
+          const currentUid = userRef.current.id;
+          const currentEmail = userRef.current.email.toLowerCase();
+
+          const mergedUsers = backendData.users.map((u) => {
+            if (u.id === currentUid || u.email.toLowerCase() === currentEmail) {
+              const safeSanctuary =
+                u.sanctuary && Object.keys(u.sanctuary).length > 0
+                  ? u.sanctuary
+                  : userRef.current.sanctuary;
+              const safePlanSanctuaries = {
+                ...(userRef.current.planSanctuaries || {}),
+                ...(u.planSanctuaries || {}),
+              };
+              const safeDailyHistory =
+                u.dailyHistory && Object.keys(u.dailyHistory).length > 0
+                  ? u.dailyHistory
+                  : userRef.current.dailyHistory;
+              return {
+                ...u,
+                sanctuary: safeSanctuary,
+                planSanctuaries: Object.keys(safePlanSanctuaries).length > 0 ? safePlanSanctuaries : undefined,
+                dailyHistory: safeDailyHistory,
+              };
+            }
+            return u;
+          });
+
+          allUsersRef.current = mergedUsers;
+          setAllUsers(mergedUsers);
           try {
-            localStorage.setItem('morningstar_registered_users', JSON.stringify(backendData.users));
+            localStorage.setItem('morningstar_registered_users', JSON.stringify(mergedUsers));
           } catch (e) {}
 
           setUser((currentUser) => {
@@ -542,9 +620,21 @@ export default function Home() {
                   ? remote.dailyHistory
                   : currentUser.dailyHistory;
 
-              const updated = {
+              const remoteSanctuary =
+                remote.sanctuary && typeof remote.sanctuary === 'object' && Object.keys(remote.sanctuary).length > 0
+                  ? remote.sanctuary
+                  : currentUser.sanctuary;
+
+              const mergedPlanSanctuaries = {
+                ...(currentUser.planSanctuaries || {}),
+                ...(remote.planSanctuaries || {}),
+              };
+
+              const updated: UserProfile = {
                 ...currentUser,
                 ...remote,
+                sanctuary: remoteSanctuary,
+                planSanctuaries: Object.keys(mergedPlanSanctuaries).length > 0 ? mergedPlanSanctuaries : undefined,
                 dailyHistory: remoteDailyHistory,
                 role: remote.role || currentUser.role,
               };
@@ -555,16 +645,30 @@ export default function Home() {
                   localStorage.setItem(getUserStorageKey(currentUser.id, 'daily_units_history'), JSON.stringify(remoteDailyHistory));
                 } catch (e) {}
               }
-              if (
+
+              // Auto-sync missing sanctuary / planSanctuaries / dailyHistory to Supabase Cloud
+              const remoteNeedsSanctuarySync =
+                (!remote.sanctuary && updated.sanctuary) ||
+                (updated.planSanctuaries && (!remote.planSanctuaries || Object.keys(updated.planSanctuaries).length > Object.keys(remote.planSanctuaries || {}).length));
+
+              const remoteNeedsDailyHistorySync =
                 (!remote.dailyHistory || Object.keys(remote.dailyHistory).length === 0) &&
                 remoteDailyHistory &&
-                Object.keys(remoteDailyHistory).length > 0
-              ) {
+                Object.keys(remoteDailyHistory).length > 0;
+
+              if (remoteNeedsSanctuarySync || remoteNeedsDailyHistorySync) {
                 syncUsersToBackend(allUsersRef.current.map((u) => (u.id === updated.id ? updated : u)));
               }
+
               try {
                 sessionStorage.setItem('morningstar_current_user', JSON.stringify(updated));
                 localStorage.setItem(getUserStorageKey(currentUser.id, 'profile'), JSON.stringify(updated));
+                if (updated.sanctuary) {
+                  localStorage.setItem(getUserStorageKey(currentUser.id, 'sanctuary'), JSON.stringify(updated.sanctuary));
+                }
+                if (updated.planSanctuaries) {
+                  localStorage.setItem(getUserStorageKey(currentUser.id, 'plan_sanctuaries'), JSON.stringify(updated.planSanctuaries));
+                }
               } catch (e) {}
               return updated;
             }
@@ -613,10 +717,37 @@ export default function Home() {
           } catch (e) {}
         }
         if (Array.isArray(backendData.users) && backendData.users.length > 0) {
-          allUsersRef.current = backendData.users;
-          setAllUsers(backendData.users);
+          const currentUid = userRef.current.id;
+          const currentEmail = userRef.current.email.toLowerCase();
+
+          const mergedUsers = backendData.users.map((u) => {
+            if (u.id === currentUid || u.email.toLowerCase() === currentEmail) {
+              const safeSanctuary =
+                u.sanctuary && Object.keys(u.sanctuary).length > 0
+                  ? u.sanctuary
+                  : userRef.current.sanctuary;
+              const safePlanSanctuaries = {
+                ...(userRef.current.planSanctuaries || {}),
+                ...(u.planSanctuaries || {}),
+              };
+              const safeDailyHistory =
+                u.dailyHistory && Object.keys(u.dailyHistory).length > 0
+                  ? u.dailyHistory
+                  : userRef.current.dailyHistory;
+              return {
+                ...u,
+                sanctuary: safeSanctuary,
+                planSanctuaries: Object.keys(safePlanSanctuaries).length > 0 ? safePlanSanctuaries : undefined,
+                dailyHistory: safeDailyHistory,
+              };
+            }
+            return u;
+          });
+
+          allUsersRef.current = mergedUsers;
+          setAllUsers(mergedUsers);
           try {
-            localStorage.setItem('morningstar_registered_users', JSON.stringify(backendData.users));
+            localStorage.setItem('morningstar_registered_users', JSON.stringify(mergedUsers));
           } catch (e) {}
 
           setUser((currentUser) => {
@@ -629,9 +760,21 @@ export default function Home() {
                   ? remote.dailyHistory
                   : currentUser.dailyHistory;
 
-              const updated = {
+              const remoteSanctuary =
+                remote.sanctuary && typeof remote.sanctuary === 'object' && Object.keys(remote.sanctuary).length > 0
+                  ? remote.sanctuary
+                  : currentUser.sanctuary;
+
+              const mergedPlanSanctuaries = {
+                ...(currentUser.planSanctuaries || {}),
+                ...(remote.planSanctuaries || {}),
+              };
+
+              const updated: UserProfile = {
                 ...currentUser,
                 ...remote,
+                sanctuary: remoteSanctuary,
+                planSanctuaries: Object.keys(mergedPlanSanctuaries).length > 0 ? mergedPlanSanctuaries : undefined,
                 dailyHistory: remoteDailyHistory,
                 role: remote.role || currentUser.role,
               };
@@ -642,9 +785,30 @@ export default function Home() {
                   localStorage.setItem(getUserStorageKey(currentUser.id, 'daily_units_history'), JSON.stringify(remoteDailyHistory));
                 } catch (e) {}
               }
+
+              // Auto-sync missing sanctuary / planSanctuaries / dailyHistory to Supabase Cloud
+              const remoteNeedsSanctuarySync =
+                (!remote.sanctuary && updated.sanctuary) ||
+                (updated.planSanctuaries && (!remote.planSanctuaries || Object.keys(updated.planSanctuaries).length > Object.keys(remote.planSanctuaries || {}).length));
+
+              const remoteNeedsDailyHistorySync =
+                (!remote.dailyHistory || Object.keys(remote.dailyHistory).length === 0) &&
+                remoteDailyHistory &&
+                Object.keys(remoteDailyHistory).length > 0;
+
+              if (remoteNeedsSanctuarySync || remoteNeedsDailyHistorySync) {
+                syncUsersToBackend(allUsersRef.current.map((u) => (u.id === updated.id ? updated : u)));
+              }
+
               try {
                 sessionStorage.setItem('morningstar_current_user', JSON.stringify(updated));
                 localStorage.setItem(getUserStorageKey(currentUser.id, 'profile'), JSON.stringify(updated));
+                if (updated.sanctuary) {
+                  localStorage.setItem(getUserStorageKey(currentUser.id, 'sanctuary'), JSON.stringify(updated.sanctuary));
+                }
+                if (updated.planSanctuaries) {
+                  localStorage.setItem(getUserStorageKey(currentUser.id, 'plan_sanctuaries'), JSON.stringify(updated.planSanctuaries));
+                }
               } catch (e) {}
               return updated;
             }
@@ -755,6 +919,12 @@ export default function Home() {
     try {
       sessionStorage.setItem('morningstar_current_user', JSON.stringify(updatedUser));
       localStorage.setItem(getUserStorageKey(updatedUser.id, 'profile'), JSON.stringify(updatedUser));
+      if (updatedUser.sanctuary) {
+        localStorage.setItem(getUserStorageKey(updatedUser.id, 'sanctuary'), JSON.stringify(updatedUser.sanctuary));
+      }
+      if (updatedUser.planSanctuaries) {
+        localStorage.setItem(getUserStorageKey(updatedUser.id, 'plan_sanctuaries'), JSON.stringify(updatedUser.planSanctuaries));
+      }
     } catch (e) {}
     saveAllUsers((prevUsers) => {
       const exists = prevUsers.some((u) => u.id === updatedUser.id);
@@ -899,7 +1069,19 @@ export default function Home() {
         (u) => u.id === newUser.id || u.email.toLowerCase() === newUser.email.toLowerCase()
       );
       const userToProcess = authoritative
-        ? { ...authoritative, ...newUser, role: authoritative.role || newUser.role }
+        ? {
+            ...authoritative,
+            ...newUser,
+            sanctuary:
+              (newUser.sanctuary && Object.keys(newUser.sanctuary).length > 0)
+                ? newUser.sanctuary
+                : authoritative.sanctuary,
+            planSanctuaries: {
+              ...(authoritative.planSanctuaries || {}),
+              ...(newUser.planSanctuaries || {}),
+            },
+            role: authoritative.role || newUser.role,
+          }
         : newUser;
 
       const { activeProfile, activeJoinedIds, completedToday } = loadUserData(
@@ -2690,6 +2872,14 @@ export default function Home() {
   };
 
   const handleSaveSanctuary = (newConfig: SanctuaryConfig) => {
+    try {
+      localStorage.setItem(getUserStorageKey(user.id, 'sanctuary'), JSON.stringify(newConfig));
+      if (currentPlan?.id) {
+        const updatedPlansSanctuary = { ...(user.planSanctuaries || {}), [currentPlan.id]: newConfig };
+        localStorage.setItem(getUserStorageKey(user.id, 'plan_sanctuaries'), JSON.stringify(updatedPlansSanctuary));
+      }
+    } catch (e) {}
+
     updateCurrentUserAndSync((prev) => ({
       ...prev,
       sanctuary: newConfig,
@@ -2697,7 +2887,7 @@ export default function Home() {
         ? { ...(prev.planSanctuaries || {}), [currentPlan.id]: newConfig }
         : prev.planSanctuaries,
     }));
-    showToast('✨ 追求帳幕佈置已更新！已保存至您的專屬天地。');
+    showToast('✨ 追求帳幕佈置已更新！已同步保存至雲端。');
   };
 
   const handleAmenCompanion = (companionId: string, companionName: string) => {
@@ -2770,10 +2960,12 @@ export default function Home() {
     return false;
   });
 
-  const currentSanctuaryConfig =
-    (currentPlan?.id && user.planSanctuaries?.[currentPlan.id]) ||
-    user.sanctuary ||
-    DEFAULT_SANCTUARY_CONFIG;
+  const activePlanConfig = currentPlan?.id ? user.planSanctuaries?.[currentPlan.id] : undefined;
+  const currentSanctuaryConfig: SanctuaryConfig = {
+    theme: activePlanConfig?.theme || user.sanctuary?.theme || DEFAULT_SANCTUARY_CONFIG.theme,
+    motto: activePlanConfig?.motto || user.sanctuary?.motto || DEFAULT_SANCTUARY_CONFIG.motto,
+    placedRelicIds: activePlanConfig?.placedRelicIds ?? user.sanctuary?.placedRelicIds ?? DEFAULT_SANCTUARY_CONFIG.placedRelicIds,
+  };
 
   const viewingCompanionUser = viewingCompanion
     ? allUsers.find((u) => u.id === viewingCompanion.id) || {
@@ -2788,10 +2980,15 @@ export default function Home() {
       }
     : null;
 
-  const viewingCompanionSanctuary = viewingCompanionUser
-    ? (currentPlan?.id && viewingCompanionUser.planSanctuaries?.[currentPlan.id]) ||
-      viewingCompanionUser.sanctuary ||
-      DEFAULT_SANCTUARY_CONFIG
+  const viewingActivePlanConfig = (viewingCompanionUser && currentPlan?.id)
+    ? viewingCompanionUser.planSanctuaries?.[currentPlan.id]
+    : undefined;
+  const viewingCompanionSanctuary: SanctuaryConfig = viewingCompanionUser
+    ? {
+        theme: viewingActivePlanConfig?.theme || viewingCompanionUser.sanctuary?.theme || DEFAULT_SANCTUARY_CONFIG.theme,
+        motto: viewingActivePlanConfig?.motto || viewingCompanionUser.sanctuary?.motto || DEFAULT_SANCTUARY_CONFIG.motto,
+        placedRelicIds: viewingActivePlanConfig?.placedRelicIds ?? viewingCompanionUser.sanctuary?.placedRelicIds ?? DEFAULT_SANCTUARY_CONFIG.placedRelicIds,
+      }
     : DEFAULT_SANCTUARY_CONFIG;
 
   const viewingCompanionDailyHistory = viewingCompanionUser
