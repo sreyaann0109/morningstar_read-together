@@ -41,6 +41,7 @@ import {
 } from 'lucide-react';
 import { PursuitPlan, UserProfile, UserRole, SiteSettings, DEFAULT_SITE_SETTINGS } from '../types';
 import { hashPasswordWeb } from '../lib/password';
+import { useBodyScrollLock } from '../lib/scrollLock';
 
 interface AdminPanelProps {
   adminUser: UserProfile;
@@ -163,6 +164,14 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
     tempCode: string;
     copied: boolean;
   } | null>(null);
+
+  // 鎖定背景滾動：當管理員開啟聖徒設定、臨時密碼或成員管理浮層時防止底層滾動
+  const isAnyAdminModalOpen = Boolean(
+    managingMembersPlanId ||
+    selectedUserIdForModal ||
+    tempCodeModal
+  );
+  useBodyScrollLock(isAnyAdminModalOpen);
 
   // New User / Admin Form State (管理者新增人員/管理員)
   const [isAddingUser, setIsAddingUser] = useState(false);
@@ -1454,11 +1463,11 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                 return (
                   <div
                     onClick={() => setSelectedUserIdForModal(null)}
-                    className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-stone-900/60 backdrop-blur-xs animate-in fade-in duration-200"
+                    className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-stone-900/60 backdrop-blur-xs animate-in fade-in duration-200 touch-none overscroll-none"
                   >
                     <div
                       onClick={(e) => e.stopPropagation()}
-                      className="bg-white rounded-3xl w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl border border-stone-200 overflow-hidden animate-in zoom-in-95 duration-200"
+                      className="bg-white rounded-3xl w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl border border-stone-200 overflow-hidden animate-in zoom-in-95 duration-200 overscroll-contain"
                     >
                       {/* Modal Header */}
                       <div className="p-4 sm:p-5 border-b border-stone-200/80 flex items-center justify-between bg-stone-50/80 flex-shrink-0">
@@ -1501,7 +1510,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                       </div>
 
                       {/* Modal Scrollable Body */}
-                      <div className="p-4 sm:p-6 overflow-y-auto space-y-4 flex-1">
+                      <div className="p-4 sm:p-6 overflow-y-auto overscroll-contain space-y-4 flex-1">
                         {/* 1. Status Notices */}
                         {u.passwordResetRequested && (
                           <div className="text-xs font-bold bg-amber-500 text-white px-3 py-1.5 rounded-xl flex items-center gap-1.5 animate-pulse">
@@ -1555,7 +1564,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                             <span className="text-xs font-bold text-stone-700 block">
                               📚 參與的追求主題：
                             </span>
-                            <div className="space-y-1.5 max-h-56 overflow-y-auto pr-1">
+                            <div className="space-y-1.5 max-h-56 overflow-y-auto overscroll-contain pr-1">
                               {plans.map((plan) => {
                                 const isJoined = (plan.members || []).some(
                                   (m) => m.userId === u.id
@@ -2374,11 +2383,11 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
       {tempCodeModal && (
         <div
           onClick={() => setTempCodeModal(null)}
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200 touch-none overscroll-none"
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl border border-stone-200 space-y-4"
+            className="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl border border-stone-200 space-y-4 overscroll-contain"
           >
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-2xl bg-amber-100 flex items-center justify-center text-amber-800 flex-shrink-0">
@@ -2443,11 +2452,11 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
         return (
           <div
             onClick={() => setManagingMembersPlanId(null)}
-            className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-stone-900/50 backdrop-blur-xs animate-in fade-in duration-200"
+            className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-stone-900/50 backdrop-blur-xs animate-in fade-in duration-200 touch-none overscroll-none"
           >
             <div
               onClick={(e) => e.stopPropagation()}
-              className="bg-white rounded-3xl w-full max-w-2xl max-h-[85vh] flex flex-col shadow-2xl border border-stone-200 overflow-hidden animate-in zoom-in-95 duration-200"
+              className="bg-white rounded-3xl w-full max-w-2xl max-h-[85vh] flex flex-col shadow-2xl border border-stone-200 overflow-hidden animate-in zoom-in-95 duration-200 overscroll-contain"
             >
               {/* Modal Header */}
               <div className="p-4 sm:p-5 border-b border-stone-200/80 flex items-center justify-between bg-stone-50/80 flex-shrink-0">
@@ -2524,7 +2533,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
               </div>
 
               {/* Modal Scrollable Content */}
-              <div className="p-4 sm:p-5 overflow-y-auto flex-1 space-y-2">
+              <div className="p-4 sm:p-5 overflow-y-auto overscroll-contain flex-1 space-y-2">
                 {memberModalTab === 'members' ? (
                   <>
                     <div className="flex items-center justify-between pb-1">

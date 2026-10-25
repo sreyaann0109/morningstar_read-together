@@ -14,6 +14,7 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { PursuitPlan, PlanCategory } from '../types';
+import { useBodyScrollLock } from '../lib/scrollLock';
 
 interface ThemesDrawerProps {
   isOpen: boolean;
@@ -40,6 +41,9 @@ export const ThemesDrawer: React.FC<ThemesDrawerProps> = ({
   isAdmin = false,
   allowJoinByInviteCode = true,
 }) => {
+  // 當抽屜開啟時鎖定全站背景滾動
+  useBodyScrollLock(isOpen);
+
   // ESC 鍵關閉滑出欄
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -88,7 +92,7 @@ export const ThemesDrawer: React.FC<ThemesDrawerProps> = ({
       {/* 遮罩背景 (Backdrop) - 自 top-16 開始，保留頂部導覽列三條線可隨時點擊 */}
       <div
         onClick={onClose}
-        className={`fixed inset-0 top-16 bg-stone-900/50 backdrop-blur-xs transition-opacity duration-300 ease-in-out ${
+        className={`fixed inset-0 top-16 bg-stone-900/50 backdrop-blur-xs transition-opacity duration-300 ease-in-out touch-none overscroll-none ${
           isOpen ? 'opacity-100' : 'opacity-0'
         }`}
         aria-hidden="true"
@@ -97,7 +101,7 @@ export const ThemesDrawer: React.FC<ThemesDrawerProps> = ({
       {/* 左側滑出抽屜 (Slide-out Sidebar Drawer) - 支援完整的滑入與滑出動畫 */}
       <div
         onClick={(e) => e.stopPropagation()}
-        className={`fixed top-16 bottom-0 left-0 w-84 sm:w-96 max-w-[85vw] bg-white dark:bg-stone-900 shadow-2xl border-r border-stone-200 dark:border-stone-800 flex flex-col z-50 transition-transform duration-300 ease-in-out transform ${
+        className={`fixed top-16 bottom-0 left-0 w-84 sm:w-96 max-w-[85vw] bg-white dark:bg-stone-900 shadow-2xl border-r border-stone-200 dark:border-stone-800 flex flex-col z-50 transition-transform duration-300 ease-in-out transform overscroll-contain ${
           isOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
@@ -132,7 +136,7 @@ export const ThemesDrawer: React.FC<ThemesDrawerProps> = ({
         </div>
 
         {/* 抽屜內容區域 (可捲動) */}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-5">
+        <div className="flex-1 overflow-y-auto overscroll-contain p-4 sm:p-5 space-y-5">
           {/* 1. 輸入 6-Emoji 邀請碼區塊 */}
           {allowJoinByInviteCode && (
             <div className="p-3.5 bg-gradient-to-br from-amber-500/10 via-amber-100/40 to-transparent dark:from-amber-950/40 dark:via-stone-800 dark:to-transparent rounded-2xl border border-amber-200/80 dark:border-amber-900/60 space-y-2.5 shadow-2xs">

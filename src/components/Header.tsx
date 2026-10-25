@@ -326,7 +326,7 @@ export const Header: React.FC<HeaderProps> = ({
 
                 {/* Notification Popover: On mobile fixed top-16 right-4 aligned with logout button right edge; on desktop absolute right-0 */}
                 {isBellOpen && (
-                  <div className="fixed top-16 right-4 mt-1.5 w-[calc(100vw-2rem)] max-w-sm sm:absolute sm:inset-auto sm:right-0 sm:top-full sm:mt-2 sm:w-96 rounded-2xl bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 shadow-2xl p-3.5 sm:p-4 z-50 animate-in fade-in zoom-in-95 duration-150">
+                  <div className="fixed top-16 right-4 mt-1.5 w-[calc(100vw-2rem)] max-w-sm sm:absolute sm:inset-auto sm:right-0 sm:top-full sm:mt-2 sm:w-96 rounded-2xl bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 shadow-2xl p-3.5 sm:p-4 z-50 animate-in fade-in zoom-in-95 duration-150 overscroll-contain">
                     <div className="flex items-center justify-between pb-2.5 mb-2.5 border-b border-stone-100 dark:border-stone-800">
                       <div className="flex items-center gap-1.5">
                         <Sparkles className="w-4 h-4 text-amber-500 dark:text-amber-400" />
@@ -358,7 +358,7 @@ export const Header: React.FC<HeaderProps> = ({
                         </p>
                       </div>
                     ) : (
-                      <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
+                      <div className="space-y-2 max-h-72 overflow-y-auto overscroll-contain pr-1">
                         {notifications.map((item) => (
                           <div
                             key={item.id}

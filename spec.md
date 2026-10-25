@@ -343,11 +343,35 @@ npm run build
   * **「當前追求主題」卡片純化專注於進度**：
     * 移除原先嵌入於卡片頂部的橫向主題切換藥丸按鈕列，徹底杜絕介面擁擠與多處分散按鈕的視覺干擾。
     * 卡片專一呈現當前主題進度（雙核表定對照、進度百分比、打卡、多讀一天與補讀調整）。
-  * **動態牆分享摸著介面純化**：發布貼文移除作者旁的「同伴」徽章，姓名與時間標籤（如 `0m`、`15m`）緊緻排版，省去多餘水平空間。
-  * **導覽列（Header）排版精簡**：移除頂部右側零散之邀請碼按鈕，全幅釋放手機與桌機頂部空間，各功能區塊層次井然。
+  * **全站浮動彈窗與側邊欄背景滾動穿透徹底修正 (Site-Wide Body Scroll Lock & Overscroll Containment)**：
+    * **雙重核心防護機制**：
+      1. **參考計數滾動鎖定架構 (`src/lib/scrollLock.ts`)**：提供 `lockBodyScroll()`、`unlockBodyScroll()` 與 `useBodyScrollLock()` Hook。具備 `lockCount` 參考計數機制，解決多層巢狀彈窗開啟與關閉時的提前解鎖問題。自動偵測桌機滾動條寬度並動態注入 `padding-right`，杜絕鎖定時的版面跳動 (Layout Shift)。
+      2. **全域與容器樣式隔離 (`globals.css`)**：在 `body.scroll-locked` 與 `html:has(body.scroll-locked)` 注入 `overflow: hidden !important; overscroll-behavior: none !important; touch-action: none !important;`。為所有 `[role="dialog"]` 及 `.overscroll-contain` 注入 `overscroll-behavior: contain !important; -webkit-overflow-scrolling: touch !important;`，從瀏覽器底層阻斷手勢滾動鏈結 (Scroll Chaining)。
+    * **全站 100% 浮動表面全面覆蓋**：
+      * 左側主題滑出欄 (`ThemesDrawer`)
+      * 今日亮光摸著分享彈窗 (`LightShareModal`)
+      * 追求主題切換彈窗 (`PlanSelectorModal`)
+      * 編輯追求主題彈窗 (`EditCurrentPursuitModal`)
+      * 新增專題追求彈窗 (`CreateThematicPlanModal`)
+      * 個人設定與帳號彈窗 (`AuthModal`)
+      * 連續追求統計彈窗 (`StatsModal`)
+      * 輸入 6-Emoji 專屬邀請碼彈窗 (`JoinByCodeModal`)
+      * 佈置晨興帳幕彈窗 (`SanctuaryCustomizeModal`)
+      * 屬靈信物收藏庫彈窗 (`RelicsCollectionModal`)
+      * 聖徒同伴帳幕與地圖彈窗 (`CompanionSanctuaryModal`)
+      * 一次設定追求進度彈窗 (`SetProgressModal`)
+      * 手動新增同伴彈窗 (`AddCompanionModal`)
+      * 控制台聖徒設定彈窗 (`AdminPanel - User Settings Modal`)
+      * 控制台臨時密碼核發彈窗 (`AdminPanel - Temp Code Modal`)
+      * 控制台專題成員名單管理彈窗 (`AdminPanel - Manage Plan Members Modal`)
+      * 強制更換密碼安全彈窗 (`Mandatory Force Change Password Modal`)
+      * 導覽列提醒通知浮空板塊 (`Header - Notification Bell Popover`)
+      * 今日追求 130 天表定排程內嵌滾動表 (`TodayPursuitCard`)
+    * 遮罩層全面加入 `touch-none overscroll-none`，內容盒全面加入 `overscroll-contain`，並同步補齊 `role="dialog"` 與 `aria-modal="true"` 無障礙宣告，滑動體驗沉浸平順且不滲透背景。
 
 ---
 
 *規格書制定維護：晨星共行同工服事組*  
 *最新修訂時間：2026-10-25*
+
 

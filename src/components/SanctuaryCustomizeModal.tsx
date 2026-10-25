@@ -10,6 +10,7 @@ import {
   getSanctuaryMaxSlots,
   getPlanRelicStats,
 } from '../data/relicsData';
+import { useBodyScrollLock } from '../lib/scrollLock';
 
 interface SanctuaryCustomizeModalProps {
   isOpen: boolean;
@@ -105,14 +106,19 @@ export const SanctuaryCustomizeModal: React.FC<SanctuaryCustomizeModalProps> = (
     onClose();
   };
 
+  useBodyScrollLock(isOpen);
+  if (!isOpen) return null;
+
   return (
     <div
+      role="dialog"
+      aria-modal="true"
       onClick={onClose}
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/40 backdrop-blur-sm animate-in fade-in duration-200"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/40 backdrop-blur-sm animate-in fade-in duration-200 touch-none overscroll-none"
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="bg-white rounded-3xl w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-2xl border border-stone-200 p-6 sm:p-7 relative"
+        className="bg-white rounded-3xl w-full max-w-lg max-h-[90vh] overflow-y-auto overscroll-contain shadow-2xl border border-stone-200 p-6 sm:p-7 relative"
       >
         <button
           onClick={onClose}
@@ -212,7 +218,7 @@ export const SanctuaryCustomizeModal: React.FC<SanctuaryCustomizeModalProps> = (
             </div>
 
             {/* Currently Selected maxSlots preview */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-2 mb-3 p-3 bg-stone-50 rounded-2xl border border-stone-200/80 max-h-56 overflow-y-auto">
+            <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-2 mb-3 p-3 bg-stone-50 rounded-2xl border border-stone-200/80 max-h-56 overflow-y-auto overscroll-contain">
               {Array.from({ length: maxSlots }).map((_, slotIdx) => {
                 const rId = selectedRelicIds[slotIdx];
                 const relic = ALL_SPIRITUAL_RELICS.find((r) => r.id === rId);
@@ -254,7 +260,7 @@ export const SanctuaryCustomizeModal: React.FC<SanctuaryCustomizeModalProps> = (
             <span className="text-[11px] font-semibold text-stone-500 block mb-1.5">
               我的解鎖信物庫（點擊選入或替換）：
             </span>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-48 overflow-y-auto p-1">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-48 overflow-y-auto overscroll-contain p-1">
               {unlockedRelics.map((r) => {
                 const isSelected = selectedRelicIds.includes(r.id);
                 return (

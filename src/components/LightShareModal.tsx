@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Sparkles, Send, BookOpen, Edit2 } from 'lucide-react';
 import { PursuitPlan, SharingPost } from '../types';
+import { useBodyScrollLock } from '../lib/scrollLock';
 
 import { getTodayNTSchedule, getNTDaySchedule, getNTChapterLocation, TOTAL_NT_DAYS, TOTAL_NT_CHAPTERS } from '../data/ntBibleData';
 
@@ -95,14 +96,19 @@ export const LightShareModal: React.FC<LightShareModalProps> = ({
     onClose();
   };
 
+  useBodyScrollLock(isOpen);
+  if (!isOpen) return null;
+
   return (
     <div
+      role="dialog"
+      aria-modal="true"
       onClick={onClose}
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/40 backdrop-blur-sm animate-in fade-in duration-200"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/40 backdrop-blur-sm animate-in fade-in duration-200 touch-none overscroll-none"
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="bg-white rounded-3xl w-full max-w-xl max-h-[90vh] overflow-y-auto shadow-2xl border border-stone-200 p-6 sm:p-7 relative"
+        className="bg-white rounded-3xl w-full max-w-xl max-h-[90vh] overflow-y-auto overscroll-contain shadow-2xl border border-stone-200 p-6 sm:p-7 relative"
       >
         {/* Close Button */}
         <button

@@ -17,6 +17,7 @@ import {
 import { UserProfile, DisplayMode } from '../types';
 import { demoUsers } from '../data/initialData';
 import { hashPasswordWeb, verifyPasswordWeb } from '../lib/password';
+import { useBodyScrollLock } from '../lib/scrollLock';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -276,14 +277,19 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     onClose();
   };
 
+  useBodyScrollLock(isOpen);
+  if (!isOpen) return null;
+
   return (
     <div
+      role="dialog"
+      aria-modal="true"
       onClick={onClose}
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/40 backdrop-blur-sm animate-in fade-in duration-200"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/40 backdrop-blur-sm animate-in fade-in duration-200 touch-none overscroll-none"
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="bg-white rounded-3xl w-full max-w-md max-h-[90vh] overflow-y-auto shadow-2xl border border-stone-200 p-6 sm:p-7 relative text-stone-900"
+        className="bg-white rounded-3xl w-full max-w-md max-h-[90vh] overflow-y-auto overscroll-contain shadow-2xl border border-stone-200 p-6 sm:p-7 relative text-stone-900"
       >
         {/* Close Button */}
         <button

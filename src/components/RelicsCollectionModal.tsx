@@ -9,6 +9,7 @@ import {
   getPlanRelicStats,
   getPlanUnlockedRelics,
 } from '../data/relicsData';
+import { useBodyScrollLock } from '../lib/scrollLock';
 
 interface RelicsCollectionModalProps {
   isOpen: boolean;
@@ -92,14 +93,19 @@ export const RelicsCollectionModal: React.FC<RelicsCollectionModalProps> = ({
       ? ALL_SPIRITUAL_RELICS
       : ALL_SPIRITUAL_RELICS.filter((r) => r.category === selectedCategory);
 
+  useBodyScrollLock(isOpen);
+  if (!isOpen) return null;
+
   return (
     <div
+      role="dialog"
+      aria-modal="true"
       onClick={onClose}
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/40 backdrop-blur-sm animate-in fade-in duration-200"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/40 backdrop-blur-sm animate-in fade-in duration-200 touch-none overscroll-none"
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="bg-white rounded-3xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl border border-stone-200 p-6 sm:p-7 relative"
+        className="bg-white rounded-3xl w-full max-w-2xl max-h-[90vh] overflow-y-auto overscroll-contain shadow-2xl border border-stone-200 p-6 sm:p-7 relative"
       >
         <button
           onClick={onClose}

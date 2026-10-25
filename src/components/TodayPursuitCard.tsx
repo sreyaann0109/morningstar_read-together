@@ -557,7 +557,7 @@ export const TodayPursuitCard: React.FC<TodayPursuitCardProps> = ({
 
         {/* Collapsible 130 Days Schedule Table */}
         {isNTHalfYear && halfYearPace && showNTSchedule && (
-          <div className="my-3 p-3.5 bg-white/90 dark:bg-stone-900/80 rounded-2xl border border-amber-200/80 dark:border-stone-700 max-h-64 overflow-y-auto space-y-1.5 pr-1 shadow-xs animate-in fade-in">
+          <div className="my-3 p-3.5 bg-white/90 dark:bg-stone-900/80 rounded-2xl border border-amber-200/80 dark:border-stone-700 max-h-64 overflow-y-auto overscroll-contain space-y-1.5 pr-1 shadow-xs animate-in fade-in">
             <div className="flex items-center justify-between text-xs text-stone-500 dark:text-stone-400 mb-2 px-1">
               <span>從馬太福音第一章讀至啟示錄二十二章（每日兩章）：</span>
               <span className="font-bold text-amber-800 dark:text-amber-300">今日表定：第 {halfYearPace.expectedDayToday} 天</span>

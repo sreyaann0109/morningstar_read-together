@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { X, UserPlus, Users } from 'lucide-react';
 import { Companion } from '../types';
+import { useBodyScrollLock } from '../lib/scrollLock';
 
 interface AddCompanionModalProps {
   isOpen: boolean;
@@ -22,6 +23,7 @@ export const AddCompanionModal: React.FC<AddCompanionModalProps> = ({
   const [avatar, setAvatar] = useState('🌱');
   const [planTitle, setPlanTitle] = useState('羅馬書生命讀經');
 
+  useBodyScrollLock(isOpen);
   if (!isOpen) return null;
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -41,12 +43,14 @@ export const AddCompanionModal: React.FC<AddCompanionModalProps> = ({
 
   return (
     <div
+      role="dialog"
+      aria-modal="true"
       onClick={onClose}
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/40 backdrop-blur-sm animate-in fade-in duration-200"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/40 backdrop-blur-sm animate-in fade-in duration-200 touch-none overscroll-none"
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="bg-white rounded-3xl w-full max-w-md shadow-2xl border border-stone-200 p-6 relative"
+        className="bg-white rounded-3xl w-full max-w-md max-h-[90vh] overflow-y-auto overscroll-contain shadow-2xl border border-stone-200 p-6 relative"
       >
         <button
           onClick={onClose}

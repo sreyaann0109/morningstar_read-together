@@ -3,6 +3,7 @@
 import React from 'react';
 import { X, BookOpen, Check, Plus } from 'lucide-react';
 import { PursuitPlan, PlanCategory } from '../types';
+import { useBodyScrollLock } from '../lib/scrollLock';
 
 interface PlanSelectorModalProps {
   isOpen: boolean;
@@ -27,6 +28,7 @@ export const PlanSelectorModal: React.FC<PlanSelectorModalProps> = ({
   onOpenJoinByCode,
   allowJoinByInviteCode = true,
 }) => {
+  useBodyScrollLock(isOpen);
   if (!isOpen) return null;
 
   const getCategoryBadge = (cat: PlanCategory) => {
@@ -52,12 +54,14 @@ export const PlanSelectorModal: React.FC<PlanSelectorModalProps> = ({
 
   return (
     <div
+      role="dialog"
+      aria-modal="true"
       onClick={onClose}
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/40 backdrop-blur-sm animate-in fade-in duration-200"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/40 backdrop-blur-sm animate-in fade-in duration-200 touch-none overscroll-none"
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="bg-white rounded-3xl w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-2xl border border-stone-200 p-6 sm:p-7 relative"
+        className="bg-white rounded-3xl w-full max-w-lg max-h-[90vh] overflow-y-auto overscroll-contain shadow-2xl border border-stone-200 p-6 sm:p-7 relative"
       >
         <button
           onClick={onClose}

@@ -23,6 +23,7 @@ import { CompanionSanctuaryModal } from '../components/CompanionSanctuaryModal';
 import { SetProgressModal } from '../components/SetProgressModal';
 import { JoinByCodePage } from '../components/JoinByCodePage';
 import { PursuitMap } from '../components/PursuitMap';
+import { useBodyScrollLock } from '../lib/scrollLock';
 import {
   currentUser as defaultUser,
   initialPlans,
@@ -275,6 +276,24 @@ export default function Home() {
   const [companionAmenMap, setCompanionAmenMap] = useState<Record<string, boolean>>({});
   const [mobileTab, setMobileTab] = useState<MobileTab>('today');
   const [isSetProgressOpen, setIsSetProgressOpen] = useState(false);
+
+  // 全站鎖定背景滾動：當任何浮動視窗、側邊欄或彈窗開啟時，徹底鎖定背景防止滑動干擾
+  const isAnyModalOpen = Boolean(
+    isThemesDrawerOpen ||
+    isShareModalOpen ||
+    isPlanSelectorOpen ||
+    isEditPursuitOpen ||
+    isCreatePlanOpen ||
+    isAuthModalOpen ||
+    isStatsModalOpen ||
+    isJoinByCodeOpen ||
+    isSanctuaryCustomizeOpen ||
+    isRelicsCollectionOpen ||
+    viewingCompanion ||
+    isSetProgressOpen ||
+    (isLoggedIn && user.mustChangePassword)
+  );
+  useBodyScrollLock(isAnyModalOpen);
 
   // Undo Pending Progress Snapshot (支援 10 秒即時復原，逾時後不可往回修改)
   interface ProgressUndoSnapshot {
@@ -3244,8 +3263,12 @@ export default function Home() {
 
       {/* Mandatory Force Change Password Modal if logged-in user has mustChangePassword === true */}
       {isLoggedIn && user.mustChangePassword && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-stone-200 space-y-4">
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200 touch-none overscroll-none"
+        >
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-stone-200 space-y-4 overscroll-contain">
             <div className="flex items-center gap-2.5">
               <div className="w-10 h-10 rounded-2xl bg-amber-100 flex items-center justify-center text-amber-800 flex-shrink-0">
                 <ShieldCheck className="w-5 h-5 text-amber-700" />

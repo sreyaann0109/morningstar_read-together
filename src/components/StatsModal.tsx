@@ -4,6 +4,7 @@ import React from 'react';
 import { X, Flame, Trophy, Calendar } from 'lucide-react';
 import { UserProfile } from '../types';
 import { getUTC8DateString, addDaysUTC8 } from '../lib/dateUtils';
+import { useBodyScrollLock } from '../lib/scrollLock';
 
 interface StatsModalProps {
   isOpen: boolean;
@@ -14,6 +15,7 @@ interface StatsModalProps {
 const WEEKDAY_NAMES = ['日', '一', '二', '三', '四', '五', '六'];
 
 export const StatsModal: React.FC<StatsModalProps> = ({ isOpen, onClose, user }) => {
+  useBodyScrollLock(isOpen);
   if (!isOpen) return null;
 
   // Dynamically generate the exact last 7 calendar days ending today in UTC+8
@@ -36,12 +38,14 @@ export const StatsModal: React.FC<StatsModalProps> = ({ isOpen, onClose, user })
 
   return (
     <div
+      role="dialog"
+      aria-modal="true"
       onClick={onClose}
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/40 backdrop-blur-sm animate-in fade-in duration-200"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/40 backdrop-blur-sm animate-in fade-in duration-200 touch-none overscroll-none"
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="bg-white rounded-3xl w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-2xl border border-stone-200 p-6 sm:p-7 relative"
+        className="bg-white rounded-3xl w-full max-w-lg max-h-[90vh] overflow-y-auto overscroll-contain shadow-2xl border border-stone-200 p-6 sm:p-7 relative"
       >
         <button
           onClick={onClose}

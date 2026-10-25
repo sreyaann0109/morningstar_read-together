@@ -9,6 +9,7 @@ import {
   SANCTUARY_THEMES,
 } from '../data/relicsData';
 import { PursuitMap } from './PursuitMap';
+import { useBodyScrollLock } from '../lib/scrollLock';
 
 interface CompanionSanctuaryModalProps {
   isOpen: boolean;
@@ -33,6 +34,7 @@ export const CompanionSanctuaryModal: React.FC<CompanionSanctuaryModalProps> = (
 }) => {
   const [isSpiritualMeaningExpanded, setIsSpiritualMeaningExpanded] = React.useState(false);
 
+  useBodyScrollLock(isOpen);
   if (!isOpen || !companion) return null;
 
   const themeMeta = SANCTUARY_THEMES[companionSanctuary.theme] || SANCTUARY_THEMES.dawn;
@@ -43,12 +45,14 @@ export const CompanionSanctuaryModal: React.FC<CompanionSanctuaryModalProps> = (
 
   return (
     <div
+      role="dialog"
+      aria-modal="true"
       onClick={onClose}
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/40 backdrop-blur-sm animate-in fade-in duration-200"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/40 backdrop-blur-sm animate-in fade-in duration-200 touch-none overscroll-none"
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="bg-white dark:bg-stone-900 rounded-3xl w-full max-w-xl max-h-[90vh] overflow-y-auto shadow-2xl border border-stone-200 dark:border-stone-800 p-6 sm:p-7 relative text-stone-900 dark:text-stone-100"
+        className="bg-white dark:bg-stone-900 rounded-3xl w-full max-w-xl max-h-[90vh] overflow-y-auto overscroll-contain shadow-2xl border border-stone-200 dark:border-stone-800 p-6 sm:p-7 relative text-stone-900 dark:text-stone-100"
       >
         <button
           onClick={onClose}
@@ -156,7 +160,7 @@ export const CompanionSanctuaryModal: React.FC<CompanionSanctuaryModalProps> = (
             </button>
 
             {isSpiritualMeaningExpanded && (
-              <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1 mt-2.5 pt-2 border-t border-stone-200/50 dark:border-stone-700/50 animate-in fade-in">
+              <div className="space-y-1.5 max-h-48 overflow-y-auto overscroll-contain pr-1 mt-2.5 pt-2 border-t border-stone-200/50 dark:border-stone-700/50 animate-in fade-in">
                 {placedRelics.filter(Boolean).map((relic) => (
                   <div
                     key={relic!.id}

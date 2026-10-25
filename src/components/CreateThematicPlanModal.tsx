@@ -5,6 +5,7 @@ import { X, PlusCircle, RefreshCw, Sparkles, KeyRound, Check } from 'lucide-reac
 import { PursuitPlan, PlanCategory, UserProfile } from '../types';
 import { CODE_EMOJIS } from './JoinByCodeModal';
 import { getUTC8DateString, addDaysUTC8, diffDaysUTC8 } from '../lib/dateUtils';
+import { useBodyScrollLock } from '../lib/scrollLock';
 
 interface CreateThematicPlanModalProps {
   isOpen: boolean;
@@ -127,14 +128,19 @@ export const CreateThematicPlanModal: React.FC<CreateThematicPlanModalProps> = (
     onClose();
   };
 
+  useBodyScrollLock(isOpen);
+  if (!isOpen) return null;
+
   return (
     <div
+      role="dialog"
+      aria-modal="true"
       onClick={onClose}
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/40 backdrop-blur-sm animate-in fade-in duration-200"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/40 backdrop-blur-sm animate-in fade-in duration-200 touch-none overscroll-none"
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="bg-white rounded-3xl w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-2xl border border-stone-200 p-4 sm:p-7 relative"
+        className="bg-white rounded-3xl w-full max-w-lg max-h-[90vh] overflow-y-auto overscroll-contain shadow-2xl border border-stone-200 p-4 sm:p-7 relative"
       >
         <button
           onClick={onClose}

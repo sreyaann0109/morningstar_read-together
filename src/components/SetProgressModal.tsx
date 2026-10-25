@@ -10,6 +10,7 @@ import {
   TOTAL_NT_DAYS,
   TOTAL_NT_CHAPTERS,
 } from '../data/ntBibleData';
+import { useBodyScrollLock } from '../lib/scrollLock';
 
 interface SetProgressModalProps {
   isOpen: boolean;
@@ -61,14 +62,19 @@ export const SetProgressModal: React.FC<SetProgressModalProps> = ({
     onClose();
   };
 
+  useBodyScrollLock(isOpen);
+  if (!isOpen) return null;
+
   return (
     <div
+      role="dialog"
+      aria-modal="true"
       onClick={onClose}
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-in fade-in duration-200"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-in fade-in duration-200 touch-none overscroll-none"
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="bg-white rounded-3xl max-w-md w-full shadow-2xl border border-stone-200 overflow-hidden transform transition-all animate-in zoom-in-95 duration-200"
+        className="bg-white rounded-3xl max-w-md w-full max-h-[90vh] overflow-y-auto overscroll-contain shadow-2xl border border-stone-200 transform transition-all animate-in zoom-in-95 duration-200"
         role="dialog"
         aria-modal="true"
         aria-labelledby="set-progress-title"
