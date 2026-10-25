@@ -118,6 +118,7 @@ export interface UserProfile {
   joinedInviteCodes?: string[]; // 已加入主題之 6-Emoji 邀請碼
   sanctuary?: SanctuaryConfig; // 個人追求帳幕自訂陳設
   planSanctuaries?: Record<string, SanctuaryConfig>; // 各追求主題專屬帳幕自訂陳設
+  dailyHistory?: Record<string, number>; // 追求地圖每日追求歷史紀錄 (Key: YYYY-MM-DD -> 篇/章數)
   passwordResetRequested?: boolean; // 是否送出了忘記密碼申請 (待管理員一鍵重設)
   mustChangePassword?: boolean; // 是否需強制更改密碼後方可進入
   tempPassword?: string; // 系統產生的 10 位臨時密碼，直到使用者重設完成後清除

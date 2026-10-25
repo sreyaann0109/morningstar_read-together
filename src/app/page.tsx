@@ -139,19 +139,32 @@ const loadUserData = (targetUser: UserProfile, sourcePlansOverride?: PursuitPlan
   }
 };
 
-// 追求地圖：讀取個人每日追求單位歷史記錄（不存在時依 streak 與追求歷史產生真實紀錄）
+// 追求地圖：讀取個人每日追求單位歷史記錄（優先使用雲端資料庫 targetUser.dailyHistory）
 const loadUserDailyHistory = (targetUser: UserProfile): Record<string, number> => {
+  // 1. 優先使用雲端資料庫中的 dailyHistory
+  if (
+    targetUser.dailyHistory &&
+    typeof targetUser.dailyHistory === 'object' &&
+    Object.keys(targetUser.dailyHistory).length > 0
+  ) {
+    try {
+      localStorage.setItem(getUserStorageKey(targetUser.id, 'daily_units_history'), JSON.stringify(targetUser.dailyHistory));
+    } catch (e) {}
+    return targetUser.dailyHistory;
+  }
+
+  // 2. 本地快取 (localStorage) 作為離線或過渡備援
   try {
     const stored = localStorage.getItem(getUserStorageKey(targetUser.id, 'daily_units_history'));
     if (stored !== null) {
       const parsed = JSON.parse(stored);
-      if (parsed && typeof parsed === 'object') {
+      if (parsed && typeof parsed === 'object' && Object.keys(parsed).length > 0) {
         return parsed;
       }
     }
   } catch (e) {}
 
-  // 預設依 streak 與近月天數初始化真實追求數據（若 streak 為 0 則預設為空，嚴格杜絕幽靈方格）
+  // 3. 預設依 streak 與近月天數初始化真實追求數據（若 streak 為 0 則預設為空，嚴格杜絕幽靈方格）
   const initialHistory: Record<string, number> = {};
   const todayStr = getUTC8DateString();
   const streak = targetUser.streakDays || 0;
@@ -415,8 +428,11 @@ export default function Home() {
         const { activeProfile, activeJoinedIds, completedToday } = loadUserData(initialUser);
         setUser(activeProfile);
         setJoinedPlanIds(activeJoinedIds);
-        setIsCompletedToday(completedToday);
-        setDailyPursuitHistory(loadUserDailyHistory(activeProfile));
+        const loadedDailyHistory = loadUserDailyHistory(activeProfile);
+        setDailyPursuitHistory(loadedDailyHistory);
+        if (!activeProfile.dailyHistory || Object.keys(activeProfile.dailyHistory).length === 0) {
+          activeProfile.dailyHistory = loadedDailyHistory;
+        }
 
         if (activeJoinedIds.length > 0) {
           setSelectedPlanId(activeJoinedIds[0]);
@@ -521,12 +537,31 @@ export default function Home() {
               (u) => u.id === currentUser.id || u.email.toLowerCase() === currentUser.email.toLowerCase()
             );
             if (remote) {
+              const remoteDailyHistory =
+                remote.dailyHistory && typeof remote.dailyHistory === 'object' && Object.keys(remote.dailyHistory).length > 0
+                  ? remote.dailyHistory
+                  : currentUser.dailyHistory;
+
               const updated = {
                 ...currentUser,
                 ...remote,
+                dailyHistory: remoteDailyHistory,
                 role: remote.role || currentUser.role,
               };
               userRef.current = updated;
+              if (remoteDailyHistory && Object.keys(remoteDailyHistory).length > 0) {
+                setDailyPursuitHistory(remoteDailyHistory);
+                try {
+                  localStorage.setItem(getUserStorageKey(currentUser.id, 'daily_units_history'), JSON.stringify(remoteDailyHistory));
+                } catch (e) {}
+              }
+              if (
+                (!remote.dailyHistory || Object.keys(remote.dailyHistory).length === 0) &&
+                remoteDailyHistory &&
+                Object.keys(remoteDailyHistory).length > 0
+              ) {
+                syncUsersToBackend(allUsersRef.current.map((u) => (u.id === updated.id ? updated : u)));
+              }
               try {
                 sessionStorage.setItem('morningstar_current_user', JSON.stringify(updated));
                 localStorage.setItem(getUserStorageKey(currentUser.id, 'profile'), JSON.stringify(updated));
@@ -589,12 +624,24 @@ export default function Home() {
               (u) => u.id === currentUser.id || u.email.toLowerCase() === currentUser.email.toLowerCase()
             );
             if (remote) {
+              const remoteDailyHistory =
+                remote.dailyHistory && typeof remote.dailyHistory === 'object' && Object.keys(remote.dailyHistory).length > 0
+                  ? remote.dailyHistory
+                  : currentUser.dailyHistory;
+
               const updated = {
                 ...currentUser,
                 ...remote,
+                dailyHistory: remoteDailyHistory,
                 role: remote.role || currentUser.role,
               };
               userRef.current = updated;
+              if (remoteDailyHistory && Object.keys(remoteDailyHistory).length > 0) {
+                setDailyPursuitHistory(remoteDailyHistory);
+                try {
+                  localStorage.setItem(getUserStorageKey(currentUser.id, 'daily_units_history'), JSON.stringify(remoteDailyHistory));
+                } catch (e) {}
+              }
               try {
                 sessionStorage.setItem('morningstar_current_user', JSON.stringify(updated));
                 localStorage.setItem(getUserStorageKey(currentUser.id, 'profile'), JSON.stringify(updated));
@@ -1673,6 +1720,7 @@ export default function Home() {
       ...target,
       streakDays: 0,
       totalChaptersRead: 0,
+      dailyHistory: {},
     };
 
     const nextUsers = currentUsers.map((u) => (u.id === userId ? updatedTarget : u));
@@ -1760,6 +1808,7 @@ export default function Home() {
       ...target,
       streakDays: prevStreak,
       totalChaptersRead: prevChapters,
+      dailyHistory: prevDailyHistory,
     };
 
     const nextAll = currentUsers.map((u) => (u.id === userId ? restoredTarget : u));
@@ -1940,21 +1989,20 @@ export default function Home() {
     }
 
     const todayStr = getUTC8DateString();
-    setDailyPursuitHistory((prev) => {
-      const cur = prev[todayStr] || 0;
-      const nextVal = nextState ? cur + (chapterDelta || 1) : Math.max(0, cur - (chapterDelta || 1));
-      const updated = { ...prev, [todayStr]: nextVal };
-      try {
-        localStorage.setItem(getUserStorageKey(user.id, 'daily_units_history'), JSON.stringify(updated));
-      } catch (e) {}
-      return updated;
-    });
+    const curVal = dailyPursuitHistory[todayStr] || 0;
+    const nextVal = nextState ? curVal + (chapterDelta || 1) : Math.max(0, curVal - (chapterDelta || 1));
+    const nextDailyHistory = { ...dailyPursuitHistory, [todayStr]: nextVal };
+    setDailyPursuitHistory(nextDailyHistory);
+    try {
+      localStorage.setItem(getUserStorageKey(user.id, 'daily_units_history'), JSON.stringify(nextDailyHistory));
+    } catch (e) {}
 
     if (nextState) {
       updateCurrentUserAndSync((prev) => ({
         ...prev,
         streakDays: prev.streakDays + 1,
         totalChaptersRead: prev.totalChaptersRead + (chapterDelta || 1),
+        dailyHistory: nextDailyHistory,
       }));
       showToast('✨ 今日追求完成！晨星在心裡出現，追求帳幕已累積屬靈信物！');
     } else {
@@ -1962,6 +2010,7 @@ export default function Home() {
         ...prev,
         streakDays: Math.max(0, prev.streakDays - 1),
         totalChaptersRead: Math.max(0, prev.totalChaptersRead - (chapterDelta || 1)),
+        dailyHistory: nextDailyHistory,
       }));
       showToastWithAction(
         '已取消今日打卡狀態',
@@ -2066,22 +2115,21 @@ export default function Home() {
       localStorage.setItem(getUserStorageKey(user.id, 'completed_today_date'), batchDateStr);
     } catch (e) {}
 
+    const todayStr = getUTC8DateString();
+    const curVal = dailyPursuitHistory[todayStr] || 0;
+    const nextDailyHistory = { ...dailyPursuitHistory, [todayStr]: curVal + deltaChapters };
+    setDailyPursuitHistory(nextDailyHistory);
+    try {
+      localStorage.setItem(getUserStorageKey(user.id, 'daily_units_history'), JSON.stringify(nextDailyHistory));
+    } catch (e) {}
+
     // Update user and sync to backend
     updateCurrentUserAndSync((prev) => ({
       ...prev,
       totalChaptersRead: prev.totalChaptersRead + deltaChapters,
       streakDays: prevPlanCompleted ? prev.streakDays : prev.streakDays + 1,
+      dailyHistory: nextDailyHistory,
     }));
-
-    const todayStr = getUTC8DateString();
-    setDailyPursuitHistory((prev) => {
-      const cur = prev[todayStr] || 0;
-      const updated = { ...prev, [todayStr]: cur + deltaChapters };
-      try {
-        localStorage.setItem(getUserStorageKey(user.id, 'daily_units_history'), JSON.stringify(updated));
-      } catch (e) {}
-      return updated;
-    });
 
     setIsCompletedToday(true);
     setProgressUndo(snapshot);
@@ -2126,21 +2174,20 @@ export default function Home() {
     } catch (e) {}
 
     const deltaRevert = snap.newCompletedUnits - snap.prevCompletedUnits;
+    const todayStr = getUTC8DateString();
+    const curVal = dailyPursuitHistory[todayStr] || 0;
+    const nextDailyHistory = { ...dailyPursuitHistory, [todayStr]: Math.max(0, curVal - deltaRevert) };
+    setDailyPursuitHistory(nextDailyHistory);
+    try {
+      localStorage.setItem(getUserStorageKey(user.id, 'daily_units_history'), JSON.stringify(nextDailyHistory));
+    } catch (e) {}
+
     updateCurrentUserAndSync((prev) => ({
       ...prev,
       totalChaptersRead: Math.max(0, prev.totalChaptersRead - deltaRevert),
       streakDays: !snap.prevTodayCompleted ? Math.max(0, prev.streakDays - 1) : prev.streakDays,
+      dailyHistory: nextDailyHistory,
     }));
-
-    const todayStr = getUTC8DateString();
-    setDailyPursuitHistory((prev) => {
-      const cur = prev[todayStr] || 0;
-      const updated = { ...prev, [todayStr]: Math.max(0, cur - deltaRevert) };
-      try {
-        localStorage.setItem(getUserStorageKey(user.id, 'daily_units_history'), JSON.stringify(updated));
-      } catch (e) {}
-      return updated;
-    });
 
     setIsCompletedToday(snap.prevTodayCompleted);
     setProgressUndo(null);
