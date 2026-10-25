@@ -388,14 +388,25 @@ npm run build
     * **同伴帳幕互訪真實呈現**：聖徒點擊同伴頭像造訪同伴追求帳幕時，袖珍追求地圖直接由雲端資料庫拉取同伴真實歷史紀錄，不再因跨裝置而顯示空方格或預設假資料。
 
   * **追求帳幕自訂佈置零回溯雲端持久化 (Sanctuary Customization Zero-Rollback Cloud Persistence)**：
-    * **徹底根治自訂回溯（Rollback）病因**：先前因背景定時輪詢（Polling）及初次頁面加載時，若雲端回傳之使用者物件未帶有 `sanctuary` 或各主題 `planSanctuaries`，物件展開運算子（`...remote`）會以 `undefined` 覆寫當前聖徒已精心佈置之帳幕設定，致使氛圍、座右銘與擺放信物在數秒內回溯至預設值。
-    * **嚴格安全合併防覆寫 (Safe Null-Resilient Merge)**：
-      * 於頁面載入（`loadUserData`）、初始 API 同步與 2.5 秒定時輪詢（`syncFromDatabaseAndStorage`）中，全面實裝 `safeSanctuary` 與 `mergedPlanSanctuaries` 雙向保護，禁止遠端空值抹除本地自訂。
-      * 實裝自動修補機制（Auto-Sync Missing Sanctuary）：若偵測到本地有帳幕陳設但 Supabase 尚未補全，系統立即自動雙向推送到 Supabase PostgreSQL，永久保存於雲端權威庫。
-    * **專屬本機備援持久化 (Dedicated Storage Fallback)**：
-      * 每次更新帳幕時，除寫入全域 Profile 與 Supabase 雲端外，額外將設定原子化寫入專屬本地鍵（`getUserStorageKey(uid, 'sanctuary')` 與 `getUserStorageKey(uid, 'plan_sanctuaries')`），確保即使快取遭清除仍可即時無損復原。
-    * **自訂彈窗信物陳設防禦 (SanctuaryCustomizeModal Slot Preservation)**：
-      * 佈置彈窗開闔時，完整保留已配置之信物清單（`placedRelicIds`），不再因組件重新渲染或解鎖進度計算時差而誤將信物重設為空陣列。
+    * **徹底根治自訂回溯（Rollback）四大連鎖病因**：
+      1. **彈窗狀態被背景輪詢強制重置**：`currentSanctuaryConfig` 原先在每次主層重新渲染時生成新物件引用，觸發彈窗內部 `useEffect` 在聖徒編輯時無預警將表單重置回舊設定。
+      2. **遠端合併順序覆寫本地 (Merge Priority Bug)**：輪詢時原先將遠端放在展開運算子右側，導致遠端尚未寫入完畢之舊資料覆寫了本地剛儲存好的設定。
+      3. **掛載時參照脫靶 (Mount Ref Desync)**：初次掛載解析 `loadUserData` 時未同步賦值 `userRef.current`，導致非同步操作短暫將儲存對象指向預設同工帳號。
+      4. **突變無冷卻鎖引發競態 (Race Condition)**：儲存帳幕時未調用突變鎖，使背景輪詢拉回寫入中的舊資料。
+    * **五重架構級安全防護機制**：
+      * **① 彈窗開闔狀態單向邊緣保護 (Modal State Open-Transition Guard)**：
+        - 於 `SanctuaryCustomizeModal` 內實裝 `prevIsOpenRef` 守衛，嚴格限制「僅在彈窗由關閉轉換為開啟（`isOpen && !prevIsOpenRef.current`）時初始化一次」，編輯過程中即使主頁面重渲染亦絕不重置。
+        - 主頁面透過 `useMemo` 將 `currentSanctuaryConfig` 深度鎖定，確保物件引用在設定未實質變更時保持絕對穩定。
+      * **② 本地權威優先合併準則 (Local-Authoritative Merge Principle)**：
+        - 確立「聖徒本機當前操作為追求帳幕自訂陳設之最高權威來源」。
+        - 於初次資料獲取與 2.5 秒定時輪詢中，專屬主題陳設一律採用 `{ ...remote.planSanctuaries, ...currentUser.planSanctuaries }` 合併順序，本地最新配置享有最高優先權。
+        - 雙向校驗機制：若偵測到本地設定與遠端不一致，即刻由本地主動觸發雙向推播同步至 Supabase PostgreSQL，使雲端權威庫自動校準更新。
+      * **③ 掛載同步參照鎖定 (Mount Synchronous Ref Binding)**：
+        - 在 `useEffect` 初次掛載解析 `loadUserData` 當下，立即同步賦值 `userRef.current = activeProfile`，杜絕任何微任務時差造成的參照錯位。
+      * **④ 突變狀態冷卻鎖 (Mutation Cooldown Lock)**：
+        - 點擊「保存帳幕佈置」及底層 `rawSyncUsers` 執行時，全面調用 `markMutationStart()` 觸發 4 秒突變保護期，期間所有定時輪詢自動靜默屏蔽，徹底阻斷競態拉回舊資料。
+      * **⑤ 專屬本機備援持久化 (Dedicated Storage Fallback)**：
+        - 每次儲存同步原子化寫入專屬本地鍵（`getUserStorageKey(uid, 'sanctuary')` 與 `getUserStorageKey(uid, 'plan_sanctuaries')`），離線與頁面刷新皆可立時精準復原。
 
 ---
 
