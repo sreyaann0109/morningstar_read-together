@@ -47,7 +47,7 @@ export function addDaysUTC8(dateStr: string, days: number): string {
 
 /**
  * 將貼文或通知的時間字串轉為簡潔動態相對時間 (m, h, d, w)
- * 例如: 1m, 15m, 2h, 3d, 1w
+ * 例如: 0m, 1m, 15m, 2h, 3d, 1w
  * 若舊資料無有效時間字串，嘗試自 ID 解析時間戳（如 post-1729864234567）
  */
 export function formatRelativeTime(timeStr?: string, entityId?: string): string {
@@ -72,15 +72,11 @@ export function formatRelativeTime(timeStr?: string, entityId?: string): string 
   }
 
   if (!timeMs) {
-    return '1m';
+    return '0m';
   }
 
   const now = Date.now();
   const diffSec = Math.max(0, Math.floor((now - timeMs) / 1000));
-
-  if (diffSec < 60) {
-    return '1m';
-  }
 
   const diffMin = Math.floor(diffSec / 60);
   if (diffMin < 60) {
