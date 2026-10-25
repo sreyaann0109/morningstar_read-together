@@ -2883,15 +2883,6 @@ export default function Home() {
                     <span className="text-[10px] text-stone-600 bg-white/80 px-2 py-0.5 rounded-full border border-amber-200/50">
                       個人身份：{user.name}
                     </span>
-                    {isLoggedIn && user.role === 'admin' && (
-                      <button
-                        onClick={() => setIsAdminMode(true)}
-                        className="text-[10px] font-semibold text-amber-800 bg-amber-100/80 hover:bg-amber-200/80 px-2 py-0.5 rounded-full border border-amber-300 flex items-center gap-1 transition-colors"
-                      >
-                        <ShieldCheck className="w-3 h-3 text-amber-700" />
-                        <span>切換管理模式</span>
-                      </button>
-                    )}
                   </div>
                   <p className="text-xs text-stone-600 font-serif">
                     「直等到天發亮，晨星在你們心裏出現，你們就作得好了。」（彼後一19）
@@ -3098,15 +3089,6 @@ export default function Home() {
         {/* Footer */}
         <footer className="mt-12 pt-6 border-t border-stone-200/60 text-center text-xs text-stone-400 flex flex-col sm:flex-row items-center justify-between gap-3">
           <span>晨星共行 © 2026 · 與清心呼求主的人一同竭力追求</span>
-          {isLoggedIn && user.role === 'admin' && (
-            <button
-              onClick={() => setIsAdminMode((prev) => !prev)}
-              className="text-stone-400 hover:text-amber-700 transition-colors flex items-center gap-1 hover:underline"
-            >
-              <ShieldCheck className="w-3.5 h-3.5 text-amber-600" />
-              <span>{isAdminMode ? '切換回一般使用者模式' : '切換至管理員模式'}</span>
-            </button>
-          )}
         </footer>
       </main>
 

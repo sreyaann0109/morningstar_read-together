@@ -144,6 +144,9 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   const [memberModalTab, setMemberModalTab] = useState<'members' | 'add'>('members');
   const [memberSearchQuery, setMemberSearchQuery] = useState('');
 
+  // Floating User Detail & Settings Modal state (點選聖徒卡片浮起之多設定彈窗)
+  const [selectedUserIdForModal, setSelectedUserIdForModal] = useState<string | null>(null);
+
   // Accordion Expand/Collapse States (Collapsed by default so page is never overly long)
   const [expandedPlanIds, setExpandedPlanIds] = useState<Set<string>>(new Set());
   const [expandedUserIds, setExpandedUserIds] = useState<Set<string>>(new Set());
@@ -448,19 +451,13 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
           </div>
         </div>
 
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 pt-2 border-t border-stone-800/80">
+        <div className="pt-2 border-t border-stone-800/80">
           <button
             onClick={onOpenCreatePlan}
-            className="flex-1 py-2 px-3.5 rounded-xl bg-amber-500 hover:bg-amber-600 active:scale-98 text-white font-bold text-xs flex items-center justify-center gap-1.5 transition-all shadow-xs"
+            className="w-full sm:w-auto py-2 px-4 rounded-xl bg-amber-500 hover:bg-amber-600 active:scale-98 text-white font-bold text-xs flex items-center justify-center gap-1.5 transition-all shadow-xs"
           >
             <Plus className="w-4 h-4" />
             <span>開啟新追求主題</span>
-          </button>
-          <button
-            onClick={onSwitchToUserMode}
-            className="py-2 px-3.5 rounded-xl bg-stone-800 hover:bg-stone-700 active:scale-98 border border-stone-700 text-stone-200 text-xs font-semibold flex items-center justify-center transition-all"
-          >
-            返回一般模式
           </button>
         </div>
       </div>
@@ -582,15 +579,6 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                 <Sliders className="w-4 h-4 flex-shrink-0" />
                 <span className="whitespace-nowrap">設定</span>
               </div>
-              <span
-                className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
-                  activeCategory === 'settings'
-                    ? 'bg-white/20 text-white'
-                    : 'bg-stone-200/70 text-stone-600'
-                }`}
-              >
-                8 項
-              </span>
             </button>
           </div>
         </aside>
@@ -600,7 +588,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
           {/* ======================================================== */}
           {/* CATEGORY 1: 追求主題管理 (Collapsible Accordion Items)     */}
           {/* ======================================================== */}
-          {(activeCategory === 'plans' || activeCategory === 'users') && (
+          {activeCategory === 'plans' && (
             <div className="space-y-3">
               {/* Header Bar with Select All & Expand/Collapse All */}
               <div className="flex items-center justify-between px-1 flex-wrap gap-2">
@@ -625,15 +613,6 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setActiveCategory('users')}
-                    className="px-2.5 py-1 rounded-xl border border-stone-200 bg-white hover:bg-amber-50 text-stone-700 hover:text-amber-900 text-xs font-bold flex items-center gap-1.5 shadow-2xs transition-colors"
-                    title="以獨立浮動彈窗開啟聖徒名冊與帳號管理"
-                  >
-                    <Users className="w-3.5 h-3.5 text-amber-600" />
-                    <span>👥 聖徒名冊 ({allUsers.length})</span>
-                  </button>
                   {plans.length > 0 && (
                     <button
                       type="button"
@@ -1051,41 +1030,11 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
           )}
 
           {/* ======================================================== */}
-          {/* CATEGORY 2: 聖徒名冊與帳號 (獨立浮動彈窗 Modal)           */}
+          {/* CATEGORY 2: 聖徒名冊與帳號                               */}
           {/* ======================================================== */}
           {activeCategory === 'users' && (
-            <div
-              onClick={() => setActiveCategory('plans')}
-              className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-stone-900/50 backdrop-blur-xs animate-in fade-in duration-200"
-            >
-              <div
-                onClick={(e) => e.stopPropagation()}
-                className="bg-white rounded-3xl w-full max-w-4xl max-h-[90vh] flex flex-col shadow-2xl border border-stone-200 overflow-hidden animate-in zoom-in-95 duration-200"
-              >
-                {/* Modal Header */}
-                <div className="p-4 sm:p-5 border-b border-stone-200/80 flex items-center justify-between bg-stone-50/80 flex-shrink-0">
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-9 h-9 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center flex-shrink-0">
-                      <Users className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <h3 className="font-bold text-base text-stone-900">聖徒名冊與帳號管理</h3>
-                      <p className="text-xs text-stone-500">共 {allUsers.length} 位註冊聖徒與管理服事者</p>
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setActiveCategory('plans')}
-                    className="p-2 rounded-xl text-stone-400 hover:text-stone-700 hover:bg-stone-200/60 transition-colors"
-                    title="關閉聖徒名冊"
-                  >
-                    <X className="w-5 h-5" />
-                  </button>
-                </div>
-
-                {/* Modal Scrollable Body */}
-                <div className="p-4 sm:p-6 overflow-y-auto space-y-4 flex-1">
-                  {/* Search & Role Filters */}
+            <div className="space-y-3">
+              {/* Search & Role Filters */}
               <div className="bg-white rounded-3xl border border-stone-200/90 p-4 shadow-2xs space-y-3">
                 <div className="relative">
                   <Search className="w-4 h-4 text-stone-400 absolute left-3 top-1/2 -translate-y-1/2" />
@@ -1295,22 +1244,10 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                 </div>
 
                 {filteredUsers.length > 0 && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (expandedUserIds.size === filteredUsers.length) {
-                        setExpandedUserIds(new Set());
-                      } else {
-                        setExpandedUserIds(new Set(filteredUsers.map((u) => u.id)));
-                      }
-                    }}
-                    className="text-[11px] font-semibold text-amber-800 hover:text-amber-950 flex items-center gap-1 transition-colors self-end sm:self-auto"
-                  >
-                    <ChevronsUpDown className="w-3.5 h-3.5" />
-                    <span>
-                      {expandedUserIds.size === filteredUsers.length ? '全部收合' : '展開全部'}
-                    </span>
-                  </button>
+                  <span className="text-[11px] text-stone-400 self-end sm:self-auto flex items-center gap-1 font-medium">
+                    <Sliders className="w-3 h-3 text-amber-600" />
+                    <span>點選聖徒卡片可開啟詳細設定與生活數據</span>
+                  </span>
                 )}
               </div>
 
@@ -1408,368 +1345,414 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                   </div>
                 ) : (
                   filteredUsers.map((u) => {
-                    const isExpanded = expandedUserIds.has(u.id);
                     const isSelf = u.id === adminUser.id;
                     const isUserAdmin = u.role === 'admin';
+                    const isSelected = selectedUserIds.has(u.id);
 
                     return (
                       <div
                         key={u.id}
-                        className={`rounded-2xl border transition-all ${
-                          isExpanded
-                            ? 'bg-white border-amber-400 ring-2 ring-amber-100 shadow-sm'
-                            : 'bg-white border-stone-200/90 hover:border-amber-300 hover:bg-stone-50/40 shadow-2xs'
+                        onClick={() => {
+                          if (selectedUserIds.size > 0) {
+                            toggleSelectUser(u.id);
+                          } else {
+                            setSelectedUserIdForModal(u.id);
+                          }
+                        }}
+                        className={`rounded-2xl border transition-all p-3 sm:p-3.5 flex items-center justify-between gap-3 cursor-pointer group select-none ${
+                          isSelected
+                            ? 'bg-amber-50/60 border-amber-400 ring-2 ring-amber-100 shadow-sm'
+                            : 'bg-white border-stone-200/90 hover:border-amber-300 hover:bg-stone-50/60 shadow-2xs'
                         }`}
                       >
-                        {/* Summary Header Row (Always Visible, Click to Toggle; in batch mode it toggles selection instead of expanding) */}
-                        <div
-                          onClick={() => {
-                            if (selectedUserIds.size > 0) {
-                              toggleSelectUser(u.id);
-                            } else {
-                              toggleUserExpanded(u.id);
-                            }
-                          }}
-                          className="p-3 sm:p-3.5 flex items-center justify-between gap-3 cursor-pointer group select-none"
-                        >
-                          <div className="flex items-center gap-2.5 min-w-0">
-                            {/* Batch Selection Checkbox */}
-                            <div
-                              onClick={(e) => toggleSelectUser(u.id, e)}
-                              className="p-1 rounded-lg hover:bg-stone-100 cursor-pointer text-stone-400 hover:text-amber-600 transition-colors flex-shrink-0"
-                              title="選取進行批量處理"
-                            >
-                              {selectedUserIds.has(u.id) ? (
-                                <CheckSquare className="w-4 h-4 text-amber-600" />
-                              ) : (
-                                <Square className="w-4 h-4 text-stone-300 hover:text-stone-500" />
-                              )}
-                            </div>
-
-                            <div className="w-10 h-10 rounded-2xl bg-amber-50 border border-amber-200 flex items-center justify-center text-xl flex-shrink-0 shadow-inner group-hover:scale-105 transition-transform">
-                              {u.avatar}
-                            </div>
-                            <div className="min-w-0">
-                              <div className="flex items-center gap-1.5 flex-wrap">
-                                <span className="font-extrabold text-sm text-stone-900 group-hover:text-amber-900 transition-colors">
-                                  {u.name}
-                                </span>
-                                {isUserAdmin ? (
-                                  <span className="text-[10px] font-bold bg-amber-100 text-amber-900 border border-amber-300 px-2 py-0.2 rounded-full flex items-center gap-0.5">
-                                    <ShieldCheck className="w-2.5 h-2.5 text-amber-700" />
-                                    管理員
-                                  </span>
-                                ) : (
-                                  <span className="text-[10px] font-medium text-stone-500 bg-stone-100 px-2 py-0.2 rounded-full">
-                                    聖徒
-                                  </span>
-                                )}
-                                {isSelf && (
-                                  <span className="text-[9px] bg-stone-800 text-white px-1.5 py-0.2 rounded-full font-semibold">
-                                    本人
-                                  </span>
-                                )}
-                                {u.passwordResetRequested && (
-                                  <span className="text-[10px] font-bold bg-amber-500 text-white px-2 py-0.2 rounded-full flex items-center gap-1 animate-pulse">
-                                    ⚠️ 申請重設中
-                                  </span>
-                                )}
-                                {u.mustChangePassword && !u.passwordResetRequested && (
-                                  <span className="text-[10px] font-bold bg-amber-100 text-amber-900 border border-amber-300 px-2 py-0.2 rounded-full">
-                                    🔑 待改密碼
-                                  </span>
-                                )}
-                              </div>
-                              <div className="text-xs text-stone-400 font-mono flex items-center gap-1 mt-0.5 truncate">
-                                <span>{u.email}</span>
-                              </div>
-                            </div>
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          {/* Batch Selection Checkbox */}
+                          <div
+                            onClick={(e) => toggleSelectUser(u.id, e)}
+                            className="p-1 rounded-lg hover:bg-stone-100 cursor-pointer text-stone-400 hover:text-amber-600 transition-colors flex-shrink-0"
+                            title="選取進行批量處理"
+                          >
+                            {isSelected ? (
+                              <CheckSquare className="w-4 h-4 text-amber-600" />
+                            ) : (
+                              <Square className="w-4 h-4 text-stone-300 hover:text-stone-500" />
+                            )}
                           </div>
 
-                          {/* Right: Key Summary Stat Pill + Chevron */}
-                          <div className="flex items-center gap-2.5 flex-shrink-0">
-                            <div className="hidden sm:flex items-center gap-2 text-xs bg-stone-100/90 px-2.5 py-1 rounded-xl text-stone-700 font-semibold border border-stone-200/60">
-                              <span className="flex items-center gap-1 text-amber-700">
-                                <Flame className="w-3.5 h-3.5" />
-                                {u.streakDays}天
+                          <div className="w-10 h-10 rounded-2xl bg-amber-50 border border-amber-200 flex items-center justify-center text-xl flex-shrink-0 shadow-inner group-hover:scale-105 transition-transform">
+                            {u.avatar}
+                          </div>
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span className="font-extrabold text-sm text-stone-900 group-hover:text-amber-900 transition-colors">
+                                {u.name}
                               </span>
-                              <span className="text-stone-300">|</span>
-                              <span className="flex items-center gap-1 text-emerald-700">
-                                <BookMarked className="w-3.5 h-3.5" />
-                                {u.totalChaptersRead}篇
-                              </span>
-                            </div>
-
-                            <div className="flex items-center gap-1 text-xs font-semibold text-stone-400 group-hover:text-amber-800 transition-colors">
-                              <span className="hidden md:inline text-[11px]">
-                                {isExpanded ? '收合' : '展開詳情'}
-                              </span>
-                              {isExpanded ? (
-                                <ChevronUp className="w-4 h-4 text-amber-600" />
+                              {isUserAdmin ? (
+                                <span className="text-[10px] font-bold bg-amber-100 text-amber-900 border border-amber-300 px-2 py-0.2 rounded-full flex items-center gap-0.5">
+                                  <ShieldCheck className="w-2.5 h-2.5 text-amber-700" />
+                                  管理員
+                                </span>
                               ) : (
-                                <ChevronDown className="w-4 h-4 text-stone-400 group-hover:text-amber-600" />
+                                <span className="text-[10px] font-medium text-stone-500 bg-stone-100 px-2 py-0.2 rounded-full">
+                                  聖徒
+                                </span>
                               )}
+                              {isSelf && (
+                                <span className="text-[9px] bg-stone-800 text-white px-1.5 py-0.2 rounded-full font-semibold">
+                                  本人
+                                </span>
+                              )}
+                              {u.passwordResetRequested && (
+                                <span className="text-[10px] font-bold bg-amber-500 text-white px-2 py-0.2 rounded-full flex items-center gap-1 animate-pulse">
+                                  ⚠️ 申請重設中
+                                </span>
+                              )}
+                              {u.mustChangePassword && !u.passwordResetRequested && (
+                                <span className="text-[10px] font-bold bg-amber-100 text-amber-900 border border-amber-300 px-2 py-0.2 rounded-full">
+                                  🔑 待改密碼
+                                </span>
+                              )}
+                            </div>
+                            <div className="text-xs text-stone-400 font-mono flex items-center gap-1 mt-0.5 truncate">
+                              <span>{u.email}</span>
                             </div>
                           </div>
                         </div>
 
-                        {/* Expanded Full Vertical Details */}
-                        {isExpanded && (
-                          <div className="px-4 pb-4 pt-1 space-y-3.5 border-t border-stone-100 animate-in fade-in duration-150">
-                            {/* 1. Status Notices */}
-                            {u.passwordResetRequested && (
-                              <div className="text-xs font-bold bg-amber-500 text-white px-3 py-1.5 rounded-xl flex items-center gap-1.5 animate-pulse">
-                                <AlertCircle className="w-4 h-4" />
-                                <span>⚠️ 該聖徒正在申請忘記密碼（待管理員核發 10 位臨時密碼）</span>
-                              </div>
-                            )}
-
-                            {u.mustChangePassword && !u.passwordResetRequested && (
-                              <div className="text-xs font-bold bg-amber-100 text-amber-900 border border-amber-300 px-3 py-1.5 rounded-xl flex items-center gap-1.5">
-                                <KeyRound className="w-4 h-4 text-amber-700" />
-                                <span>🔑 已核發 10 位臨時密碼（等待聖徒登入更改為新密碼）</span>
-                              </div>
-                            )}
-
-                            {/* 2. Vertical Row: Pursuit Performance Metrics (Vertical List) */}
-                            <div className="space-y-1.5 p-3 rounded-2xl bg-stone-50/80 border border-stone-200/60">
-                              <span className="text-[11px] font-bold text-stone-600 block mb-1">
-                                📊 個人追求生活數據（各項縱向條列）：
-                              </span>
-                              <div className="flex items-center justify-between text-xs py-1 border-b border-stone-200/50">
-                                <span className="text-stone-500 flex items-center gap-1.5 font-medium">
-                                  <Flame className="w-3.5 h-3.5 text-amber-600" />
-                                  連續追求天數
-                                </span>
-                                <span className="font-extrabold text-stone-900">{u.streakDays} 天</span>
-                              </div>
-                              <div className="flex items-center justify-between text-xs py-1 border-b border-stone-200/50">
-                                <span className="text-stone-500 flex items-center gap-1.5 font-medium">
-                                  <BookMarked className="w-3.5 h-3.5 text-emerald-600" />
-                                  累計閱讀篇數
-                                </span>
-                                <span className="font-extrabold text-stone-900">
-                                  {u.totalChaptersRead} 篇
-                                </span>
-                              </div>
-                              <div className="flex items-center justify-between text-xs py-1">
-                                <span className="text-stone-500 flex items-center gap-1.5 font-medium">
-                                  <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-                                  動態亮光分享
-                                </span>
-                                <span className="font-extrabold text-stone-900">
-                                  {u.totalSharesCount} 則
-                                </span>
-                              </div>
-                            </div>
-
-                            {/* 3. Vertical Row: Thematic Pursuits Participation (Vertical Stack) */}
-                            {plans.length > 0 && (
-                              <div className="space-y-1.5 pt-1">
-                                <span className="text-xs font-bold text-stone-700 block">
-                                  📚 參與的追求主題（各主題直向排列）：
-                                </span>
-                                <div className="space-y-1.5">
-                                  {plans.map((plan) => {
-                                    const isJoined = (plan.members || []).some(
-                                      (m) => m.userId === u.id
-                                    );
-                                    const shortTitle = plan.title.replace(/^主題：/, '');
-                                    return isJoined ? (
-                                      <div
-                                        key={plan.id}
-                                        className="p-2.5 rounded-xl bg-emerald-50/80 border border-emerald-200 flex items-center justify-between text-xs"
-                                      >
-                                        <span className="font-semibold text-emerald-950 flex items-center gap-1.5">
-                                          <Check className="w-3.5 h-3.5 text-emerald-600 flex-shrink-0" />
-                                          《{shortTitle}》
-                                        </span>
-                                        <button
-                                          type="button"
-                                          onClick={() => onRemoveUserFromPlan(plan.id, u.id, u.name)}
-                                          className="px-2.5 py-1 rounded-lg bg-white border border-rose-200 text-rose-700 hover:bg-rose-50 text-[11px] font-semibold transition-colors shadow-2xs"
-                                        >
-                                          使該員退出此主題
-                                        </button>
-                                      </div>
-                                    ) : (
-                                      <div
-                                        key={plan.id}
-                                        className="p-2.5 rounded-xl bg-stone-50 border border-dashed border-stone-200 flex items-center justify-between text-xs"
-                                      >
-                                        <span className="text-stone-500">
-                                          《{shortTitle}》（尚未加入）
-                                        </span>
-                                        <button
-                                          type="button"
-                                          onClick={() => onAddUserToPlan(plan.id, u)}
-                                          className="px-2.5 py-1 rounded-lg bg-amber-500 hover:bg-amber-600 text-white text-[11px] font-bold transition-colors shadow-2xs flex items-center gap-1"
-                                        >
-                                          <Plus className="w-3 h-3" />
-                                          <span>加入此追求</span>
-                                        </button>
-                                      </div>
-                                    );
-                                  })}
-                                </div>
-                              </div>
-                            )}
-
-                            {/* 4. Vertical Row: Temporary Password Box (if active) */}
-                            {u.tempPassword && (u.passwordResetRequested || u.mustChangePassword) && (
-                              <div className="p-3.5 rounded-2xl bg-amber-50/90 border border-amber-300 space-y-2.5 shadow-2xs">
-                                <span className="text-xs font-bold text-amber-950 flex items-center gap-1.5">
-                                  <KeyRound className="w-4 h-4 text-amber-600" />
-                                  10 位臨時登入密碼：
-                                </span>
-                                <div className="text-xl font-mono font-extrabold tracking-widest text-amber-950 bg-white py-2 px-4 rounded-xl border border-amber-300 shadow-2xs select-all text-center">
-                                  {u.tempPassword}
-                                </div>
-                                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      if (typeof navigator !== 'undefined' && navigator.clipboard) {
-                                        navigator.clipboard.writeText(u.tempPassword || '');
-                                      }
-                                      setCopiedTempId(u.id);
-                                      setTimeout(() => setCopiedTempId(null), 2500);
-                                    }}
-                                    className="flex-1 py-2 px-3 bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs rounded-xl shadow-2xs transition-all flex items-center justify-center gap-1.5"
-                                  >
-                                    {copiedTempId === u.id ? (
-                                      <Check className="w-3.5 h-3.5" />
-                                    ) : (
-                                      <Copy className="w-3.5 h-3.5" />
-                                    )}
-                                    <span>{copiedTempId === u.id ? '已複製密碼！' : '一鍵複製臨時密碼'}</span>
-                                  </button>
-                                  {onResetUserPassword && (
-                                    <button
-                                      type="button"
-                                      onClick={() => handleResetPasswordClick(u.id, u.name)}
-                                      className="py-2 px-3 border border-stone-200 bg-white hover:bg-amber-100 text-stone-700 text-xs rounded-xl font-semibold flex items-center justify-center gap-1 transition-colors"
-                                    >
-                                      <RotateCcw className="w-3.5 h-3.5 text-stone-400" />
-                                      <span>換一組臨時碼</span>
-                                    </button>
-                                  )}
-                                </div>
-                              </div>
-                            )}
-
-                            {/* 5. Vertical Row: Admin Action Buttons (Vertical Stack) */}
-                            <div className="space-y-2 pt-2 border-t border-stone-100">
-                              <span className="text-[11px] font-bold text-stone-500 block">
-                                管理操作功能（各項獨立按鈕）：
-                              </span>
-                              <div className="flex flex-col gap-1.5">
-                                {/* Reset Progress Button */}
-                                {onResetUserProgress && (
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      if (
-                                        window.confirm(
-                                          `確定要將【${u.name}】的追求進度重設歸零嗎？（連續天數、累計篇數將歸零）`
-                                        )
-                                      ) {
-                                        onResetUserProgress(u.id, u.name);
-                                      }
-                                    }}
-                                    className="w-full py-2 px-3 rounded-xl border border-stone-200 bg-white hover:bg-amber-50 text-stone-700 hover:text-amber-900 text-xs font-semibold flex items-center justify-between transition-colors shadow-2xs"
-                                  >
-                                    <span className="flex items-center gap-2">
-                                      <RotateCcw className="w-3.5 h-3.5 text-amber-700" />
-                                      重設追求進度（天數與篇數歸零）
-                                    </span>
-                                    <span className="text-[10px] text-stone-400">支援 7 秒立即復原</span>
-                                  </button>
-                                )}
-
-                                {/* Reset Password Button if requested */}
-                                {onResetUserPassword && !isSelf && u.passwordResetRequested && !u.tempPassword && (
-                                  <button
-                                    type="button"
-                                    onClick={() => handleResetPasswordClick(u.id, u.name)}
-                                    className="w-full py-2 px-3 rounded-xl border border-amber-500 bg-amber-500 text-white hover:bg-amber-600 text-xs font-bold flex items-center justify-between shadow-2xs transition-all animate-pulse"
-                                  >
-                                    <span className="flex items-center gap-2">
-                                      <KeyRound className="w-3.5 h-3.5" />
-                                      產生 10 位英數臨時密碼
-                                    </span>
-                                    <span className="text-[10px] text-amber-100">提供該員登入重設</span>
-                                  </button>
-                                )}
-
-                                {/* Role Toggle Button */}
-                                {onToggleUserAdminRole && !isSelf && (
-                                  isUserAdmin ? (
-                                    <button
-                                      type="button"
-                                      onClick={() => {
-                                        if (typeof window !== 'undefined' && window.confirm(`確定要將【${u.name}】解除管理員身分，轉為一般聖徒嗎？`)) {
-                                          onToggleUserAdminRole(u.id, 'user', u.name);
-                                        }
-                                      }}
-                                      className="w-full py-2 px-3 rounded-xl border border-stone-200 bg-white hover:bg-stone-100 text-stone-600 text-xs font-semibold flex items-center justify-between transition-colors shadow-2xs"
-                                    >
-                                      <span className="flex items-center gap-2">
-                                        <ShieldOff className="w-3.5 h-3.5 text-stone-500" />
-                                        解除管理員身分
-                                      </span>
-                                      <span className="text-[10px] text-stone-400">降為一般聖徒</span>
-                                    </button>
-                                  ) : (
-                                    <button
-                                      type="button"
-                                      onClick={() => {
-                                        if (typeof window !== 'undefined' && window.confirm(`確定要將【${u.name}】設為管理員服事者嗎？`)) {
-                                          onToggleUserAdminRole(u.id, 'admin', u.name);
-                                        }
-                                      }}
-                                      className="w-full py-2 px-3 rounded-xl border border-amber-300 bg-amber-50/80 hover:bg-amber-100 text-amber-900 text-xs font-bold flex items-center justify-between transition-colors shadow-2xs"
-                                    >
-                                      <span className="flex items-center gap-2">
-                                        <ShieldCheck className="w-3.5 h-3.5 text-amber-600" />
-                                        設為管理員服事者
-                                      </span>
-                                      <span className="text-[10px] text-amber-700">賦予後台管理權限</span>
-                                    </button>
-                                  )
-                                )}
-
-                                {/* Delete User Button */}
-                                {onDeleteRegisteredUser && !isSelf && (
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      if (typeof window !== 'undefined' && window.confirm(`確定要永久刪除聖徒【${u.name}】的帳號嗎？此操作將同時將其自所有追求主題中退出。`)) {
-                                        onDeleteRegisteredUser(u.id, u.name);
-                                      }
-                                    }}
-                                    className="w-full py-2 px-3 rounded-xl border border-rose-200 bg-rose-50/70 hover:bg-rose-100 text-rose-700 text-xs font-semibold flex items-center justify-between transition-colors shadow-2xs"
-                                  >
-                                    <span className="flex items-center gap-2">
-                                      <Trash2 className="w-3.5 h-3.5 text-rose-600" />
-                                      刪除此聖徒帳號
-                                    </span>
-                                    <span className="text-[10px] text-rose-400">永久移除帳號</span>
-                                  </button>
-                                )}
-                              </div>
-                            </div>
+                        {/* Right: Key Summary Stat Pill + Floating Modal Trigger Pill */}
+                        <div className="flex items-center gap-2.5 flex-shrink-0">
+                          <div className="hidden sm:flex items-center gap-2 text-xs bg-stone-100/90 px-2.5 py-1 rounded-xl text-stone-700 font-semibold border border-stone-200/60">
+                            <span className="flex items-center gap-1 text-amber-700">
+                              <Flame className="w-3.5 h-3.5" />
+                              {u.streakDays}天
+                            </span>
+                            <span className="text-stone-300">|</span>
+                            <span className="flex items-center gap-1 text-emerald-700">
+                              <BookMarked className="w-3.5 h-3.5" />
+                              {u.totalChaptersRead}篇
+                            </span>
                           </div>
-                        )}
+
+                          <div className="flex items-center gap-1.5 text-xs font-bold text-stone-600 group-hover:text-amber-900 bg-stone-100 group-hover:bg-amber-100/80 px-2.5 py-1.5 rounded-xl border border-stone-200/70 group-hover:border-amber-300 transition-all shadow-2xs">
+                            <Sliders className="w-3.5 h-3.5 text-amber-600" />
+                            <span className="text-[11px]">設定詳情</span>
+                          </div>
+                        </div>
                       </div>
                     );
                   })
                 )}
-                </div>
               </div>
+
+              {/* 聖徒詳細設定與管理獨立浮動彈窗 (點選聖徒卡片浮起) */}
+              {selectedUserIdForModal && (() => {
+                const u = allUsers.find((x) => x.id === selectedUserIdForModal);
+                if (!u) return null;
+                const isSelf = u.id === adminUser.id;
+                const isUserAdmin = u.role === 'admin';
+
+                return (
+                  <div
+                    onClick={() => setSelectedUserIdForModal(null)}
+                    className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-stone-900/60 backdrop-blur-xs animate-in fade-in duration-200"
+                  >
+                    <div
+                      onClick={(e) => e.stopPropagation()}
+                      className="bg-white rounded-3xl w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl border border-stone-200 overflow-hidden animate-in zoom-in-95 duration-200"
+                    >
+                      {/* Modal Header */}
+                      <div className="p-4 sm:p-5 border-b border-stone-200/80 flex items-center justify-between bg-stone-50/80 flex-shrink-0">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="w-11 h-11 rounded-2xl bg-amber-50 border border-amber-200 flex items-center justify-center text-2xl flex-shrink-0 shadow-inner">
+                            {u.avatar}
+                          </div>
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <h3 className="font-extrabold text-base text-stone-900 truncate">
+                                {u.name}
+                              </h3>
+                              {isUserAdmin ? (
+                                <span className="text-[10px] font-bold bg-amber-100 text-amber-900 border border-amber-300 px-2 py-0.2 rounded-full flex items-center gap-0.5">
+                                  <ShieldCheck className="w-2.5 h-2.5 text-amber-700" />
+                                  管理員
+                                </span>
+                              ) : (
+                                <span className="text-[10px] font-medium text-stone-500 bg-stone-100 px-2 py-0.2 rounded-full">
+                                  聖徒
+                                </span>
+                              )}
+                              {isSelf && (
+                                <span className="text-[9px] bg-stone-800 text-white px-1.5 py-0.2 rounded-full font-semibold">
+                                  本人
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-xs text-stone-400 font-mono mt-0.5 truncate">{u.email}</p>
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setSelectedUserIdForModal(null)}
+                          className="p-2 rounded-xl text-stone-400 hover:text-stone-700 hover:bg-stone-200/60 transition-colors flex-shrink-0"
+                          title="關閉"
+                        >
+                          <X className="w-5 h-5" />
+                        </button>
+                      </div>
+
+                      {/* Modal Scrollable Body */}
+                      <div className="p-4 sm:p-6 overflow-y-auto space-y-4 flex-1">
+                        {/* 1. Status Notices */}
+                        {u.passwordResetRequested && (
+                          <div className="text-xs font-bold bg-amber-500 text-white px-3 py-1.5 rounded-xl flex items-center gap-1.5 animate-pulse">
+                            <AlertCircle className="w-4 h-4" />
+                            <span>⚠️ 該聖徒正在申請忘記密碼（待管理員核發 10 位臨時密碼）</span>
+                          </div>
+                        )}
+
+                        {u.mustChangePassword && !u.passwordResetRequested && (
+                          <div className="text-xs font-bold bg-amber-100 text-amber-900 border border-amber-300 px-3 py-1.5 rounded-xl flex items-center gap-1.5">
+                            <KeyRound className="w-4 h-4 text-amber-700" />
+                            <span>🔑 已核發 10 位臨時密碼（等待聖徒登入更改為新密碼）</span>
+                          </div>
+                        )}
+
+                        {/* 2. Vertical Row: Pursuit Performance Metrics */}
+                        <div className="space-y-1.5 p-3.5 rounded-2xl bg-stone-50/80 border border-stone-200/60">
+                          <span className="text-[11px] font-bold text-stone-600 block mb-1">
+                            📊 個人追求生活數據：
+                          </span>
+                          <div className="flex items-center justify-between text-xs py-1 border-b border-stone-200/50">
+                            <span className="text-stone-500 flex items-center gap-1.5 font-medium">
+                              <Flame className="w-3.5 h-3.5 text-amber-600" />
+                              連續追求天數
+                            </span>
+                            <span className="font-extrabold text-stone-900">{u.streakDays} 天</span>
+                          </div>
+                          <div className="flex items-center justify-between text-xs py-1 border-b border-stone-200/50">
+                            <span className="text-stone-500 flex items-center gap-1.5 font-medium">
+                              <BookMarked className="w-3.5 h-3.5 text-emerald-600" />
+                              累計閱讀篇數
+                            </span>
+                            <span className="font-extrabold text-stone-900">
+                              {u.totalChaptersRead} 篇
+                            </span>
+                          </div>
+                          <div className="flex items-center justify-between text-xs py-1">
+                            <span className="text-stone-500 flex items-center gap-1.5 font-medium">
+                              <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                              動態亮光分享
+                            </span>
+                            <span className="font-extrabold text-stone-900">
+                              {u.totalSharesCount} 則
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* 3. Thematic Pursuits Participation */}
+                        {plans.length > 0 && (
+                          <div className="space-y-2 pt-1">
+                            <span className="text-xs font-bold text-stone-700 block">
+                              📚 參與的追求主題：
+                            </span>
+                            <div className="space-y-1.5 max-h-56 overflow-y-auto pr-1">
+                              {plans.map((plan) => {
+                                const isJoined = (plan.members || []).some(
+                                  (m) => m.userId === u.id
+                                );
+                                const shortTitle = plan.title.replace(/^主題：/, '');
+                                return isJoined ? (
+                                  <div
+                                    key={plan.id}
+                                    className="p-2.5 rounded-xl bg-emerald-50/80 border border-emerald-200 flex items-center justify-between text-xs"
+                                  >
+                                    <span className="font-semibold text-emerald-950 flex items-center gap-1.5">
+                                      <Check className="w-3.5 h-3.5 text-emerald-600 flex-shrink-0" />
+                                      《{shortTitle}》
+                                    </span>
+                                    <button
+                                      type="button"
+                                      onClick={() => onRemoveUserFromPlan(plan.id, u.id, u.name)}
+                                      className="px-2.5 py-1 rounded-lg bg-white border border-rose-200 text-rose-700 hover:bg-rose-50 text-[11px] font-semibold transition-colors shadow-2xs"
+                                    >
+                                      使該員退出此主題
+                                    </button>
+                                  </div>
+                                ) : (
+                                  <div
+                                    key={plan.id}
+                                    className="p-2.5 rounded-xl bg-stone-50 border border-dashed border-stone-200 flex items-center justify-between text-xs"
+                                  >
+                                    <span className="text-stone-500">
+                                      《{shortTitle}》（尚未加入）
+                                    </span>
+                                    <button
+                                      type="button"
+                                      onClick={() => onAddUserToPlan(plan.id, u)}
+                                      className="px-2.5 py-1 rounded-lg bg-amber-500 hover:bg-amber-600 text-white text-[11px] font-bold transition-colors shadow-2xs flex items-center gap-1"
+                                    >
+                                      <Plus className="w-3 h-3" />
+                                      <span>加入此追求</span>
+                                    </button>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* 4. Temporary Password Box */}
+                        {u.tempPassword && (u.passwordResetRequested || u.mustChangePassword) && (
+                          <div className="p-3.5 rounded-2xl bg-amber-50/90 border border-amber-300 space-y-2.5 shadow-2xs">
+                            <span className="text-xs font-bold text-amber-950 flex items-center gap-1.5">
+                              <KeyRound className="w-4 h-4 text-amber-600" />
+                              10 位臨時登入密碼：
+                            </span>
+                            <div className="text-xl font-mono font-extrabold tracking-widest text-amber-950 bg-white py-2 px-4 rounded-xl border border-amber-300 shadow-2xs select-all text-center">
+                              {u.tempPassword}
+                            </div>
+                            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  if (typeof navigator !== 'undefined' && navigator.clipboard) {
+                                    navigator.clipboard.writeText(u.tempPassword || '');
+                                  }
+                                  setCopiedTempId(u.id);
+                                  setTimeout(() => setCopiedTempId(null), 2500);
+                                }}
+                                className="flex-1 py-2 px-3 bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs rounded-xl shadow-2xs transition-all flex items-center justify-center gap-1.5"
+                              >
+                                {copiedTempId === u.id ? (
+                                  <Check className="w-3.5 h-3.5" />
+                                ) : (
+                                  <Copy className="w-3.5 h-3.5" />
+                                )}
+                                <span>{copiedTempId === u.id ? '已複製密碼！' : '一鍵複製臨時密碼'}</span>
+                              </button>
+                              {onResetUserPassword && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleResetPasswordClick(u.id, u.name)}
+                                  className="py-2 px-3 border border-stone-200 bg-white hover:bg-amber-100 text-stone-700 text-xs rounded-xl font-semibold flex items-center justify-center gap-1 transition-colors"
+                                >
+                                  <RotateCcw className="w-3.5 h-3.5 text-stone-400" />
+                                  <span>換一組臨時碼</span>
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* 5. Admin Action Buttons */}
+                        <div className="space-y-2 pt-2 border-t border-stone-200">
+                          <span className="text-[11px] font-bold text-stone-500 block">
+                            管理操作功能：
+                          </span>
+                          <div className="flex flex-col gap-2">
+                            {/* Reset Progress Button */}
+                            {onResetUserProgress && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  if (
+                                    window.confirm(
+                                      `確定要將【${u.name}】的追求進度重設歸零嗎？（連續天數、累計篇數將歸零）`
+                                    )
+                                  ) {
+                                    onResetUserProgress(u.id, u.name);
+                                  }
+                                }}
+                                className="w-full py-2.5 px-3 rounded-xl border border-stone-200 bg-stone-50 hover:bg-amber-50 text-stone-700 hover:text-amber-900 text-xs font-semibold flex items-center justify-between transition-colors shadow-2xs"
+                              >
+                                <span className="flex items-center gap-2">
+                                  <RotateCcw className="w-3.5 h-3.5 text-amber-700" />
+                                  重設追求進度（天數與篇數歸零）
+                                </span>
+                                <span className="text-[10px] text-stone-400">支援 7 秒立即復原</span>
+                              </button>
+                            )}
+
+                            {/* Reset Password Button if requested */}
+                            {onResetUserPassword && !isSelf && u.passwordResetRequested && !u.tempPassword && (
+                              <button
+                                type="button"
+                                onClick={() => handleResetPasswordClick(u.id, u.name)}
+                                className="w-full py-2.5 px-3 rounded-xl border border-amber-500 bg-amber-500 text-white hover:bg-amber-600 text-xs font-bold flex items-center justify-between shadow-2xs transition-all animate-pulse"
+                              >
+                                <span className="flex items-center gap-2">
+                                  <KeyRound className="w-3.5 h-3.5" />
+                                  產生 10 位英數臨時密碼
+                                </span>
+                                <span className="text-[10px] text-amber-100">提供該員登入重設</span>
+                              </button>
+                            )}
+
+                            {/* Role Toggle Button */}
+                            {onToggleUserAdminRole && !isSelf && (
+                              isUserAdmin ? (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    if (typeof window !== 'undefined' && window.confirm(`確定要將【${u.name}】解除管理員身分，轉為一般聖徒嗎？`)) {
+                                      onToggleUserAdminRole(u.id, 'user', u.name);
+                                    }
+                                  }}
+                                  className="w-full py-2.5 px-3 rounded-xl border border-stone-200 bg-stone-50 hover:bg-stone-100 text-stone-600 text-xs font-semibold flex items-center justify-between transition-colors shadow-2xs"
+                                >
+                                  <span className="flex items-center gap-2">
+                                    <ShieldOff className="w-3.5 h-3.5 text-stone-500" />
+                                    解除管理員身分
+                                  </span>
+                                  <span className="text-[10px] text-stone-400">降為一般聖徒</span>
+                                </button>
+                              ) : (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    if (typeof window !== 'undefined' && window.confirm(`確定要將【${u.name}】設為管理員服事者嗎？`)) {
+                                      onToggleUserAdminRole(u.id, 'admin', u.name);
+                                    }
+                                  }}
+                                  className="w-full py-2.5 px-3 rounded-xl border border-amber-300 bg-amber-50/80 hover:bg-amber-100 text-amber-900 text-xs font-bold flex items-center justify-between transition-colors shadow-2xs"
+                                >
+                                  <span className="flex items-center gap-2">
+                                    <ShieldCheck className="w-3.5 h-3.5 text-amber-600" />
+                                    設為管理員服事者
+                                  </span>
+                                  <span className="text-[10px] text-amber-700">賦予後台管理權限</span>
+                                </button>
+                              )
+                            )}
+
+                            {/* Delete User Button */}
+                            {onDeleteRegisteredUser && !isSelf && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  if (typeof window !== 'undefined' && window.confirm(`確定要永久刪除聖徒【${u.name}】的帳號嗎？此操作將同時將其自所有追求主題中退出。`)) {
+                                    setSelectedUserIdForModal(null);
+                                    onDeleteRegisteredUser(u.id, u.name);
+                                  }
+                                }}
+                                className="w-full py-2.5 px-3 rounded-xl border border-rose-200 bg-rose-50/70 hover:bg-rose-100 text-rose-700 text-xs font-semibold flex items-center justify-between transition-colors shadow-2xs"
+                              >
+                                <span className="flex items-center gap-2">
+                                  <Trash2 className="w-3.5 h-3.5 text-rose-600" />
+                                  刪除此聖徒帳號
+                                </span>
+                                <span className="text-[10px] text-rose-400">永久移除帳號</span>
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
-          </div>
-        )}
+          )}
 
           {/* ======================================================== */}
           {/* CATEGORY 3: 忘記密碼與臨時碼專區 (Collapsible Accordion)   */}
