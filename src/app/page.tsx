@@ -2314,9 +2314,6 @@ export default function Home() {
           read: false,
         };
         saveNotifications([newNotif, ...notificationsRef.current]);
-        showToast('✨ 阿們！已記錄在同伴的小鈴鐺提醒中！');
-      } else {
-        showToast('✨ 阿們！');
       }
     }
   };
@@ -2981,6 +2978,7 @@ export default function Home() {
                 <div className={mobileTab === 'stats' ? 'hidden md:block' : 'block'}>
                   <CompanionsStatusList
                     companions={currentCompanions}
+                    currentUserId={user.id}
                     isAdmin={isLoggedIn && user.role === 'admin'}
                     allowSanctuaryVisit={siteSettings.allowSanctuaryVisit}
                     onRemindCompanion={(companionId) => {

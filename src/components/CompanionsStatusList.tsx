@@ -6,6 +6,7 @@ import { Companion } from '../types';
 
 interface CompanionsStatusListProps {
   companions: Companion[];
+  currentUserId?: string;
   onRemindCompanion: (companionId: string) => void;
   onViewSanctuary?: (companion: Companion) => void;
   isAdmin?: boolean;
@@ -14,6 +15,7 @@ interface CompanionsStatusListProps {
 
 export const CompanionsStatusList: React.FC<CompanionsStatusListProps> = ({
   companions,
+  currentUserId,
   onRemindCompanion,
   onViewSanctuary,
   isAdmin = false,
@@ -26,6 +28,17 @@ export const CompanionsStatusList: React.FC<CompanionsStatusListProps> = ({
 
   const completedCount = companions.filter((c) => c.todayCompleted).length;
   const total = companions.length;
+  const hasSelf = Boolean(currentUserId && companions.some((c) => c.id === currentUserId));
+  const otherCompanionsCount = hasSelf ? Math.max(0, total - 1) : total;
+
+  // Pin self to top so the user always sees their own status clearly alongside companions
+  const sortedCompanions = [...companions].sort((a, b) => {
+    if (currentUserId) {
+      if (a.id === currentUserId) return -1;
+      if (b.id === currentUserId) return 1;
+    }
+    return 0;
+  });
 
   return (
     <div className="bg-white rounded-3xl border border-stone-200/80 p-5 shadow-xs">
@@ -39,7 +52,9 @@ export const CompanionsStatusList: React.FC<CompanionsStatusListProps> = ({
             <h3 className="font-bold text-sm text-stone-900">同伴追求狀態</h3>
             <p suppressHydrationWarning className="text-[11px] text-stone-500">
               {total > 0
-                ? `今日已有 ${mounted ? completedCount : companions.filter((c) => c.todayCompleted).length} / ${total} 位同伴完成追求`
+                ? hasSelf
+                  ? `今日您與 ${otherCompanionsCount} 位同伴中，已有 ${mounted ? completedCount : companions.filter((c) => c.todayCompleted).length} 人完成追求`
+                  : `今日已有 ${mounted ? completedCount : companions.filter((c) => c.todayCompleted).length} / ${total} 位同伴完成追求`
                 : isAdmin
                 ? '共行追求同伴'
                 : '以 6-Emoji 邀請碼連線同伴'}
@@ -60,21 +75,33 @@ export const CompanionsStatusList: React.FC<CompanionsStatusListProps> = ({
         </div>
       ) : (
         <div className="space-y-3">
-        {companions.map((companion) => (
+        {sortedCompanions.map((companion) => {
+          const isSelf = Boolean(currentUserId && companion.id === currentUserId);
+          return (
           <div
             key={companion.id}
-            className="flex items-center justify-between p-3 rounded-2xl bg-stone-50/70 border border-stone-100 hover:border-amber-200 transition-colors gap-2"
+            className={`flex items-center justify-between p-3 rounded-2xl border transition-colors gap-2 ${
+              isSelf
+                ? 'bg-amber-50/50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-800/60'
+                : 'bg-stone-50/70 border-stone-100 hover:border-amber-200'
+            }`}
           >
             {/* Avatar & Name & Progress */}
             <div
-              onClick={() => onViewSanctuary && onViewSanctuary(companion)}
+              onClick={() => {
+                if (onViewSanctuary) {
+                  onViewSanctuary(companion);
+                }
+              }}
               className={`flex items-start sm:items-center gap-3 group flex-1 min-w-0 ${
                 allowSanctuaryVisit ? 'cursor-pointer' : 'cursor-default'
               }`}
-              title={allowSanctuaryVisit ? '點擊造訪他的晨興帳幕' : undefined}
+              title={isSelf ? '點擊查看我的晨興帳幕' : allowSanctuaryVisit ? '點擊造訪他的晨興帳幕' : undefined}
             >
               <div className="relative flex-shrink-0 mt-0.5 sm:mt-0">
-                <div className="w-9 h-9 rounded-xl bg-white border border-stone-200 group-hover:border-amber-400 group-hover:scale-105 transition-all flex items-center justify-center text-base shadow-2xs">
+                <div className={`w-9 h-9 rounded-xl border group-hover:scale-105 transition-all flex items-center justify-center text-base shadow-2xs ${
+                  isSelf ? 'bg-amber-100/80 border-amber-300' : 'bg-white border-stone-200 group-hover:border-amber-400'
+                }`}>
                   {companion.avatar}
                 </div>
                 <div suppressHydrationWarning>
@@ -93,9 +120,15 @@ export const CompanionsStatusList: React.FC<CompanionsStatusListProps> = ({
                   <span className="font-semibold text-xs text-stone-900 dark:text-stone-100 truncate">
                     {companion.name}
                   </span>
-                  <span className="text-[10px] bg-stone-200/60 dark:bg-stone-800 text-stone-600 dark:text-stone-300 px-1 py-0.2 rounded font-medium">
-                    同伴
-                  </span>
+                  {isSelf ? (
+                    <span className="text-[10px] bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-200 px-1.5 py-0.2 rounded font-bold border border-amber-300/80 dark:border-amber-700/80">
+                      自己
+                    </span>
+                  ) : (
+                    <span className="text-[10px] bg-stone-200/60 dark:bg-stone-800 text-stone-600 dark:text-stone-300 px-1 py-0.2 rounded font-medium">
+                      同伴
+                    </span>
+                  )}
                 </div>
 
                 {/* Direct Companion Progress Display (直接顯示同伴進度 以彼此激勵) */}
@@ -163,7 +196,8 @@ export const CompanionsStatusList: React.FC<CompanionsStatusListProps> = ({
               )}
             </div>
           </div>
-        ))}
+        );
+        })}
       </div>
       )}
 

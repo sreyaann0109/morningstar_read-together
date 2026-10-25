@@ -168,11 +168,13 @@ export interface NTSpeedPaceInfo {
   completedRounds: number;           // 已完整讀完幾遍
   currentRoundUnits: number;         // 當前這遍已讀章數 (0 ~ 260)
   currentLocation: ChapterLocation;  // 當前讀到的書卷章節
-  totalDays: number;                 // 總設定天數
+  speedDays: number;                 // 目標幾天讀完一遍 (自選節奏，例如 30, 60, 90 天)
+  totalDays: number;                 // 整期追求設定總天數 (由開始至結束時間決定)
   daysElapsed: number;               // 開始迄今經過天數
-  daysRemaining: number;             // 剩餘天數
-  dailyTargetChapters: number;       // 每日目標章數 (例如 8.7 章/天)
-  expectedChaptersToday: number;     // 截至今日當前這遍預期應讀章數 (1 ~ 260)
+  daysRemaining: number;             // 距結束時間剩餘天數
+  targetTotalRounds: number;         // 在此追求期程內預計可完成總遍數
+  dailyTargetChapters: number;       // 每日目標章數 (由 260 / speedDays 計算，例如 8.7 章/天)
+  expectedChaptersToday: number;     // 截至今日預期應讀章數 (1 ~ 260)
   expectedLocation: ChapterLocation; // 預期應讀到的書卷章節
   paceDelta: number;                 // 實際章數 - 預期章數 (正值代表超前，負值代表落後)
   paceStatus: 'ahead' | 'on-track' | 'behind';
@@ -180,12 +182,13 @@ export interface NTSpeedPaceInfo {
 }
 
 /**
- * 計算新約速讀的即時進度、遍數與趕上提醒
+ * 計算新約速讀的即時進度、遍數與趕上提醒（支援一讀再讀，目標幾天一遍與總期程脫鉤）
  */
 export function calculateNTSpeedPace(
   startDateStr?: string,
   endDateStr?: string,
-  completedUnits: number = 0
+  completedUnits: number = 0,
+  speedDaysParam?: number
 ): NTSpeedPaceInfo {
   const currentRound = Math.floor(completedUnits / TOTAL_NT_CHAPTERS) + 1;
   const completedRounds = Math.floor(completedUnits / TOTAL_NT_CHAPTERS);
@@ -198,29 +201,36 @@ export function calculateNTSpeedPace(
   const startStr = (startDateStr || todayStr).split('T')[0];
   const endStr = (endDateStr || addDaysUTC8(startStr, 60)).split('T')[0];
 
+  // 整期追求總天數 (由 startDate 到 endDate 決定，不可被覆蓋)
   const totalDays = Math.max(1, diffDaysUTC8(startStr, endStr) + 1);
   const rawElapsed = diffDaysUTC8(startStr, todayStr) + 1;
   const daysElapsed = Math.max(1, Math.min(totalDays, rawElapsed));
   const daysRemaining = Math.max(0, totalDays - daysElapsed);
 
-  const dailyTargetChapters = Math.round((TOTAL_NT_CHAPTERS / totalDays) * 10) / 10;
-  const expectedChaptersToday = Math.min(TOTAL_NT_CHAPTERS, Math.ceil(dailyTargetChapters * daysElapsed));
-  const expectedLocation = getNTChapterLocation(Math.max(1, expectedChaptersToday));
+  // 目標幾天讀完一遍 (預設 60 天，或由使用者自選 30/60/90 天)
+  const speedDays = speedDaysParam && speedDaysParam > 0 ? speedDaysParam : 60;
+  const dailyTargetChapters = Math.round((TOTAL_NT_CHAPTERS / speedDays) * 10) / 10;
+  const targetTotalRounds = Math.max(1, Math.round((totalDays / speedDays) * 10) / 10);
 
-  const paceDelta = currentRoundUnits - expectedChaptersToday;
+  // 累計預期章數與落後/超前差距 (支援跨遍累計)
+  const totalExpectedChapters = Math.ceil(dailyTargetChapters * daysElapsed);
+  const expectedRoundUnits = ((totalExpectedChapters - 1) % TOTAL_NT_CHAPTERS) + 1;
+  const expectedLocation = getNTChapterLocation(expectedRoundUnits);
+
+  const paceDelta = completedUnits - totalExpectedChapters;
   let paceStatus: 'ahead' | 'on-track' | 'behind' = 'on-track';
   let statusMessage = '';
 
   const dailyTargetInt = Math.max(2, Math.ceil(dailyTargetChapters));
   if (paceDelta > 2) {
     paceStatus = 'ahead';
-    statusMessage = `🔥 進度超前 ${paceDelta} 章！已讀至【${currentLocation.displayText}】（今日目標為第 ${expectedChaptersToday} 章），感謝主跑在時間前面！`;
+    statusMessage = `🔥 進度超前 ${paceDelta} 章！已讀至第 ${currentRound} 遍【${currentLocation.displayText}】（累計已完成 ${completedRounds} 遍全書），感謝主跑在時間前面！`;
   } else if (paceDelta < -dailyTargetInt) {
     paceStatus = 'behind';
-    statusMessage = `⚠️ 落後預定進度 ${Math.abs(paceDelta)} 章！今日進度應讀至第 ${expectedChaptersToday} 章【${expectedLocation.displayText}】，建議今日補讀以跟上 ${totalDays} 天期程！`;
+    statusMessage = `⚠️ 落後預定進度 ${Math.abs(paceDelta)} 章！今日目標應讀至【${expectedLocation.displayText}】（第 ${Math.floor(totalExpectedChapters / TOTAL_NT_CHAPTERS) + 1} 遍），建議今日補讀以跟上每 ${speedDays} 天一遍的節奏！`;
   } else {
     paceStatus = 'on-track';
-    statusMessage = `✨ 穩健跟上今日進度！今日目標約讀至第 ${expectedChaptersToday} 章【${expectedLocation.displayText}】，靈裡剛強齊步前行！`;
+    statusMessage = `✨ 穩健跟上今日進度！目前第 ${currentRound} 遍追求中，今日目標約讀至【${expectedLocation.displayText}】，靈裡剛強齊步前行！`;
   }
 
   return {
@@ -228,11 +238,13 @@ export function calculateNTSpeedPace(
     completedRounds,
     currentRoundUnits,
     currentLocation,
+    speedDays,
     totalDays,
     daysElapsed,
     daysRemaining,
+    targetTotalRounds,
     dailyTargetChapters,
-    expectedChaptersToday,
+    expectedChaptersToday: expectedRoundUnits,
     expectedLocation,
     paceDelta,
     paceStatus,

@@ -26,24 +26,31 @@ export async function supabaseGetAllPlans(): Promise<PursuitPlan[]> {
     return [];
   }
 
-  return data.map((r: any) => ({
-    id: r.id,
-    title: r.title,
-    category: r.category,
-    unitName: r.unit_name || (r.category === 'bible' ? '章' : '篇'),
-    description: r.description,
-    totalUnits: Number(r.total_units) || 0,
-    completedUnits: Number(r.completed_units) || 0,
-    currentUnitTitle: r.current_unit_title,
-    currentVerses: r.current_verses,
-    summary: r.summary,
-    startDate: r.start_date,
-    endDate: r.end_date,
-    inviteCode: r.invite_code,
-    adminId: r.admin_id,
-    adminName: r.admin_name,
-    members: Array.isArray(r.members_json) ? r.members_json : (typeof r.members_json === 'string' ? JSON.parse(r.members_json || '[]') : []),
-  }));
+  return data.map((r: any) => {
+    const speedDaysMatch = typeof r.summary === 'string' ? r.summary.match(/\[speedDays:(\d+)\]/) : null;
+    const speedDays = speedDaysMatch ? parseInt(speedDaysMatch[1], 10) : (r.category === 'nt-speed-reading' ? 60 : undefined);
+    const cleanSummary = typeof r.summary === 'string' ? r.summary.replace(/\[speedDays:\d+\]/g, '').trim() : r.summary;
+
+    return {
+      id: r.id,
+      title: r.title,
+      category: r.category,
+      unitName: r.unit_name || (r.category === 'bible' ? '章' : '篇'),
+      description: r.description,
+      totalUnits: Number(r.total_units) || 0,
+      completedUnits: Number(r.completed_units) || 0,
+      currentUnitTitle: r.current_unit_title,
+      currentVerses: r.current_verses,
+      summary: cleanSummary || undefined,
+      startDate: r.start_date,
+      endDate: r.end_date,
+      speedDays,
+      inviteCode: r.invite_code,
+      adminId: r.admin_id,
+      adminName: r.admin_name,
+      members: Array.isArray(r.members_json) ? r.members_json : (typeof r.members_json === 'string' ? JSON.parse(r.members_json || '[]') : []),
+    };
+  });
 }
 
 export async function supabaseSavePlans(plans: PursuitPlan[], fullSync = true) {
@@ -68,25 +75,30 @@ export async function supabaseSavePlans(plans: PursuitPlan[], fullSync = true) {
 
   if (plans.length === 0) return;
 
-  const rows = plans.map((p) => ({
-    id: p.id,
-    title: p.title,
-    category: p.category,
-    unit_name: p.unitName || (p.category === 'bible' ? '章' : '篇'),
-    description: p.description || '',
-    total_units: p.totalUnits,
-    completed_units: p.completedUnits,
-    current_unit_title: p.currentUnitTitle || '',
-    current_verses: p.currentVerses || '',
-    summary: p.summary || '',
-    start_date: p.startDate || '',
-    end_date: p.endDate || '',
-    invite_code: p.inviteCode || '',
-    admin_id: p.adminId || '',
-    admin_name: p.adminName || '',
-    members_json: p.members || [],
-    updated_at: now,
-  }));
+  const rows = plans.map((p) => {
+    const cleanSummary = (p.summary || '').replace(/\[speedDays:\d+\]/g, '').trim();
+    const encodedSummary = (cleanSummary + (p.speedDays ? ` [speedDays:${p.speedDays}]` : '')).trim();
+
+    return {
+      id: p.id,
+      title: p.title,
+      category: p.category,
+      unit_name: p.unitName || (p.category === 'bible' ? '章' : '篇'),
+      description: p.description || '',
+      total_units: p.totalUnits,
+      completed_units: p.completedUnits,
+      current_unit_title: p.currentUnitTitle || '',
+      current_verses: p.currentVerses || '',
+      summary: encodedSummary,
+      start_date: p.startDate || '',
+      end_date: p.endDate || '',
+      invite_code: p.inviteCode || '',
+      admin_id: p.adminId || '',
+      admin_name: p.adminName || '',
+      members_json: p.members || [],
+      updated_at: now,
+    };
+  });
 
   const { error } = await supabase.from('plans').upsert(rows, { onConflict: 'id' });
   if (error) {

@@ -290,12 +290,12 @@ export const Header: React.FC<HeaderProps> = ({
 
                 {/* Notification Popover */}
                 {isBellOpen && (
-                  <div className="absolute right-0 mt-2 w-80 sm:w-96 rounded-2xl bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 shadow-2xl p-4 z-50 animate-in fade-in zoom-in-95 duration-150">
+                  <div className="absolute right-0 mt-2 w-[calc(100vw-2rem)] max-w-[350px] sm:max-w-none sm:w-96 rounded-2xl bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 shadow-2xl p-3.5 sm:p-4 z-50 animate-in fade-in zoom-in-95 duration-150">
                     <div className="flex items-center justify-between pb-2.5 mb-2.5 border-b border-stone-100 dark:border-stone-800">
                       <div className="flex items-center gap-1.5">
                         <Sparkles className="w-4 h-4 text-amber-500 dark:text-amber-400" />
                         <span className="text-xs font-bold text-stone-900 dark:text-stone-100">
-                          同伴阿們與互動提醒
+                          提醒
                         </span>
                         <span className="text-[10px] bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 font-semibold px-1.5 py-0.2 rounded-full">
                           {notifications.length} 則

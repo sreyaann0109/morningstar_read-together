@@ -33,6 +33,7 @@ export const EditCurrentPursuitModal: React.FC<EditCurrentPursuitModalProps> = (
   const [totalUnits, setTotalUnits] = useState(currentPlan.totalUnits.toString());
   const [startDate, setStartDate] = useState(currentPlan.startDate || todayStr);
   const [endDate, setEndDate] = useState(currentPlan.endDate || '');
+  const [speedDays, setSpeedDays] = useState<number>(currentPlan.speedDays || 60);
 
   function generateRandom6Emojis(): string {
     const shuffled = [...CODE_EMOJIS].sort(() => 0.5 - Math.random());
@@ -64,7 +65,7 @@ export const EditCurrentPursuitModal: React.FC<EditCurrentPursuitModalProps> = (
   };
 
   const handleSetSpeedPreset = (days: number) => {
-    setEndDate(addDaysUTC8(startDate || todayStr, days - 1));
+    setSpeedDays(days);
   };
 
   // Sync state whenever currentPlan changes or modal opens
@@ -80,6 +81,7 @@ export const EditCurrentPursuitModal: React.FC<EditCurrentPursuitModalProps> = (
     setTotalUnits(currentPlan.totalUnits.toString());
     setStartDate(currentPlan.startDate || todayStr);
     setEndDate(currentPlan.endDate || '');
+    setSpeedDays(currentPlan.speedDays || 60);
   }, [currentPlan, isOpen, todayStr]);
 
   if (!isOpen) return null;
@@ -103,6 +105,7 @@ export const EditCurrentPursuitModal: React.FC<EditCurrentPursuitModalProps> = (
       totalUnits: total,
       startDate: startDate || todayStr,
       endDate: endDate.trim() || undefined,
+      speedDays: category === 'nt-speed-reading' ? speedDays : undefined,
     });
 
     onClose();
@@ -273,51 +276,79 @@ export const EditCurrentPursuitModal: React.FC<EditCurrentPursuitModalProps> = (
               </div>
             </div>
 
-            {/* Quick Speed Preset Buttons for NT Speed Reading */}
+            {/* Speed Days Per Round Setting for NT Speed Reading */}
             {category === 'nt-speed-reading' && (
-              <div className="p-3 bg-amber-50/70 dark:bg-amber-950/30 rounded-2xl border border-amber-200 dark:border-amber-800 space-y-2 animate-in fade-in">
-                <span className="text-[11px] font-bold text-amber-900 dark:text-amber-200 block">
-                  ⚡ 選擇您想多快讀完一遍新約（快速設定期程）：
-                </span>
+              <div className="p-3.5 bg-amber-50/70 dark:bg-amber-950/30 rounded-2xl border border-amber-200 dark:border-amber-800 space-y-2.5 animate-in fade-in">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <span className="text-[11px] font-bold text-amber-900 dark:text-amber-200 block">
+                    ⚡ 速讀節奏設定：目標幾天讀完一遍新約（可一讀再讀，不影響結束時間）：
+                  </span>
+                  <div className="flex items-center gap-1.5 self-start sm:self-auto">
+                    <input
+                      type="number"
+                      min={10}
+                      max={365}
+                      value={speedDays}
+                      onChange={(e) => setSpeedDays(Math.max(1, parseInt(e.target.value) || 60))}
+                      className="w-16 text-center text-xs font-bold rounded-lg border border-amber-300 dark:border-amber-700 bg-white dark:bg-stone-800 py-1 text-amber-900 dark:text-amber-200 focus:outline-none"
+                    />
+                    <span className="text-[11px] font-bold text-amber-800 dark:text-amber-300">天一遍</span>
+                  </div>
+                </div>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 text-xs">
                   <button
                     type="button"
                     onClick={() => handleSetSpeedPreset(30)}
-                    className="px-2 py-1.5 rounded-xl border border-amber-300 dark:border-amber-700 bg-white dark:bg-stone-800 hover:bg-amber-100 dark:hover:bg-amber-900/40 font-bold text-amber-900 dark:text-amber-200 transition-colors shadow-2xs text-center"
+                    className={`px-2 py-1.5 rounded-xl border font-bold transition-colors shadow-2xs text-center ${
+                      speedDays === 30
+                        ? 'border-amber-500 bg-amber-500 text-white shadow-xs'
+                        : 'border-amber-300 dark:border-amber-700 bg-white dark:bg-stone-800 hover:bg-amber-100 dark:hover:bg-amber-900/40 text-amber-900 dark:text-amber-200'
+                    }`}
                   >
-                    30 天速讀 (約8.7章/天)
+                    30 天一遍 (約8.7章/天)
                   </button>
                   <button
                     type="button"
                     onClick={() => handleSetSpeedPreset(60)}
-                    className="px-2 py-1.5 rounded-xl border border-amber-300 dark:border-amber-700 bg-white dark:bg-stone-800 hover:bg-amber-100 dark:hover:bg-amber-900/40 font-bold text-amber-900 dark:text-amber-200 transition-colors shadow-2xs text-center"
+                    className={`px-2 py-1.5 rounded-xl border font-bold transition-colors shadow-2xs text-center ${
+                      speedDays === 60
+                        ? 'border-amber-500 bg-amber-500 text-white shadow-xs'
+                        : 'border-amber-300 dark:border-amber-700 bg-white dark:bg-stone-800 hover:bg-amber-100 dark:hover:bg-amber-900/40 text-amber-900 dark:text-amber-200'
+                    }`}
                   >
-                    60 天速讀 (約4.3章/天)
+                    60 天一遍 (約4.3章/天)
                   </button>
                   <button
                     type="button"
                     onClick={() => handleSetSpeedPreset(90)}
-                    className="px-2 py-1.5 rounded-xl border border-amber-300 dark:border-amber-700 bg-white dark:bg-stone-800 hover:bg-amber-100 dark:hover:bg-amber-900/40 font-bold text-amber-900 dark:text-amber-200 transition-colors shadow-2xs text-center"
+                    className={`px-2 py-1.5 rounded-xl border font-bold transition-colors shadow-2xs text-center ${
+                      speedDays === 90
+                        ? 'border-amber-500 bg-amber-500 text-white shadow-xs'
+                        : 'border-amber-300 dark:border-amber-700 bg-white dark:bg-stone-800 hover:bg-amber-100 dark:hover:bg-amber-900/40 text-amber-900 dark:text-amber-200'
+                    }`}
                   >
-                    90 天速讀 (約2.9章/天)
+                    90 天一遍 (約2.9章/天)
                   </button>
                   <button
                     type="button"
                     onClick={() => handleSetSpeedPreset(120)}
-                    className="px-2 py-1.5 rounded-xl border border-amber-300 dark:border-amber-700 bg-white dark:bg-stone-800 hover:bg-amber-100 dark:hover:bg-amber-900/40 font-bold text-amber-900 dark:text-amber-200 transition-colors shadow-2xs text-center"
+                    className={`px-2 py-1.5 rounded-xl border font-bold transition-colors shadow-2xs text-center ${
+                      speedDays === 120
+                        ? 'border-amber-500 bg-amber-500 text-white shadow-xs'
+                        : 'border-amber-300 dark:border-amber-700 bg-white dark:bg-stone-800 hover:bg-amber-100 dark:hover:bg-amber-900/40 text-amber-900 dark:text-amber-200'
+                    }`}
                   >
-                    120 天速讀 (約2.2章/天)
+                    120 天一遍 (約2.2章/天)
                   </button>
                 </div>
-                {startDate && endDate && (
-                  <p className="text-[11px] text-amber-800 dark:text-amber-300 font-medium pt-1">
-                    已選期程：{startDate} 至 {endDate} (共{' '}
-                    {Math.max(1, diffDaysUTC8(startDate, endDate) + 1)}{' '}
-                    天，平均每天約{' '}
-                    {(260 / Math.max(1, diffDaysUTC8(startDate, endDate) + 1)).toFixed(1)}{' '}
-                    章)
-                  </p>
-                )}
+                <div className="text-[11px] text-amber-800 dark:text-amber-300 leading-relaxed font-medium pt-0.5">
+                  📖 目標每 <strong>{speedDays}</strong> 天讀完一遍（每日約 <strong>{(260 / speedDays).toFixed(1)}</strong> 章）。
+                  {startDate && endDate && (
+                    <span>
+                      {' '}整期時間 {startDate} 至 {endDate}（共 {Math.max(1, diffDaysUTC8(startDate, endDate) + 1)} 天），可一讀再讀（在此期程內預計可完成約 {(Math.max(1, diffDaysUTC8(startDate, endDate) + 1) / speedDays).toFixed(1)} 遍）！
+                    </span>
+                  )}
+                </div>
               </div>
             )}
           </div>

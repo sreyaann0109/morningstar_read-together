@@ -324,30 +324,30 @@ export const CompanionsFeed: React.FC<CompanionsFeedProps> = ({
             return (
               <div
                 key={post.id}
-                className="bg-white rounded-2xl border border-stone-200/80 p-5 shadow-xs hover:border-amber-200 transition-all"
+                className="bg-white rounded-2xl border border-stone-200/80 p-4 sm:p-5 shadow-xs hover:border-amber-200 transition-all min-w-0 overflow-hidden"
               >
                 {/* Author Info */}
                 <div className="flex items-start justify-between mb-3 gap-2">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-2xl bg-amber-50 border border-amber-100 flex items-center justify-center text-lg shadow-inner">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-10 h-10 rounded-2xl bg-amber-50 border border-amber-100 flex items-center justify-center text-lg shadow-inner flex-shrink-0">
                       {post.authorAvatar}
                     </div>
-                    <div>
+                    <div className="min-w-0">
                       <div className="flex items-center gap-2">
-                        <span className="font-semibold text-sm text-stone-900">
+                        <span className="font-semibold text-sm text-stone-900 truncate">
                           {post.authorName}
                         </span>
-                        <span className="text-[11px] bg-stone-100 text-stone-600 px-1.5 py-0.5 rounded-md font-medium">
+                        <span className="text-[11px] bg-stone-100 text-stone-600 px-1.5 py-0.5 rounded-md font-medium flex-shrink-0">
                           同伴
                         </span>
                       </div>
-                      <p className="text-[11px] text-stone-400">
+                      <p className="text-[11px] text-stone-400 truncate">
                         {post.createdAt} · 追求：{post.planTitle}
                       </p>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-1.5 flex-wrap justify-end">
+                  <div className="flex items-center gap-1.5 flex-wrap justify-end flex-shrink-0">
                     <span className="text-xs text-amber-800 font-medium bg-amber-50 px-2 py-0.5 rounded-md">
                       {post.unitTitle}
                     </span>
@@ -402,7 +402,7 @@ export const CompanionsFeed: React.FC<CompanionsFeedProps> = ({
                       value={editingPostText}
                       onChange={(e) => setEditingPostText(e.target.value)}
                       rows={4}
-                      className="w-full text-sm rounded-xl border border-stone-200 bg-white p-3 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 leading-relaxed"
+                      className="w-full text-sm rounded-xl border border-stone-200 bg-white p-3 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 leading-relaxed break-words"
                       placeholder="修改您的今日摸著與亮光..."
                     />
                     <div className="flex items-center justify-end gap-2">
@@ -433,13 +433,13 @@ export const CompanionsFeed: React.FC<CompanionsFeedProps> = ({
                   <>
                     {/* Key Scripture Quote (if present in existing post) */}
                     {post.keyVerse && (
-                      <div className="my-3 scripture-quote bg-amber-50/40 rounded-r-xl py-2 px-3 text-xs sm:text-sm font-serif text-stone-800 leading-relaxed">
+                      <div className="my-3 scripture-quote bg-amber-50/40 rounded-r-xl py-2 px-3 text-xs sm:text-sm font-serif text-stone-800 leading-relaxed break-words [overflow-wrap:anywhere]">
                         {post.keyVerse}
                       </div>
                     )}
 
-                    {/* Reflection Body */}
-                    <p className="text-sm text-stone-700 leading-relaxed mb-3 whitespace-pre-line">
+                    {/* Reflection Body with full responsive auto-wrap */}
+                    <p className="text-sm text-stone-700 leading-relaxed mb-3 break-words whitespace-pre-wrap [overflow-wrap:anywhere]">
                       {post.reflection}
                     </p>
                   </>

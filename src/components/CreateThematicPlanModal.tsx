@@ -26,6 +26,7 @@ export const CreateThematicPlanModal: React.FC<CreateThematicPlanModalProps> = (
   const [totalUnits, setTotalUnits] = useState('20');
   const [startDate, setStartDate] = useState(todayStr);
   const [endDate, setEndDate] = useState('');
+  const [speedDays, setSpeedDays] = useState<number>(60);
   const [currentVerses, setCurrentVerses] = useState('');
   const [summary, setSummary] = useState('');
   const [description, setDescription] = useState('');
@@ -48,6 +49,7 @@ export const CreateThematicPlanModal: React.FC<CreateThematicPlanModalProps> = (
       // Default to 60 days
       const baseStart = startDate || todayStr;
       setEndDate(addDaysUTC8(baseStart, 59));
+      setSpeedDays(60);
     } else if (newCat === 'nt-half-year') {
       setTitle('半年新約讀經一遍');
       setUnitName('章');
@@ -62,8 +64,7 @@ export const CreateThematicPlanModal: React.FC<CreateThematicPlanModalProps> = (
   };
 
   const handleSetSpeedPreset = (days: number) => {
-    const baseStart = startDate || todayStr;
-    setEndDate(addDaysUTC8(baseStart, days - 1));
+    setSpeedDays(days);
   };
 
   // Reset form and generate a fresh 6-Emoji invite code every time the modal opens
@@ -103,6 +104,7 @@ export const CreateThematicPlanModal: React.FC<CreateThematicPlanModalProps> = (
       description: description.trim(),
       startDate: startDate || todayStr,
       endDate: endDate.trim() || undefined,
+      speedDays: category === 'nt-speed-reading' ? speedDays : undefined,
       inviteCode: inviteEmojis.join(''),
       adminId: adminUser.id,
       adminName: adminUser.name,
@@ -283,47 +285,79 @@ export const CreateThematicPlanModal: React.FC<CreateThematicPlanModalProps> = (
               </div>
             </div>
 
-            {/* Quick Speed Preset Buttons for NT Speed Reading */}
+            {/* Speed Days Per Round Setting for NT Speed Reading */}
             {category === 'nt-speed-reading' && (
-              <div className="p-3 bg-amber-50/70 rounded-2xl border border-amber-200 space-y-2 animate-in fade-in">
-                <span className="text-[11px] font-bold text-amber-900 block">
-                  ⚡ 選擇您想多快讀完一遍新約（快速設定期程）：
-                </span>
+              <div className="p-3.5 bg-amber-50/70 rounded-2xl border border-amber-200 space-y-2.5 animate-in fade-in">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <span className="text-[11px] font-bold text-amber-900 block">
+                    ⚡ 速讀節奏設定：目標幾天讀完一遍新約（可一讀再讀，不影響結束時間）：
+                  </span>
+                  <div className="flex items-center gap-1.5 self-start sm:self-auto">
+                    <input
+                      type="number"
+                      min={10}
+                      max={365}
+                      value={speedDays}
+                      onChange={(e) => setSpeedDays(Math.max(1, parseInt(e.target.value) || 60))}
+                      className="w-16 text-center text-xs font-bold rounded-lg border border-amber-300 bg-white py-1 text-amber-900 focus:outline-none"
+                    />
+                    <span className="text-[11px] font-bold text-amber-800">天一遍</span>
+                  </div>
+                </div>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 text-xs">
                   <button
                     type="button"
                     onClick={() => handleSetSpeedPreset(30)}
-                    className="px-2 py-1.5 rounded-xl border border-amber-300 bg-white hover:bg-amber-100 font-bold text-amber-900 transition-colors shadow-2xs text-center"
+                    className={`px-2 py-1.5 rounded-xl border font-bold transition-colors shadow-2xs text-center ${
+                      speedDays === 30
+                        ? 'border-amber-500 bg-amber-500 text-white shadow-xs'
+                        : 'border-amber-300 bg-white hover:bg-amber-100 text-amber-900'
+                    }`}
                   >
-                    30 天速讀 (約8.7章/天)
+                    30 天一遍 (約8.7章/天)
                   </button>
                   <button
                     type="button"
                     onClick={() => handleSetSpeedPreset(60)}
-                    className="px-2 py-1.5 rounded-xl border border-amber-300 bg-white hover:bg-amber-100 font-bold text-amber-900 transition-colors shadow-2xs text-center"
+                    className={`px-2 py-1.5 rounded-xl border font-bold transition-colors shadow-2xs text-center ${
+                      speedDays === 60
+                        ? 'border-amber-500 bg-amber-500 text-white shadow-xs'
+                        : 'border-amber-300 bg-white hover:bg-amber-100 text-amber-900'
+                    }`}
                   >
-                    60 天速讀 (約4.3章/天)
+                    60 天一遍 (約4.3章/天)
                   </button>
                   <button
                     type="button"
                     onClick={() => handleSetSpeedPreset(90)}
-                    className="px-2 py-1.5 rounded-xl border border-amber-300 bg-white hover:bg-amber-100 font-bold text-amber-900 transition-colors shadow-2xs text-center"
+                    className={`px-2 py-1.5 rounded-xl border font-bold transition-colors shadow-2xs text-center ${
+                      speedDays === 90
+                        ? 'border-amber-500 bg-amber-500 text-white shadow-xs'
+                        : 'border-amber-300 bg-white hover:bg-amber-100 text-amber-900'
+                    }`}
                   >
-                    90 天速讀 (約2.9章/天)
+                    90 天一遍 (約2.9章/天)
                   </button>
                   <button
                     type="button"
                     onClick={() => handleSetSpeedPreset(120)}
-                    className="px-2 py-1.5 rounded-xl border border-amber-300 bg-white hover:bg-amber-100 font-bold text-amber-900 transition-colors shadow-2xs text-center"
+                    className={`px-2 py-1.5 rounded-xl border font-bold transition-colors shadow-2xs text-center ${
+                      speedDays === 120
+                        ? 'border-amber-500 bg-amber-500 text-white shadow-xs'
+                        : 'border-amber-300 bg-white hover:bg-amber-100 text-amber-900'
+                    }`}
                   >
-                    120 天速讀 (約2.2章/天)
+                    120 天一遍 (約2.2章/天)
                   </button>
                 </div>
-                {startDate && endDate && (
-                  <p className="text-[11px] text-amber-800 font-medium pt-1">
-                    🎯 目前設定期程共 {Math.max(1, diffDaysUTC8(startDate, endDate) + 1)} 天，每日目標進度約 {Math.round((260 / Math.max(1, diffDaysUTC8(startDate, endDate) + 1)) * 10) / 10} 章。系統將每日自動檢查是否趕上進度並提醒！
-                  </p>
-                )}
+                <div className="text-[11px] text-amber-800 leading-relaxed font-medium pt-0.5">
+                  📖 目標每 <strong>{speedDays}</strong> 天讀完一遍（每日約 <strong>{(260 / speedDays).toFixed(1)}</strong> 章）。
+                  {startDate && endDate && (
+                    <span>
+                      {' '}整期時間 {startDate} 至 {endDate}（共 {Math.max(1, diffDaysUTC8(startDate, endDate) + 1)} 天），可一讀再讀（在此期程內預計可完成約 {(Math.max(1, diffDaysUTC8(startDate, endDate) + 1) / speedDays).toFixed(1)} 遍）！
+                    </span>
+                  )}
+                </div>
               </div>
             )}
           </div>

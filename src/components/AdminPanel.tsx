@@ -139,6 +139,11 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   const [selectedPlanIds, setSelectedPlanIds] = useState<Set<string>>(new Set());
   const [batchTargetPlanId, setBatchTargetPlanId] = useState<string>(plans[0]?.id || '');
 
+  // Floating Member Management Modal state (獨立浮起：編輯參與聖徒或加入聖徒)
+  const [managingMembersPlanId, setManagingMembersPlanId] = useState<string | null>(null);
+  const [memberModalTab, setMemberModalTab] = useState<'members' | 'add'>('members');
+  const [memberSearchQuery, setMemberSearchQuery] = useState('');
+
   // Accordion Expand/Collapse States (Collapsed by default so page is never overly long)
   const [expandedPlanIds, setExpandedPlanIds] = useState<Set<string>>(new Set());
   const [expandedUserIds, setExpandedUserIds] = useState<Set<string>>(new Set());
@@ -467,17 +472,17 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
       {/* Main Two-Column Frame (Left: Category Menu, Right: Collapsible Accordion Lists) */}
       <div className="flex flex-col md:flex-row gap-4 items-start">
         {/* Left Side: Category Navigation Menu */}
-        {/* Left Side: Category Navigation Menu (Mobile: Horizontal Pills; Desktop: Vertical Sidebar) */}
-        <aside className="w-full md:w-56 flex-shrink-0 bg-white rounded-2xl md:rounded-3xl border border-stone-200 p-1.5 sm:p-2 shadow-2xs">
-          <div className="px-3 py-1.5 text-[11px] font-bold text-stone-400 tracking-wider hidden md:block">
+        {/* Left Side: Category Navigation Menu (Vertical on both Mobile and Desktop) */}
+        <aside className="w-full md:w-56 flex-shrink-0 bg-white rounded-2xl md:rounded-3xl border border-stone-200 p-2 sm:p-2.5 shadow-2xs">
+          <div className="px-3 py-1.5 text-[11px] font-bold text-stone-400 tracking-wider">
             管理專題目錄
           </div>
 
-          <div className="flex flex-row overflow-x-auto no-scrollbar gap-1.5 md:flex-col md:space-y-1 md:overflow-visible pb-1 md:pb-0">
+          <div className="flex flex-col space-y-1">
             <button
               type="button"
               onClick={() => setActiveCategory('plans')}
-              className={`flex-shrink-0 md:w-full py-2 px-3 sm:py-2.5 sm:px-3.5 rounded-xl md:rounded-2xl text-xs font-bold flex items-center justify-between gap-2 transition-all ${
+              className={`w-full py-2.5 px-3.5 rounded-xl md:rounded-2xl text-xs font-bold flex items-center justify-between gap-2 transition-all ${
                 activeCategory === 'plans'
                   ? 'bg-amber-500 text-white shadow-xs'
                   : 'text-stone-700 hover:bg-stone-100 bg-stone-50/60 md:bg-transparent'
@@ -501,7 +506,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
             <button
               type="button"
               onClick={() => setActiveCategory('users')}
-              className={`flex-shrink-0 md:w-full py-2 px-3 sm:py-2.5 sm:px-3.5 rounded-xl md:rounded-2xl text-xs font-bold flex items-center justify-between gap-2 transition-all ${
+              className={`w-full py-2.5 px-3.5 rounded-xl md:rounded-2xl text-xs font-bold flex items-center justify-between gap-2 transition-all ${
                 activeCategory === 'users'
                   ? 'bg-amber-500 text-white shadow-xs'
                   : 'text-stone-700 hover:bg-stone-100 bg-stone-50/60 md:bg-transparent'
@@ -525,7 +530,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
             <button
               type="button"
               onClick={() => setActiveCategory('passwords')}
-              className={`flex-shrink-0 md:w-full py-2 px-3 sm:py-2.5 sm:px-3.5 rounded-xl md:rounded-2xl text-xs font-bold flex items-center justify-between gap-2 transition-all ${
+              className={`w-full py-2.5 px-3.5 rounded-xl md:rounded-2xl text-xs font-bold flex items-center justify-between gap-2 transition-all ${
                 activeCategory === 'passwords'
                   ? 'bg-amber-500 text-white shadow-xs'
                   : 'text-stone-700 hover:bg-stone-100 bg-stone-50/60 md:bg-transparent'
@@ -555,7 +560,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
             <button
               type="button"
               onClick={() => setActiveCategory('stats')}
-              className={`flex-shrink-0 md:w-full py-2 px-3 sm:py-2.5 sm:px-3.5 rounded-xl md:rounded-2xl text-xs font-bold flex items-center justify-between gap-2 transition-all ${
+              className={`w-full py-2.5 px-3.5 rounded-xl md:rounded-2xl text-xs font-bold flex items-center justify-between gap-2 transition-all ${
                 activeCategory === 'stats'
                   ? 'bg-amber-500 text-white shadow-xs'
                   : 'text-stone-700 hover:bg-stone-100 bg-stone-50/60 md:bg-transparent'
@@ -571,7 +576,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
             <button
               type="button"
               onClick={() => setActiveCategory('settings')}
-              className={`flex-shrink-0 md:w-full py-2 px-3 sm:py-2.5 sm:px-3.5 rounded-xl md:rounded-2xl text-xs font-bold flex items-center justify-between gap-2 transition-all ${
+              className={`w-full py-2.5 px-3.5 rounded-xl md:rounded-2xl text-xs font-bold flex items-center justify-between gap-2 transition-all ${
                 activeCategory === 'settings'
                   ? 'bg-amber-500 text-white shadow-xs'
                   : 'text-stone-700 hover:bg-stone-100 bg-stone-50/60 md:bg-transparent'
@@ -599,7 +604,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
           {/* ======================================================== */}
           {/* CATEGORY 1: 追求主題管理 (Collapsible Accordion Items)     */}
           {/* ======================================================== */}
-          {activeCategory === 'plans' && (
+          {(activeCategory === 'plans' || activeCategory === 'users') && (
             <div className="space-y-3">
               {/* Header Bar with Select All & Expand/Collapse All */}
               <div className="flex items-center justify-between px-1 flex-wrap gap-2">
@@ -623,24 +628,35 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                     追求主題（共 {plans.length} 個主題）：
                   </span>
                 </div>
-                {plans.length > 0 && (
+                <div className="flex items-center gap-2">
                   <button
                     type="button"
-                    onClick={() => {
-                      if (expandedPlanIds.size === plans.length) {
-                        setExpandedPlanIds(new Set());
-                      } else {
-                        setExpandedPlanIds(new Set(plans.map((p) => p.id)));
-                      }
-                    }}
-                    className="text-[11px] font-semibold text-amber-800 hover:text-amber-950 flex items-center gap-1 transition-colors"
+                    onClick={() => setActiveCategory('users')}
+                    className="px-2.5 py-1 rounded-xl border border-stone-200 bg-white hover:bg-amber-50 text-stone-700 hover:text-amber-900 text-xs font-bold flex items-center gap-1.5 shadow-2xs transition-colors"
+                    title="以獨立浮動彈窗開啟聖徒名冊與帳號管理"
                   >
-                    <ChevronsUpDown className="w-3.5 h-3.5" />
-                    <span>
-                      {expandedPlanIds.size === plans.length ? '全部收合' : '展開全部'}
-                    </span>
+                    <Users className="w-3.5 h-3.5 text-amber-600" />
+                    <span>👥 聖徒名冊 ({allUsers.length})</span>
                   </button>
-                )}
+                  {plans.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (expandedPlanIds.size === plans.length) {
+                          setExpandedPlanIds(new Set());
+                        } else {
+                          setExpandedPlanIds(new Set(plans.map((p) => p.id)));
+                        }
+                      }}
+                      className="text-[11px] font-semibold text-amber-800 hover:text-amber-950 flex items-center gap-1 transition-colors"
+                    >
+                      <ChevronsUpDown className="w-3.5 h-3.5" />
+                      <span>
+                        {expandedPlanIds.size === plans.length ? '全部收合' : '展開全部'}
+                      </span>
+                    </button>
+                  )}
+                </div>
               </div>
 
               {/* Batch Action Toolbar for Plans */}
@@ -973,161 +989,30 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                               </div>
                             </div>
 
-                            {/* 3. Vertical Row: Members List */}
-                            <div className="space-y-2">
-                              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                                <span className="text-xs font-bold text-stone-700 block">
-                                  👥 參與聖徒成員名單（共 {totalMembers} 位，逐條縱向）：
+                            {/* 3. Member Management Button (獨立浮動彈窗觸發) */}
+                            <div className="pt-2 border-t border-stone-100 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5">
+                              <div className="text-xs text-stone-600 flex items-center gap-2">
+                                <Users className="w-4 h-4 text-amber-600 flex-shrink-0" />
+                                <span>
+                                  目前共有 <strong className="text-stone-900 font-bold">{totalMembers}</strong> 位聖徒參與追求
+                                  {nonMembers.length > 0 && (
+                                    <span className="text-stone-400">（尚有 {nonMembers.length} 位可加入）</span>
+                                  )}
                                 </span>
-                                {totalMembers > 1 && (
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      if (
-                                        window.confirm(
-                                          `確定要使這 ${totalMembers} 位成員全數退出《${plan.title}》追求嗎？`
-                                        )
-                                      ) {
-                                        const uids = members.map((m) => m.userId);
-                                        if (onBatchRemoveUsersFromPlan) {
-                                          onBatchRemoveUsersFromPlan(plan.id, uids);
-                                        } else {
-                                          members.forEach((m) => onRemoveUserFromPlan(plan.id, m.userId, m.name));
-                                        }
-                                      }
-                                    }}
-                                    className="w-full sm:w-auto px-2 py-1 rounded-lg border border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-700 font-semibold text-[10px] flex items-center justify-center gap-1 transition-colors shadow-2xs self-end sm:self-auto"
-                                    title="將本主題所有成員批量移出"
-                                  >
-                                    <UserMinus className="w-3 h-3" />
-                                    <span>批量全體退出</span>
-                                  </button>
-                                )}
                               </div>
-                              {totalMembers === 0 ? (
-                                <p className="text-xs text-stone-400 py-1 pl-1">尚無任何成員加入</p>
-                              ) : (
-                                <div className="space-y-1.5">
-                                  {members.map((m, idx) => (
-                                    <div
-                                      key={m.userId}
-                                      className="p-2.5 rounded-xl border border-stone-200 bg-stone-50/50 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs"
-                                    >
-                                      <div className="flex items-start sm:items-center gap-2.5 min-w-0 flex-1">
-                                        <span className="text-xs text-stone-400 font-mono w-4 flex-shrink-0 mt-0.5 sm:mt-0">
-                                          {idx + 1}.
-                                        </span>
-                                        <span className="text-base flex-shrink-0">{m.avatar}</span>
-                                        <div className="min-w-0 flex-1">
-                                          <div className="flex items-center gap-1.5 flex-wrap">
-                                            <span className="font-bold text-stone-900 truncate">
-                                              {m.name}
-                                            </span>
-                                            {m.todayCompleted ? (
-                                              <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.2 rounded border border-emerald-200">
-                                                ✓今日已讀
-                                              </span>
-                                            ) : (
-                                              <span className="text-[10px] text-stone-400">
-                                                今日未打卡
-                                              </span>
-                                            )}
-                                          </div>
-                                          <div className="flex items-center gap-2 text-[10px] text-stone-500 flex-wrap mt-0.5">
-                                            <span>連續追求：{m.streakDays} 天</span>
-                                            <span>·</span>
-                                            <span className="font-medium text-stone-700">
-                                              個人進度：第 {m.completedUnits ?? 0} {plan.unitName || (plan.category === 'bible' ? '章' : '篇')}
-                                            </span>
-                                          </div>
-                                        </div>
-                                      </div>
-
-                                      <div className="flex items-center gap-1.5 flex-wrap pt-1.5 sm:pt-0 border-t border-stone-200/50 sm:border-0 justify-end w-full sm:w-auto">
-                                        {onResetUserProgress && (
-                                          <button
-                                            type="button"
-                                            onClick={() => {
-                                              if (
-                                                window.confirm(
-                                                  `確定要將【${m.name}】的追求進度重設歸零嗎？（連續天數與打卡紀錄將歸零）`
-                                                )
-                                              ) {
-                                                onResetUserProgress(m.userId, m.name);
-                                              }
-                                            }}
-                                            className="px-2 py-1 rounded-lg border border-stone-200 bg-white hover:bg-amber-50 text-stone-600 hover:text-amber-900 text-[11px] font-medium flex items-center gap-1 transition-colors"
-                                            title={`重設 ${m.name} 的追求進度`}
-                                          >
-                                            <RotateCcw className="w-3 h-3 text-stone-400" />
-                                            <span>重設進度</span>
-                                          </button>
-                                        )}
-                                        <button
-                                          type="button"
-                                          onClick={() => onRemoveUserFromPlan(plan.id, m.userId, m.name)}
-                                          className="px-2 py-1 rounded-lg border border-rose-200 bg-white hover:bg-rose-50 text-rose-600 text-[11px] font-medium flex items-center gap-1 transition-colors"
-                                          title={`使 ${m.name} 退出此主題`}
-                                        >
-                                          <X className="w-3 h-3" />
-                                          <span>退出</span>
-                                        </button>
-                                      </div>
-                                    </div>
-                                  ))}
-                                </div>
-                              )}
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setManagingMembersPlanId(plan.id);
+                                  setMemberModalTab('members');
+                                  setMemberSearchQuery('');
+                                }}
+                                className="px-3.5 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 active:scale-98 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-xs transition-all"
+                              >
+                                <UserPlus className="w-3.5 h-3.5" />
+                                <span>👥 編輯參與聖徒 / 加入聖徒 ({totalMembers})</span>
+                              </button>
                             </div>
-
-                            {/* 4. Vertical Row: Quick Add Candidates */}
-                            {nonMembers.length > 0 && (
-                              <div className="space-y-1.5 pt-2 border-t border-stone-100">
-                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                                  <span className="text-xs font-semibold text-stone-600 block">
-                                    ➕ 快速加入尚未參與之聖徒（共 {nonMembers.length} 位）：
-                                  </span>
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      if (onBatchAddUsersToPlan) {
-                                        onBatchAddUsersToPlan(plan.id, nonMembers);
-                                      } else {
-                                        nonMembers.forEach((u) => onAddUserToPlan(plan.id, u));
-                                      }
-                                    }}
-                                    className="w-full sm:w-auto px-2.5 py-1 rounded-lg bg-amber-500 hover:bg-amber-600 text-white font-bold text-[11px] flex items-center justify-center gap-1 shadow-2xs transition-colors"
-                                    title="一鍵將所有尚未加入的聖徒批量加入此追求主題"
-                                  >
-                                    <Sparkles className="w-3 h-3" />
-                                    <span>⚡ 一鍵全體加入 ({nonMembers.length} 位)</span>
-                                  </button>
-                                </div>
-                                <div className="space-y-1.5">
-                                  {nonMembers.map((u) => (
-                                    <div
-                                      key={u.id}
-                                      className="p-2 rounded-xl bg-stone-50 border border-dashed border-stone-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs"
-                                    >
-                                      <span className="flex items-center gap-2 text-stone-700 font-medium min-w-0">
-                                        <span className="flex-shrink-0">{u.avatar}</span>
-                                        <span className="font-bold truncate">{u.name}</span>
-                                        <span className="text-[10px] text-stone-400 font-mono truncate">
-                                          ({u.email})
-                                        </span>
-                                      </span>
-                                      <button
-                                        type="button"
-                                        onClick={() => onAddUserToPlan(plan.id, u)}
-                                        className="w-full sm:w-auto px-2.5 py-1 rounded-lg bg-amber-500 hover:bg-amber-600 text-white font-bold text-[11px] flex items-center justify-center gap-1 shadow-2xs transition-colors self-end sm:self-auto"
-                                      >
-                                        <Plus className="w-3 h-3" />
-                                        <span>加入主題</span>
-                                      </button>
-                                    </div>
-                                  ))}
-                                </div>
-                              </div>
-                            )}
 
                             {/* 5. Vertical Row: Theme Action Buttons */}
                             <div className="space-y-2 pt-2 border-t border-stone-100">
@@ -1170,11 +1055,41 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
           )}
 
           {/* ======================================================== */}
-          {/* CATEGORY 2: 聖徒名冊與帳號 (Collapsible Accordion Items)   */}
+          {/* CATEGORY 2: 聖徒名冊與帳號 (獨立浮動彈窗 Modal)           */}
           {/* ======================================================== */}
           {activeCategory === 'users' && (
-            <div className="space-y-3">
-              {/* Search & Role Filters */}
+            <div
+              onClick={() => setActiveCategory('plans')}
+              className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-stone-900/50 backdrop-blur-xs animate-in fade-in duration-200"
+            >
+              <div
+                onClick={(e) => e.stopPropagation()}
+                className="bg-white rounded-3xl w-full max-w-4xl max-h-[90vh] flex flex-col shadow-2xl border border-stone-200 overflow-hidden animate-in zoom-in-95 duration-200"
+              >
+                {/* Modal Header */}
+                <div className="p-4 sm:p-5 border-b border-stone-200/80 flex items-center justify-between bg-stone-50/80 flex-shrink-0">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-9 h-9 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center flex-shrink-0">
+                      <Users className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-base text-stone-900">聖徒名冊與帳號管理</h3>
+                      <p className="text-xs text-stone-500">共 {allUsers.length} 位註冊聖徒與管理服事者</p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setActiveCategory('plans')}
+                    className="p-2 rounded-xl text-stone-400 hover:text-stone-700 hover:bg-stone-200/60 transition-colors"
+                    title="關閉聖徒名冊"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+
+                {/* Modal Scrollable Body */}
+                <div className="p-4 sm:p-6 overflow-y-auto space-y-4 flex-1">
+                  {/* Search & Role Filters */}
               <div className="bg-white rounded-3xl border border-stone-200/90 p-4 shadow-2xs space-y-3">
                 <div className="relative">
                   <Search className="w-4 h-4 text-stone-400 absolute left-3 top-1/2 -translate-y-1/2" />
@@ -1880,9 +1795,11 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                     );
                   })
                 )}
+                </div>
               </div>
             </div>
-          )}
+          </div>
+        )}
 
           {/* ======================================================== */}
           {/* CATEGORY 3: 忘記密碼與臨時碼專區 (Collapsible Accordion)   */}
@@ -2556,6 +2473,263 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
           </div>
         </div>
       )}
+
+      {/* 獨立浮起：編輯參與聖徒或加入聖徒彈窗 (Manage Plan Members Modal) */}
+      {managingMembersPlanId && (() => {
+        const plan = plans.find((p) => p.id === managingMembersPlanId);
+        if (!plan) return null;
+        const members = plan.members || [];
+        const nonMembers = allUsers.filter((u) => !members.some((m) => m.userId === u.id));
+        const filteredMembers = memberSearchQuery.trim()
+          ? members.filter((m) => m.name.toLowerCase().includes(memberSearchQuery.toLowerCase()))
+          : members;
+        const filteredNonMembers = memberSearchQuery.trim()
+          ? nonMembers.filter((u) => u.name.toLowerCase().includes(memberSearchQuery.toLowerCase()) || u.email.toLowerCase().includes(memberSearchQuery.toLowerCase()))
+          : nonMembers;
+
+        return (
+          <div
+            onClick={() => setManagingMembersPlanId(null)}
+            className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-stone-900/50 backdrop-blur-xs animate-in fade-in duration-200"
+          >
+            <div
+              onClick={(e) => e.stopPropagation()}
+              className="bg-white rounded-3xl w-full max-w-2xl max-h-[85vh] flex flex-col shadow-2xl border border-stone-200 overflow-hidden animate-in zoom-in-95 duration-200"
+            >
+              {/* Modal Header */}
+              <div className="p-4 sm:p-5 border-b border-stone-200/80 flex items-center justify-between bg-stone-50/80 flex-shrink-0">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="w-9 h-9 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center flex-shrink-0">
+                    <Users className="w-5 h-5" />
+                  </div>
+                  <div className="min-w-0">
+                    <h3 className="font-bold text-base text-stone-900 truncate">
+                      《{plan.title}》參與聖徒與加入管理
+                    </h3>
+                    <p className="text-xs text-stone-500">
+                      共 {plan.totalUnits} {plan.unitName || '篇'} · 專屬邀請碼：{plan.inviteCode}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setManagingMembersPlanId(null)}
+                  className="p-2 rounded-xl text-stone-400 hover:text-stone-700 hover:bg-stone-200/60 transition-colors flex-shrink-0"
+                  title="關閉"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Tab Switcher & Search Bar */}
+              <div className="p-3 sm:p-4 bg-stone-50/40 border-b border-stone-100 space-y-2.5 flex-shrink-0">
+                <div className="flex items-center bg-stone-200/70 p-1 rounded-xl text-xs font-bold">
+                  <button
+                    type="button"
+                    onClick={() => setMemberModalTab('members')}
+                    className={`flex-1 py-1.5 rounded-lg transition-all flex items-center justify-center gap-1.5 ${
+                      memberModalTab === 'members'
+                        ? 'bg-white text-stone-900 shadow-2xs'
+                        : 'text-stone-600 hover:text-stone-900'
+                    }`}
+                  >
+                    <span>👥 目前參與聖徒</span>
+                    <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
+                      memberModalTab === 'members' ? 'bg-amber-100 text-amber-800' : 'bg-stone-300 text-stone-600'
+                    }`}>
+                      {members.length}
+                    </span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setMemberModalTab('add')}
+                    className={`flex-1 py-1.5 rounded-lg transition-all flex items-center justify-center gap-1.5 ${
+                      memberModalTab === 'add'
+                        ? 'bg-white text-stone-900 shadow-2xs'
+                        : 'text-stone-600 hover:text-stone-900'
+                    }`}
+                  >
+                    <span>➕ 快速加入聖徒</span>
+                    <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
+                      memberModalTab === 'add' ? 'bg-amber-100 text-amber-800' : 'bg-stone-300 text-stone-600'
+                    }`}>
+                      {nonMembers.length}
+                    </span>
+                  </button>
+                </div>
+
+                <div className="relative">
+                  <Search className="w-3.5 h-3.5 text-stone-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="text"
+                    value={memberSearchQuery}
+                    onChange={(e) => setMemberSearchQuery(e.target.value)}
+                    placeholder={memberModalTab === 'members' ? '搜尋參與聖徒姓名...' : '搜尋尚未加入之聖徒姓名或信箱...'}
+                    className="w-full pl-8 pr-3 py-1.5 text-xs rounded-xl border border-stone-200 bg-white focus:outline-none focus:border-amber-500"
+                  />
+                </div>
+              </div>
+
+              {/* Modal Scrollable Content */}
+              <div className="p-4 sm:p-5 overflow-y-auto flex-1 space-y-2">
+                {memberModalTab === 'members' ? (
+                  <>
+                    <div className="flex items-center justify-between pb-1">
+                      <span className="text-xs font-bold text-stone-700">
+                        名單列表（{filteredMembers.length} 位）：
+                      </span>
+                      {members.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (window.confirm(`確定要使這 ${members.length} 位成員全數退出《${plan.title}》追求嗎？`)) {
+                              const uids = members.map((m) => m.userId);
+                              if (onBatchRemoveUsersFromPlan) {
+                                onBatchRemoveUsersFromPlan(plan.id, uids);
+                              } else {
+                                members.forEach((m) => onRemoveUserFromPlan(plan.id, m.userId, m.name));
+                              }
+                            }
+                          }}
+                          className="px-2 py-1 rounded-lg border border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-700 font-semibold text-[10px] flex items-center gap-1 transition-colors"
+                        >
+                          <UserMinus className="w-3 h-3" />
+                          <span>批量全體退出</span>
+                        </button>
+                      )}
+                    </div>
+
+                    {filteredMembers.length === 0 ? (
+                      <div className="py-8 text-center text-xs text-stone-400">
+                        {members.length === 0 ? '目前尚無聖徒加入此追求' : '查無符合搜尋條件之聖徒'}
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        {filteredMembers.map((m, idx) => (
+                          <div
+                            key={m.userId}
+                            className="p-3 rounded-2xl border border-stone-200/80 bg-stone-50/60 hover:bg-white flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-xs transition-colors"
+                          >
+                            <div className="flex items-start sm:items-center gap-2.5 min-w-0 flex-1">
+                              <span className="text-xs text-stone-400 font-mono w-4 flex-shrink-0 mt-0.5 sm:mt-0">
+                                {idx + 1}.
+                              </span>
+                              <span className="text-lg flex-shrink-0">{m.avatar}</span>
+                              <div className="min-w-0 flex-1">
+                                <div className="flex items-center gap-1.5 flex-wrap">
+                                  <span className="font-bold text-stone-900 truncate">
+                                    {m.name}
+                                  </span>
+                                  {m.todayCompleted ? (
+                                    <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.2 rounded border border-emerald-200">
+                                      ✓今日已追求
+                                    </span>
+                                  ) : (
+                                    <span className="text-[10px] text-stone-400 bg-stone-100 px-1.5 py-0.2 rounded">
+                                      今日尚未打卡
+                                    </span>
+                                  )}
+                                </div>
+                                <div className="flex items-center gap-2 text-[10px] text-stone-500 flex-wrap mt-0.5">
+                                  <span>連續追求：{m.streakDays} 天</span>
+                                  <span>·</span>
+                                  <span className="font-medium text-stone-700">
+                                    個人進度：第 {m.completedUnits ?? 0} {plan.unitName || (plan.category === 'bible' ? '章' : '篇')}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center gap-1.5 flex-wrap pt-2 sm:pt-0 border-t border-stone-200/50 sm:border-0 justify-end w-full sm:w-auto flex-shrink-0">
+                              {onResetUserProgress && (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    if (window.confirm(`確定要將【${m.name}】的追求進度重設歸零嗎？`)) {
+                                      onResetUserProgress(m.userId, m.name);
+                                    }
+                                  }}
+                                  className="px-2.5 py-1 rounded-lg border border-stone-200 bg-white hover:bg-amber-50 text-stone-600 hover:text-amber-900 text-[11px] font-medium flex items-center gap-1 transition-colors"
+                                >
+                                  <RotateCcw className="w-3 h-3 text-stone-400" />
+                                  <span>重設進度</span>
+                                </button>
+                              )}
+                              <button
+                                type="button"
+                                onClick={() => onRemoveUserFromPlan(plan.id, m.userId, m.name)}
+                                className="px-2.5 py-1 rounded-lg border border-rose-200 bg-white hover:bg-rose-50 text-rose-600 text-[11px] font-medium flex items-center gap-1 transition-colors"
+                              >
+                                <X className="w-3 h-3" />
+                                <span>退出追求</span>
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    <div className="flex items-center justify-between pb-1">
+                      <span className="text-xs font-bold text-stone-700">
+                        可加入聖徒（{filteredNonMembers.length} 位）：
+                      </span>
+                      {nonMembers.length > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (onBatchAddUsersToPlan) {
+                              onBatchAddUsersToPlan(plan.id, nonMembers);
+                            } else {
+                              nonMembers.forEach((u) => onAddUserToPlan(plan.id, u));
+                            }
+                          }}
+                          className="px-2.5 py-1 rounded-lg bg-amber-500 hover:bg-amber-600 text-white font-bold text-[11px] flex items-center gap-1 shadow-2xs transition-colors"
+                        >
+                          <Sparkles className="w-3 h-3" />
+                          <span>⚡ 一鍵全體加入 ({nonMembers.length} 位)</span>
+                        </button>
+                      )}
+                    </div>
+
+                    {filteredNonMembers.length === 0 ? (
+                      <div className="py-8 text-center text-xs text-stone-400">
+                        {nonMembers.length === 0 ? '全體註冊聖徒皆已在此主題中！' : '查無符合搜尋條件之聖徒'}
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        {filteredNonMembers.map((u) => (
+                          <div
+                            key={u.id}
+                            className="p-3 rounded-2xl bg-stone-50/70 border border-stone-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs"
+                          >
+                            <div className="flex items-center gap-2.5 min-w-0">
+                              <span className="text-base flex-shrink-0">{u.avatar}</span>
+                              <div className="min-w-0">
+                                <span className="font-bold text-stone-900 block truncate">{u.name}</span>
+                                <span className="text-[10px] text-stone-400 font-mono block truncate">{u.email}</span>
+                              </div>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => onAddUserToPlan(plan.id, u)}
+                              className="w-full sm:w-auto px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs flex items-center justify-center gap-1 shadow-2xs transition-colors self-end sm:self-auto"
+                            >
+                              <Plus className="w-3.5 h-3.5" />
+                              <span>加入追求</span>
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 };

@@ -126,7 +126,7 @@ export const TodayPursuitCard: React.FC<TodayPursuitCardProps> = ({
 
   const isNTHalfYear = plan.category === 'nt-half-year';
   const isNTSpeed = plan.category === 'nt-speed-reading';
-  const speedPace = isNTSpeed ? calculateNTSpeedPace(plan.startDate, plan.endDate, plan.completedUnits) : null;
+  const speedPace = isNTSpeed ? calculateNTSpeedPace(plan.startDate, plan.endDate, plan.completedUnits, plan.speedDays) : null;
   const halfYearPace = isNTHalfYear ? calculateNTHalfYearPace(plan.startDate, plan.completedUnits) : null;
 
   const percent = isNTSpeed && speedPace
@@ -442,8 +442,8 @@ export const TodayPursuitCard: React.FC<TodayPursuitCardProps> = ({
                 <span>
                   下一待讀：<strong className="text-amber-800 dark:text-amber-300">{speedNextLocation?.displayText || ''}</strong>
                 </span>
-                <span className="text-[11px] text-stone-400">
-                  第 {speedPace.currentRound} 遍追求中
+                <span className="text-[11px] text-amber-800 dark:text-amber-300 font-semibold">
+                  第 {speedPace.currentRound} 遍追求中{speedPace.completedRounds > 0 ? `（已讀完 ${speedPace.completedRounds} 遍）` : ''}
                 </span>
               </div>
             </div>
@@ -454,10 +454,10 @@ export const TodayPursuitCard: React.FC<TodayPursuitCardProps> = ({
                 <div className="flex items-center justify-between mb-2 flex-wrap gap-1">
                   <span className="text-xs font-bold text-amber-800 dark:text-amber-300 flex items-center gap-1.5">
                     <Calendar className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
-                    <span>今日表定進度</span>
+                    <span>今日目標進度</span>
                   </span>
                   <span className="text-[11px] font-semibold text-stone-600 dark:text-stone-300 bg-stone-100 dark:bg-stone-800 px-2 py-0.5 rounded-full">
-                    第 {speedPace.daysElapsed} 天 / 共 {speedPace.totalDays} 天
+                    整期第 {speedPace.daysElapsed} 天 / 共 {speedPace.totalDays} 天
                   </span>
                 </div>
                 <div className="text-lg sm:text-xl font-extrabold text-amber-900 dark:text-amber-200 tracking-tight my-1">
@@ -466,10 +466,10 @@ export const TodayPursuitCard: React.FC<TodayPursuitCardProps> = ({
               </div>
               <div className="pt-2.5 mt-2 border-t border-stone-100 dark:border-stone-800 text-xs text-stone-600 dark:text-stone-400 flex items-center justify-between flex-wrap gap-1">
                 <span>
-                  每日目標：約 <strong className="text-stone-800 dark:text-stone-200">{speedPace.dailyTargetChapters} 章</strong>
+                  目標每 {speedPace.speedDays} 天一遍（約 <strong className="text-stone-800 dark:text-stone-200">{speedPace.dailyTargetChapters} 章/天</strong>）
                 </span>
                 <span className="text-[11px] text-stone-400">
-                  剩餘 {speedPace.daysRemaining} 天
+                  期程尚餘 {speedPace.daysRemaining} 天
                 </span>
               </div>
             </div>
@@ -671,7 +671,7 @@ export const TodayPursuitCard: React.FC<TodayPursuitCardProps> = ({
                       {isNTHalfYear
                         ? `📖 多讀一天（推進至第 ${Math.min(TOTAL_NT_DAYS, Math.floor(plan.completedUnits / 2) + 1)} 天 · 【${nextReadScheduleText}】）`
                         : isNTSpeed && speedPace
-                        ? `📖 多讀 1 章（推進至【${speedNextLocation?.displayText || ''}】）`
+                        ? `📖 多讀 1 章（推進至第 ${speedPace.currentRound} 遍【${speedNextLocation?.displayText || ''}】）`
                         : `📖 多讀一${unit}（完成第 ${Math.min(plan.completedUnits + 1, plan.totalUnits)} ${unit}）`}
                     </span>
                   </button>
@@ -704,7 +704,7 @@ export const TodayPursuitCard: React.FC<TodayPursuitCardProps> = ({
                   {isNTHalfYear && ntScheduleInfo
                     ? `勾選今日已追求（第 ${ntScheduleInfo.dayNumber} 天 · ${ntScheduleInfo.schedule.displayText}）`
                     : isNTSpeed && speedPace
-                    ? `勾選今日已追求（推進至【${getNTChapterLocation(Math.min(260, plan.completedUnits + Math.max(1, Math.round(speedPace.dailyTargetChapters)))).displayText}】）`
+                    ? `勾選今日已追求（第 ${speedPace.currentRound} 遍 · 推進至【${getNTChapterLocation((((plan.completedUnits + Math.max(1, Math.round(speedPace.dailyTargetChapters)) - 1) % 260) + 1)).displayText}】）`
                     : `勾選今日已追求（第 ${Math.min(plan.completedUnits + 1, plan.totalUnits)} ${unit}）`}
                 </span>
               </button>

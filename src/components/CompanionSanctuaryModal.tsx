@@ -31,6 +31,8 @@ export const CompanionSanctuaryModal: React.FC<CompanionSanctuaryModalProps> = (
   dailyHistory = {},
   unitName = '章',
 }) => {
+  const [isSpiritualMeaningExpanded, setIsSpiritualMeaningExpanded] = React.useState(false);
+
   if (!isOpen || !companion) return null;
 
   const themeMeta = SANCTUARY_THEMES[companionSanctuary.theme] || SANCTUARY_THEMES.dawn;
@@ -136,50 +138,46 @@ export const CompanionSanctuaryModal: React.FC<CompanionSanctuaryModalProps> = (
           />
         </div>
 
-        {/* Relic verses breakdown */}
+        {/* Relic verses breakdown (Collapsible, default folded) */}
         {placedRelics.filter(Boolean).length > 0 && (
-          <div className="mb-5 space-y-2">
-            <span className="text-xs font-bold text-stone-700 dark:text-stone-300 block">陳設信物之屬靈意境：</span>
-            <div className="space-y-1.5 max-h-40 overflow-y-auto pr-1">
-              {placedRelics.filter(Boolean).map((relic) => (
-                <div
-                  key={relic!.id}
-                  className="p-2.5 bg-stone-50 dark:bg-stone-800/60 rounded-xl border border-stone-200/60 dark:border-stone-700/60 text-[11px]"
-                >
-                  <div className="flex items-center gap-1.5 font-semibold text-stone-800 dark:text-stone-200">
-                    <span>{relic!.emoji}</span>
-                    <span>{relic!.name}</span>
-                    <span className="text-stone-400 dark:text-stone-500 font-normal">· {relic!.meaning}</span>
+          <div className="mb-4 bg-stone-50/80 dark:bg-stone-800/40 rounded-2xl p-3 border border-stone-200/60 dark:border-stone-700/60">
+            <button
+              type="button"
+              onClick={() => setIsSpiritualMeaningExpanded(!isSpiritualMeaningExpanded)}
+              className="flex items-center justify-between w-full text-left group"
+            >
+              <div className="flex items-center gap-1.5 text-xs font-bold text-stone-700 dark:text-stone-300 group-hover:text-amber-700 dark:group-hover:text-amber-400 transition-colors">
+                <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                <span>陳設信物之屬靈意境（共 {placedRelics.filter(Boolean).length} 件）</span>
+              </div>
+              <span className="text-[11px] text-stone-400 group-hover:text-stone-600 dark:group-hover:text-stone-200 transition-colors">
+                {isSpiritualMeaningExpanded ? '收合 ▲' : '點擊展開查看經文 ▼'}
+              </span>
+            </button>
+
+            {isSpiritualMeaningExpanded && (
+              <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1 mt-2.5 pt-2 border-t border-stone-200/50 dark:border-stone-700/50 animate-in fade-in">
+                {placedRelics.filter(Boolean).map((relic) => (
+                  <div
+                    key={relic!.id}
+                    className="p-2.5 bg-white dark:bg-stone-800 rounded-xl border border-stone-200/60 dark:border-stone-700/60 text-[11px]"
+                  >
+                    <div className="flex items-center gap-1.5 font-semibold text-stone-800 dark:text-stone-200">
+                      <span>{relic!.emoji}</span>
+                      <span>{relic!.name}</span>
+                      <span className="text-stone-400 dark:text-stone-500 font-normal">· {relic!.meaning}</span>
+                    </div>
+                    <div className="text-amber-900/90 dark:text-amber-300/90 font-serif italic mt-1">
+                      {relic!.verseQuote}
+                    </div>
                   </div>
-                  <div className="text-amber-900/90 dark:text-amber-300/90 font-serif italic mt-1">
-                    {relic!.verseQuote}
-                  </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
-
-        {/* Action button: Amen */}
-        <div className="flex items-center justify-between pt-3 border-t border-stone-100 dark:border-stone-800">
-          <span className="text-xs text-stone-500 dark:text-stone-400">
-            給同伴一句阿們與禱告，在愛中彼此建造！
-          </span>
-
-          <button
-            onClick={() => onAmenCompanion(companion.id, companion.name)}
-            disabled={hasAmenedToday}
-            className={`px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all ${
-              hasAmenedToday
-                ? 'bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 cursor-default border border-emerald-300 dark:border-emerald-800'
-                : 'bg-amber-500 hover:bg-amber-600 text-white shadow-xs active:scale-95'
-            }`}
-          >
-            <HeartHandshake className="w-4 h-4" />
-            <span>{hasAmenedToday ? '今日已為他阿們！' : '為同伴的追求阿們'}</span>
-          </button>
-        </div>
       </div>
     </div>
   );
 };
+
