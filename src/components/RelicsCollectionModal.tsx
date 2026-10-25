@@ -214,7 +214,7 @@ export const RelicsCollectionModal: React.FC<RelicsCollectionModalProps> = ({
                     </div>
                     <div className="flex items-center justify-between text-[11px] text-stone-500">
                       <span>
-                        已追求 {pStats.totalChaptersRead} 篇 · 連續 {pStats.streakDays} 天
+                        已追求 {pStats.totalChaptersRead} {plan.unitName || (plan.category === 'bible' || plan.category === 'nt-half-year' || plan.category === 'nt-speed-reading' ? '章' : '篇')} · 連續 {pStats.streakDays} 天
                       </span>
                       <span className="truncate max-w-[110px]">
                         {unlockedRelics.length > 0

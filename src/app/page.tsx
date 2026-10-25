@@ -2646,6 +2646,9 @@ export default function Home() {
     updateCurrentUserAndSync((prev) => ({
       ...prev,
       sanctuary: newConfig,
+      planSanctuaries: currentPlan?.id
+        ? { ...(prev.planSanctuaries || {}), [currentPlan.id]: newConfig }
+        : prev.planSanctuaries,
     }));
     showToast('✨ 追求帳幕佈置已更新！已保存至您的專屬天地。');
   };
@@ -2720,9 +2723,10 @@ export default function Home() {
     return false;
   });
 
-  const viewingCompanionSanctuary = viewingCompanion
-    ? allUsers.find((u) => u.id === viewingCompanion.id)?.sanctuary || DEFAULT_SANCTUARY_CONFIG
-    : DEFAULT_SANCTUARY_CONFIG;
+  const currentSanctuaryConfig =
+    (currentPlan?.id && user.planSanctuaries?.[currentPlan.id]) ||
+    user.sanctuary ||
+    DEFAULT_SANCTUARY_CONFIG;
 
   const viewingCompanionUser = viewingCompanion
     ? allUsers.find((u) => u.id === viewingCompanion.id) || {
@@ -2736,6 +2740,12 @@ export default function Home() {
         avatar: viewingCompanion.avatar,
       }
     : null;
+
+  const viewingCompanionSanctuary = viewingCompanionUser
+    ? (currentPlan?.id && viewingCompanionUser.planSanctuaries?.[currentPlan.id]) ||
+      viewingCompanionUser.sanctuary ||
+      DEFAULT_SANCTUARY_CONFIG
+    : DEFAULT_SANCTUARY_CONFIG;
 
   const viewingCompanionDailyHistory = viewingCompanionUser
     ? loadUserDailyHistory(viewingCompanionUser)
@@ -2977,7 +2987,7 @@ export default function Home() {
                   {/* Personal Pursuit Sanctuary (個人追求帳幕) */}
                   <SanctuaryCard
                     user={user}
-                    sanctuaryConfig={user.sanctuary || DEFAULT_SANCTUARY_CONFIG}
+                    sanctuaryConfig={currentSanctuaryConfig}
                     currentPlan={currentPlan}
                     joinedPlans={userJoinedPlans}
                     posts={posts}
@@ -3238,7 +3248,7 @@ export default function Home() {
         currentPlan={currentPlan}
         joinedPlans={userJoinedPlans}
         posts={posts}
-        currentConfig={user.sanctuary || DEFAULT_SANCTUARY_CONFIG}
+        currentConfig={currentSanctuaryConfig}
         onSaveConfig={handleSaveSanctuary}
       />
 

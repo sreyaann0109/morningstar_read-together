@@ -210,23 +210,29 @@ export function getPlanRelicStats(
   const member = (plan.members || []).find(
     (m) => m.userId === user.id || m.name === user.name
   );
-  // An active pursuer's chapters should be the greater of user's personal chapters read and plan's progress
-  const planChapters = Math.max(user.totalChaptersRead || 0, plan.completedUnits || 0);
-  const planStreak = Math.max(
-    user.streakDays || 0,
-    member ? member.streakDays : 0,
-    member?.todayCompleted ? 1 : 0
-  );
 
+  // 該追求主題聖徒獨立完成之篇數（嚴格跟隨該主題，絕不混入其他主題之總篇數）
+  const planChapters = member?.completedUnits !== undefined
+    ? member.completedUnits
+    : (plan.completedUnits || 0);
+
+  // 該追求主題之連續追求天數
+  const planStreak = member?.streakDays !== undefined
+    ? member.streakDays
+    : (user.streakDays || 0);
+
+  // 該追求主題內由該聖徒分享之亮光摸著（嚴格跟隨該主題）
   const userPlanPosts = posts.filter(
     (p) =>
       (p.planId === plan.id || p.planTitle === plan.title) &&
       (p.authorId === user.id || p.authorName === user.name)
   );
-  const planShares = Math.max(user.totalSharesCount || 0, userPlanPosts.length);
-  const planAmenFromPosts = Math.max(
-    user.totalAmenReceived || 0,
-    userPlanPosts.reduce((sum, p) => sum + (p.reactions?.amenCount || 0), 0)
+  const planShares = userPlanPosts.length;
+
+  // 該追求主題內獲得之阿們數
+  const planAmenFromPosts = userPlanPosts.reduce(
+    (sum, p) => sum + (p.reactions?.amenCount || 0),
+    0
   );
 
   return {

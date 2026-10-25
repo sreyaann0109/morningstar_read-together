@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Palette, Award, Flame, BookMarked, Sparkles, HeartHandshake, CheckCircle2, Clock } from 'lucide-react';
+import { Palette, Award, Flame, BookMarked, Sparkles, CheckCircle2, Clock } from 'lucide-react';
 import { UserProfile, SanctuaryConfig, SpiritualRelic, PursuitPlan, SharingPost } from '../types';
 import {
   ALL_SPIRITUAL_RELICS,
@@ -9,7 +9,6 @@ import {
   SANCTUARY_THEMES,
   isRelicUnlocked,
   getSanctuaryMaxSlots,
-  getPlanUnlockedRelics,
   getPlanRelicStats,
 } from '../data/relicsData';
 
@@ -35,17 +34,25 @@ export const SanctuaryCard: React.FC<SanctuaryCardProps> = ({
   const themeMeta = SANCTUARY_THEMES[sanctuaryConfig.theme] || SANCTUARY_THEMES.dawn;
   const hasJoinedPlans = joinedPlans.length > 0 && !!currentPlan;
 
-  // Calculate unlocked relics and progressive slots based on user's real pursuit progress
+  // Calculate unlocked relics and progressive slots based on user's real pursuit progress in current plan
   const planStats = currentPlan
     ? getPlanRelicStats(currentPlan, user, posts)
     : {
-        totalChaptersRead: user.totalChaptersRead || 0,
-        streakDays: user.streakDays || 0,
-        totalSharesCount: user.totalSharesCount || 0,
-        totalAmenReceived: user.totalAmenReceived || 0,
+        totalChaptersRead: 0,
+        streakDays: 0,
+        totalSharesCount: 0,
+        totalAmenReceived: 0,
         hasJoinedPlans: false,
         planCompleted: false,
       };
+
+  const planUnit =
+    currentPlan?.unitName ||
+    (currentPlan?.category === 'bible' ||
+    currentPlan?.category === 'nt-half-year' ||
+    currentPlan?.category === 'nt-speed-reading'
+      ? '章'
+      : '篇');
 
   const unlockedRelics = hasJoinedPlans
     ? ALL_SPIRITUAL_RELICS.filter((r) => isRelicUnlocked(r.id, planStats))
@@ -53,13 +60,6 @@ export const SanctuaryCard: React.FC<SanctuaryCardProps> = ({
   const unlockedIds = new Set(unlockedRelics.map((r) => r.id));
   const unlockedCount = unlockedRelics.length;
   const { maxSlots, currentTier, nextTier } = getSanctuaryMaxSlots(planStats);
-
-  // Per-theme breakdown
-  const planRelicSummaries = joinedPlans.map((plan) => ({
-    planId: plan.id,
-    title: plan.title,
-    count: getPlanUnlockedRelics(plan, user, posts).length,
-  }));
 
   // Resolve placed relics based on dynamic maxSlots:
   // 1. If user configured placedRelicIds, display the configured relics (that are unlocked) in their slots.
@@ -117,7 +117,7 @@ export const SanctuaryCard: React.FC<SanctuaryCardProps> = ({
             </div>
             <p className="text-[11px] text-stone-500 line-clamp-1 mt-0.5">
               {currentPlan
-                ? `當前追求進度：共累計閱讀 ${planStats.totalChaptersRead} 篇・已解鎖 ${unlockedCount} 件屬靈信物`
+                ? `當前追求進度：共累計閱讀 ${planStats.totalChaptersRead} ${planUnit}・已解鎖 ${unlockedCount} 件屬靈信物`
                 : '請先加入追求主題，即可依進度開展帳幕格子並陳列信物'}
             </p>
           </div>
@@ -180,10 +180,10 @@ export const SanctuaryCard: React.FC<SanctuaryCardProps> = ({
           </div>
 
           <div className="p-1.5 rounded-xl bg-emerald-50/50 dark:bg-slate-800/80 border border-emerald-100 dark:border-transparent">
-            <span className="text-[10px] text-stone-500 block">累計追求篇數</span>
+            <span className="text-[10px] text-stone-500 block">累計追求{planUnit}數</span>
             <div className="font-extrabold text-stone-800 flex items-center justify-center gap-1 mt-0.5">
               <BookMarked className="w-3.5 h-3.5 text-emerald-600" />
-              <span>{planStats.totalChaptersRead} 篇</span>
+              <span>{planStats.totalChaptersRead} {planUnit}</span>
             </div>
           </div>
 
@@ -195,30 +195,6 @@ export const SanctuaryCard: React.FC<SanctuaryCardProps> = ({
             </div>
           </div>
         </div>
-      </div>
-
-      {/* Per-Theme Relic Summary Strip */}
-      <div className="mb-3.5 relative z-10">
-        {hasJoinedPlans ? (
-          <div className="flex items-center gap-1.5 flex-wrap text-[11px]">
-            <span className="font-semibold text-stone-600">各主題獲得信物：</span>
-            {planRelicSummaries.map((item) => (
-              <button
-                key={item.planId}
-                type="button"
-                onClick={onOpenCollection}
-                className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-white/85 hover:bg-white border border-amber-200/80 text-stone-700 font-medium shadow-2xs transition-colors"
-              >
-                <span className="truncate max-w-[160px]">{item.title}</span>
-                <span className="font-bold text-amber-800">{item.count} 件</span>
-              </button>
-            ))}
-          </div>
-        ) : (
-          <div className="px-3 py-2 rounded-xl bg-white/80 border border-stone-200/80 text-[11px] text-stone-600 flex items-center justify-between gap-2">
-            <span>🌱 尚未加入任何追求主題，目前獲得 <strong>0</strong> 件信物（加入主題追求後即可獲得信物）</span>
-          </div>
-        )}
       </div>
 
       {/* Motto Banner */}
