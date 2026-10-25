@@ -368,6 +368,12 @@ npm run build
       * 導覽列提醒通知浮空板塊 (`Header - Notification Bell Popover`)
       * 今日追求 130 天表定排程內嵌滾動表 (`TodayPursuitCard`)
     * 遮罩層全面加入 `touch-none overscroll-none`，內容盒全面加入 `overscroll-contain`，並同步補齊 `role="dialog"` 與 `aria-modal="true"` 無障礙宣告，滑動體驗沉浸平順且不滲透背景。
+  * **導覽列（Header）常駐置頂與浮動頁面高度隔離 (Persistent Header & Viewport Height Isolation)**：
+    * **導覽列常態置頂不消失**：Header 全面改採 `fixed top-0 left-0 right-0 h-16 z-[60]`，配合 `h-16` 佔位容器保持常態文檔流。無論滾動至何處或開啟任何浮動頁面，導覽列始終清晰可見，絕不因背景鎖定或視圖溢出而消失。
+    * **浮動頁面高度隔離與邊界保護**：全站浮動彈窗統一自 `top-16` 起算（`fixed top-16 inset-x-0 bottom-0 z-50`），彈窗主卡片高度限於 `max-h-[calc(100dvh-5.5rem)]` 並垂直置中於導覽列下方可視區域。徹底解決手機與桌機雙端下「同伴追求狀態（`CompanionSanctuaryModal`）」及各彈窗因過高卡到、撞到或遮蔽導覽列的問題。
+  * **左側追求主題滑出欄（ThemesDrawer）純化「加入什麼就顯示什麼」**：
+    * 徹底移除「其他追求主題 (X)」區塊，抽屜目錄只專注呈現聖徒當前已實際加入之追求主題，杜絕未加入專題之視覺干擾。
+    * 仍保有頂部 6-Emoji 專屬邀請碼輸入區塊，聖徒可依需隨時輸入代碼加入新追求。
 
 ---
 

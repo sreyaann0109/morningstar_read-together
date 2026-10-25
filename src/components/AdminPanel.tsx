@@ -1463,11 +1463,11 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                 return (
                   <div
                     onClick={() => setSelectedUserIdForModal(null)}
-                    className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-stone-900/60 backdrop-blur-xs animate-in fade-in duration-200 touch-none overscroll-none"
+                    className="fixed top-16 inset-x-0 bottom-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-stone-900/60 backdrop-blur-xs animate-in fade-in duration-200 touch-none overscroll-none"
                   >
                     <div
                       onClick={(e) => e.stopPropagation()}
-                      className="bg-white rounded-3xl w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl border border-stone-200 overflow-hidden animate-in zoom-in-95 duration-200 overscroll-contain"
+                      className="bg-white rounded-3xl w-full max-w-2xl max-h-[calc(100dvh-5.5rem)] flex flex-col shadow-2xl border border-stone-200 overflow-hidden animate-in zoom-in-95 duration-200 overscroll-contain"
                     >
                       {/* Modal Header */}
                       <div className="p-4 sm:p-5 border-b border-stone-200/80 flex items-center justify-between bg-stone-50/80 flex-shrink-0">
@@ -2383,11 +2383,11 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
       {tempCodeModal && (
         <div
           onClick={() => setTempCodeModal(null)}
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200 touch-none overscroll-none"
+          className="fixed top-16 inset-x-0 bottom-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200 touch-none overscroll-none"
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl border border-stone-200 space-y-4 overscroll-contain"
+            className="bg-white rounded-3xl max-w-sm w-full max-h-[calc(100dvh-5.5rem)] overflow-y-auto p-6 shadow-2xl border border-stone-200 space-y-4 overscroll-contain"
           >
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-2xl bg-amber-100 flex items-center justify-center text-amber-800 flex-shrink-0">
@@ -2452,11 +2452,11 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
         return (
           <div
             onClick={() => setManagingMembersPlanId(null)}
-            className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-stone-900/50 backdrop-blur-xs animate-in fade-in duration-200 touch-none overscroll-none"
+            className="fixed top-16 inset-x-0 bottom-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-stone-900/50 backdrop-blur-xs animate-in fade-in duration-200 touch-none overscroll-none"
           >
             <div
               onClick={(e) => e.stopPropagation()}
-              className="bg-white rounded-3xl w-full max-w-2xl max-h-[85vh] flex flex-col shadow-2xl border border-stone-200 overflow-hidden animate-in zoom-in-95 duration-200 overscroll-contain"
+              className="bg-white rounded-3xl w-full max-w-2xl max-h-[calc(100dvh-5.5rem)] flex flex-col shadow-2xl border border-stone-200 overflow-hidden animate-in zoom-in-95 duration-200 overscroll-contain"
             >
               {/* Modal Header */}
               <div className="p-4 sm:p-5 border-b border-stone-200/80 flex items-center justify-between bg-stone-50/80 flex-shrink-0">

@@ -2808,6 +2808,8 @@ export default function Home() {
         onOpenAuth={() => setIsAuthModalOpen(true)}
         onLogout={handleLogout}
       />
+      {/* Fixed Header Height Placeholder */}
+      <div className="h-16 flex-shrink-0" aria-hidden="true" />
 
       {/* Main Container */}
       <main className="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 py-6 sm:py-8">
@@ -3266,9 +3268,9 @@ export default function Home() {
         <div
           role="dialog"
           aria-modal="true"
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200 touch-none overscroll-none"
+          className="fixed top-16 inset-x-0 bottom-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200 touch-none overscroll-none"
         >
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-stone-200 space-y-4 overscroll-contain">
+          <div className="bg-white rounded-3xl max-w-md w-full max-h-[calc(100dvh-5.5rem)] overflow-y-auto p-6 shadow-2xl border border-stone-200 space-y-4 overscroll-contain">
             <div className="flex items-center gap-2.5">
               <div className="w-10 h-10 rounded-2xl bg-amber-100 flex items-center justify-center text-amber-800 flex-shrink-0">
                 <ShieldCheck className="w-5 h-5 text-amber-700" />

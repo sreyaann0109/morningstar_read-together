@@ -48,11 +48,11 @@ export const CompanionSanctuaryModal: React.FC<CompanionSanctuaryModalProps> = (
       role="dialog"
       aria-modal="true"
       onClick={onClose}
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/40 backdrop-blur-sm animate-in fade-in duration-200 touch-none overscroll-none"
+      className="fixed top-16 inset-x-0 bottom-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-stone-900/40 backdrop-blur-sm animate-in fade-in duration-200 touch-none overscroll-none"
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="bg-white dark:bg-stone-900 rounded-3xl w-full max-w-xl max-h-[90vh] overflow-y-auto overscroll-contain shadow-2xl border border-stone-200 dark:border-stone-800 p-6 sm:p-7 relative text-stone-900 dark:text-stone-100"
+        className="bg-white dark:bg-stone-900 rounded-3xl w-full max-w-xl max-h-[calc(100dvh-5.5rem)] overflow-y-auto overscroll-contain shadow-2xl border border-stone-200 dark:border-stone-800 p-4 sm:p-6 relative text-stone-900 dark:text-stone-100"
       >
         <button
           onClick={onClose}

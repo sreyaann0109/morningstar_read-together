@@ -78,10 +78,6 @@ export const ThemesDrawer: React.FC<ThemesDrawerProps> = ({
     }
   };
 
-  // 篩選出尚未加入的其他主題
-  const joinedIds = new Set(joinedPlans.map((p) => p.id));
-  const otherPlans = plans.filter((p) => !joinedIds.has(p.id));
-
   return (
     <div
       className={`fixed inset-0 top-16 z-40 overflow-hidden transition-all duration-300 ${
@@ -292,54 +288,6 @@ export const ThemesDrawer: React.FC<ThemesDrawerProps> = ({
               </div>
             )}
           </div>
-
-          {/* 4. 其他追求主題（若存在尚未加入的主題） */}
-          {otherPlans.length > 0 && (
-            <div className="pt-2 space-y-2.5">
-              <div className="flex items-center justify-between px-1">
-                <span className="text-xs font-bold text-stone-600 dark:text-stone-400 flex items-center gap-1.5">
-                  <Compass className="w-3.5 h-3.5 text-stone-400" />
-                  其他追求主題 ({otherPlans.length})
-                </span>
-              </div>
-              <div className="space-y-2">
-                {otherPlans.map((op) => (
-                  <div
-                    key={op.id}
-                    className="p-3 rounded-xl border border-dashed border-stone-200 dark:border-stone-800 bg-stone-50/40 dark:bg-stone-850/50 hover:bg-amber-50/30 transition-colors flex items-center justify-between gap-2"
-                  >
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-1.5 flex-wrap">
-                        <span className="text-xs font-semibold text-stone-700 dark:text-stone-300 truncate">
-                          {op.title}
-                        </span>
-                        <span className="text-[9px] bg-stone-100 dark:bg-stone-800 text-stone-500 px-1 py-0.2 rounded flex-shrink-0">
-                          {getCategoryLabel(op.category)}
-                        </span>
-                      </div>
-                      <span className="text-[10px] text-stone-400 dark:text-stone-500 block mt-0.5">
-                        共 {op.totalUnits} {op.unitName || '篇'} · {(op.members || []).length} 位聖徒同行
-                      </span>
-                    </div>
-                    {allowJoinByInviteCode && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          onClose();
-                          onOpenJoinByCode();
-                        }}
-                        className="px-2.5 py-1 rounded-lg bg-amber-100 hover:bg-amber-200 dark:bg-amber-950 dark:hover:bg-amber-900 text-amber-900 dark:text-amber-300 text-[10px] font-semibold flex items-center gap-1 transition-colors flex-shrink-0"
-                        title="輸入專屬邀請碼加入"
-                      >
-                        <KeyRound className="w-2.5 h-2.5 text-amber-700 dark:text-amber-400" />
-                        <span>輸入代碼加入</span>
-                      </button>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
         </div>
 
         {/* 抽屜底部 屬靈勸勉 (Footer) */}

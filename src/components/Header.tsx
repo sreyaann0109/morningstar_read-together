@@ -216,7 +216,7 @@ export const Header: React.FC<HeaderProps> = ({
   };
 
   return (
-    <header className="sticky top-0 z-[60] bg-white/95 backdrop-blur-md border-b border-stone-200/80 transition-all">
+    <header className="fixed top-0 left-0 right-0 h-16 z-[60] bg-white/95 dark:bg-stone-900/95 backdrop-blur-md border-b border-stone-200/80 dark:border-stone-800 transition-all">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-3">
         {/* Left: Menu Toggle & Logo & Subtitle */}
         <div className="flex items-center gap-2 sm:gap-3">
