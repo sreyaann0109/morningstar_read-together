@@ -273,53 +273,9 @@ export const Header: React.FC<HeaderProps> = ({
                 <Flame className="w-3.5 h-3.5 text-amber-600 fill-amber-500" />
                 <span>{user.streakDays} 天</span>
               </button>
-            </>
-          )}
 
-          {/* User Profile / Personal Settings Button */}
-          <button
-            onClick={onOpenAuth}
-            className="flex items-center gap-1.5 sm:gap-2 pl-1.5 sm:pl-2 pr-2 sm:pr-2.5 py-1 rounded-full hover:bg-stone-100 transition-colors border border-stone-200 bg-stone-50/50"
-            title="個人設定與帳號管理"
-          >
-            <div className="w-7 h-7 rounded-full bg-amber-100 flex items-center justify-center text-xs shadow-inner">
-              {user.avatar}
-            </div>
-            <div className="text-left hidden md:block">
-              <div className="flex items-center gap-1">
-                <span className="block text-xs font-semibold text-stone-800 leading-tight">
-                  {user.name}
-                </span>
-                {isAdmin && (
-                  <span className="text-[9px] bg-amber-100 text-amber-800 px-1 py-0.1 rounded font-bold">
-                    管理員
-                  </span>
-                )}
-              </div>
-              <span className="block text-[10px] text-stone-400 leading-none">
-                個人設定
-              </span>
-            </div>
-            <Settings className="w-3.5 h-3.5 text-stone-400 hidden sm:block" />
-          </button>
-
-          {/* Rightmost Action Group: On mobile, Logout on top and 提醒 shifted right directly below Logout! On desktop, inline row */}
-          <div className="flex flex-col sm:flex-row items-end sm:items-center gap-1 sm:gap-2">
-            {/* Direct Logout Button */}
-            {isLoggedIn && onLogout && (
-              <button
-                onClick={onLogout}
-                className="order-1 sm:order-2 flex items-center gap-1 px-2 py-0.5 sm:px-2.5 sm:py-1.5 rounded-lg sm:rounded-xl border border-stone-200 hover:border-rose-200 hover:bg-rose-50 text-stone-600 hover:text-rose-700 text-[10px] sm:text-xs font-medium transition-colors"
-                title="登出並退回登入頁"
-              >
-                <LogOut className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
-                <span className="inline lg:inline">登出</span>
-              </button>
-            )}
-
-            {/* Notification Bell (同伴阿們與互動提醒小鈴鐺) */}
-            {!isAdminMode && (
-              <div className="relative order-2 sm:order-1" ref={bellRef}>
+              {/* Notification Bell (同伴阿們與互動提醒小鈴鐺) */}
+              <div className="relative" ref={bellRef}>
                 <button
                   type="button"
                   onClick={() => {
@@ -329,21 +285,20 @@ export const Header: React.FC<HeaderProps> = ({
                       onMarkAllNotificationsRead();
                     }
                   }}
-                  className="relative flex items-center gap-1 px-2 py-0.5 sm:p-2 rounded-lg sm:rounded-full border border-stone-200 dark:border-stone-700 bg-stone-50/70 dark:bg-stone-800/70 hover:bg-amber-50 dark:hover:bg-amber-950/60 hover:border-amber-300 dark:hover:border-amber-600 text-stone-700 dark:text-stone-300 transition-colors"
+                  className="relative p-2 rounded-full border border-stone-200 dark:border-stone-700 bg-stone-50/70 dark:bg-stone-800/70 hover:bg-amber-50 dark:hover:bg-amber-950/60 hover:border-amber-300 dark:hover:border-amber-600 text-stone-700 dark:text-stone-300 transition-colors"
                   title="查看同伴阿們與留言提醒"
                 >
-                  <Bell className="w-3 h-3 sm:w-4 sm:h-4 text-amber-600 dark:text-amber-400" />
-                  <span className="text-[10px] font-bold text-stone-700 sm:hidden">提醒</span>
+                  <Bell className="w-4 h-4 text-amber-600 dark:text-amber-400" />
                   {unreadCount > 0 && (
-                    <span className="absolute -top-1 -right-1 min-w-[15px] h-[15px] sm:min-w-[18px] sm:h-[18px] px-0.5 sm:px-1 rounded-full bg-rose-500 text-white text-[9px] sm:text-[10px] font-bold flex items-center justify-center shadow-2xs">
+                    <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-rose-500 text-white text-[10px] font-bold flex items-center justify-center shadow-2xs">
                       {unreadCount}
                     </span>
                   )}
                 </button>
 
-                {/* Notification Popover */}
+                {/* Notification Popover: On mobile fixed top-16 right-4 aligned with logout button right edge; on desktop absolute right-0 */}
                 {isBellOpen && (
-                  <div className="fixed inset-x-3 top-16 sm:absolute sm:right-0 sm:top-full sm:inset-x-auto sm:mt-2 sm:w-96 rounded-2xl bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 shadow-2xl p-3.5 sm:p-4 z-50 animate-in fade-in zoom-in-95 duration-150">
+                  <div className="fixed top-16 right-4 mt-1.5 w-[calc(100vw-2rem)] max-w-sm sm:absolute sm:inset-auto sm:right-0 sm:top-full sm:mt-2 sm:w-96 rounded-2xl bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 shadow-2xl p-3.5 sm:p-4 z-50 animate-in fade-in zoom-in-95 duration-150">
                     <div className="flex items-center justify-between pb-2.5 mb-2.5 border-b border-stone-100 dark:border-stone-800">
                       <div className="flex items-center gap-1.5">
                         <Sparkles className="w-4 h-4 text-amber-500 dark:text-amber-400" />
@@ -400,8 +355,47 @@ export const Header: React.FC<HeaderProps> = ({
                   </div>
                 )}
               </div>
-            )}
-          </div>
+            </>
+          )}
+
+          {/* User Profile / Personal Settings Button */}
+          <button
+            onClick={onOpenAuth}
+            className="flex items-center gap-1.5 sm:gap-2 pl-1.5 sm:pl-2 pr-2 sm:pr-2.5 py-1 rounded-full hover:bg-stone-100 transition-colors border border-stone-200 bg-stone-50/50"
+            title="個人設定與帳號管理"
+          >
+            <div className="w-7 h-7 rounded-full bg-amber-100 flex items-center justify-center text-xs shadow-inner">
+              {user.avatar}
+            </div>
+            <div className="text-left hidden md:block">
+              <div className="flex items-center gap-1">
+                <span className="block text-xs font-semibold text-stone-800 leading-tight">
+                  {user.name}
+                </span>
+                {isAdmin && (
+                  <span className="text-[9px] bg-amber-100 text-amber-800 px-1 py-0.1 rounded font-bold">
+                    管理員
+                  </span>
+                )}
+              </div>
+              <span className="block text-[10px] text-stone-400 leading-none">
+                個人設定
+              </span>
+            </div>
+            <Settings className="w-3.5 h-3.5 text-stone-400 hidden sm:block" />
+          </button>
+
+          {/* Direct Logout Button */}
+          {isLoggedIn && onLogout && (
+            <button
+              onClick={onLogout}
+              className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl border border-stone-200 hover:border-rose-200 hover:bg-rose-50 text-stone-600 hover:text-rose-700 text-xs font-medium transition-colors"
+              title="登出並退回登入頁"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+              <span className="text-xs">登出</span>
+            </button>
+          )}
         </div>
       </div>
     </header>
