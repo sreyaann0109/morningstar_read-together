@@ -1,6 +1,6 @@
 # 《晨星共行 Morning Star Companions》產品規格與系統架構書 (spec.md)
 
-> **當前系統版本**：`v1.1.2`  
+> **當前系統版本**：`v1.1.3`  
 > **正式站點 (Production)**：[https://morningstar-read-together.vercel.app/](https://morningstar-read-together.vercel.app/)（對應 `main` 分支）  
 > **核心資料庫架構**：100% Pure Cloud Supabase PostgreSQL (Zero-Mock Clean Schema，徹底棄用本地 SQLite 與檔案持久化)  
 > 
@@ -23,6 +23,10 @@
 >    - **嚴禁自動 Push**：未經使用者明確發布「push」指令前，**絕對不可執行 `git push`**，以維護遠端部署紀錄之整潔。
 >    - **版本發布 Commit 格式規範**：往後當收到使用者「push vx.x.x」指令時，提交訊息（Commit Message）一律直接寫為「Release vx.x.x」（不帶任何前綴如 chore(release):，純粹直接寫 `Release vx.x.x`），並同步建立對應版本 Tag 推送至遠端。
 >    - **本機服務常態運行**：任何修改與重構完成後，必須確保本機 `http://localhost:3000` 正常運作且隨時可供驗證。
+> 4. **Bug 優先查閱與修復登錄紀律（重要）**：
+>    - **發現 Bug 優先查閱**：當使用者或工程開發發現任何 Bug 時，AI 助手**必須優先查閱 `BUGFIX.md`**，比對歷史病因、既有架構防護（如追求帳幕自訂佈置零回溯五重防護、資料庫 safe upsert 等）與相關模組，嚴禁盲目修改而破壞既有防護機制。
+>    - **修復完成即時登錄**：任何 Bug 一旦修復驗證通過，**必須立即將問題描述、根因剖析、架構級修復方案、變更檔案清單與驗證步驟完整寫入 `BUGFIX.md`**。
+>    - **規格書專注架構**：`spec.md` 專注於產品定位、業務邏輯、資料模型與架構規格，Bug 修復歷程細節統籌移至 `BUGFIX.md` 維護。
 
 ---
 
@@ -390,39 +394,20 @@ npm run build
 
 * **v1.1.2 (2026-10-26)**：
   * **追求帳幕自訂佈置零回溯雲端持久化 (Sanctuary Customization Zero-Rollback Cloud Persistence)**：
-    * **徹底根治自訂回溯（Rollback）四大連鎖病因**：
-      1. **彈窗狀態被背景輪詢強制重置**：`currentSanctuaryConfig` 原先在每次主層重新渲染時生成新物件引用，觸發彈窗內部 `useEffect` 在聖徒編輯時無預警將表單重置回舊設定。
-      2. **遠端合併順序覆寫本地 (Merge Priority Bug)**：輪詢時原先將遠端放在展開運算子右側，導致遠端尚未寫入完畢之舊資料覆寫了本地剛儲存好的設定。
-      3. **掛載時參照脫靶 (Mount Ref Desync)**：初次掛載解析 `loadUserData` 時未同步賦值 `userRef.current`，導致非同步操作短暫將儲存對象指向預設同工帳號。
-      4. **突變無冷卻鎖引發競態 (Race Condition)**：儲存帳幕時未調用突變鎖，使背景輪詢拉回寫入中的舊資料。
-    * **五重架構級安全防護機制**：
-      * **① 彈窗開闔狀態單向邊緣保護 (Modal State Open-Transition Guard)**：
-        - 於 `SanctuaryCustomizeModal` 內實裝 `prevIsOpenRef` 守衛，嚴格限制「僅在彈窗由關閉轉換為開啟（`isOpen && !prevIsOpenRef.current`）時初始化一次」，編輯過程中即使主頁面重渲染亦絕不重置。
-        - 主頁面透過 `useMemo` 將 `currentSanctuaryConfig` 深度鎖定，確保物件引用在設定未實質變更時保持絕對穩定。
-      * **② 本地權威優先合併準則 (Local-Authoritative Merge Principle)**：
-        - 確立「聖徒本機當前操作為追求帳幕自訂陳設之最高權威來源」。
-        - 於初次資料獲取與 2.5 秒定時輪詢中，專屬主題陳設一律採用 `{ ...remote.planSanctuaries, ...currentUser.planSanctuaries }` 合併順序，本地最新配置享有最高優先權。
-        - 雙向校驗機制：若偵測到本地設定與遠端不一致，即刻由本地主動觸發雙向推播同步至 Supabase PostgreSQL，使雲端權威庫自動校準更新。
-      * **③ 掛載同步參照鎖定 (Mount Synchronous Ref Binding)**：
-        - 在 `useEffect` 初次掛載解析 `loadUserData` 當下，立即同步賦值 `userRef.current = activeProfile`，杜絕任何微任務時差造成的參照錯位。
-      * **④ 突變狀態冷卻鎖 (Mutation Cooldown Lock)**：
-        - 點擊「保存帳幕佈置」及底層 `rawSyncUsers` 執行時，全面調用 `markMutationStart()` 觸發 4 秒突變保護期，期間所有定時輪詢自動靜默屏蔽，徹底阻斷競態拉回舊資料。
-      * **⑤ 專屬本機備援持久化 (Dedicated Storage Fallback)**：
-        - 每次儲存同步原子化寫入專屬本地鍵（`getUserStorageKey(uid, 'sanctuary')` 與 `getUserStorageKey(uid, 'plan_sanctuaries')`），離線與頁面刷新皆可立時精準復原。
+    * 實裝本地權威優先合併（Local-Authoritative Merge Principle）、彈窗開啟邊緣守衛（Modal State Open-Transition Guard）、掛載同步參照鎖定、4 秒突變冷卻鎖與本機原子化備援等五重架構級防護機制。
+    * 徹底終結跨裝置輪詢競態與追求帳幕自訂陳設之回溯（Rollback）問題。
+    * *詳細問題病因分析與五重防護實作機制請參閱 [`BUGFIX.md`](BUGFIX.md#v112-修復紀錄-2026-10-26)。*
 
 * **v1.1.3 (2026-10-28)**：
-  * **Google 帳號快速登入 (Google Identity Services OAuth 2.0)**：
-    * 整合 Google Identity Services (GIS) 登入機制，支援使用既有 Google 帳號一鍵登入。
-    * 實裝自動帳號融合（Account Merging），以 Email 比對已存在之聖徒檔案，完整繼承追求帳幕、進度、信物與系統權限；新使用者則自動註冊並同步至 Supabase 雲端資料庫。
+  * **Google 帳號快速登入整合 (Google Identity Services OAuth 2.0)**：
+    * 支援既有 Google 帳號一鍵登入，並具備智慧帳號融合機制，無縫保留追求帳幕、進度與權限。
   * **追求真實歷史校準與幽靈連勝清除 (Streak & History Integrity)**：
-    * 徹底清除 `loadUserDailyHistory` 預設生成之虛構假資料，無紀錄嚴格回歸空物件 `{}`。
-    * 重構 `calculateStreakDaysFromHistory` 演算法，嚴格以台北時間（UTC+8）自今日/昨日逐日往回檢驗連續性，杜絕虛報。
-    * 「今日已完成」判斷嚴格綁定台北時間 `lastCompletedDate === currentUtc8Date`。
-  * **雲端資料庫使用者防誤刪保護 (Safe Database Sync)**：
-    * 修復 `supabaseSaveUsers` 預設 `fullSync = false`，僅執行安全 upsert，杜絕單人更新誤刪其他聖徒資料之連鎖風險。
+    * 嚴格以台北時間（UTC+8）連續天數演算法為唯一基準，杜絕任何未打卡虛報。
+  * **雲端資料庫安全儲存防護 (Safe Database Upsert)**：
+    * 修正 Supabase 使用者資料同步策略，全面杜絕單人更新誤刪其他聖徒資料之連鎖風險。
   * **追求地圖與最近七天紀錄跨裝置雲端整合 (Pursuit Map & 7-Day Stats Cloud Sync)**：
-    * 修復 `StatsModal` 正確接收 `dailyPursuitHistory`，消除統計顯示為 0 之錯誤。
-    * 實裝本地快取、遠端歷史與專題成員打卡紀錄（`m.lastCompletedDate`）之三方深度聚合合併，達成跨裝置 100% 即時一致。
+    * 實裝三方深度聚合合併（本地、遠端與成員打卡紀錄），達成跨裝置 100% 即時一致。
+    * *詳細問題病因分析與修復歷程請參閱 [`BUGFIX.md`](BUGFIX.md#v113-修復紀錄-2026-10-28)。*
 
 ---
 
