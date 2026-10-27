@@ -11,6 +11,7 @@ import {
   getSanctuaryMaxSlots,
   getPlanRelicStats,
 } from '../data/relicsData';
+import { getUTC8DateString } from '../lib/dateUtils';
 
 interface SanctuaryCardProps {
   user: UserProfile;
@@ -80,7 +81,10 @@ export const SanctuaryCard: React.FC<SanctuaryCardProps> = ({
   const memberInCurrentPlan = currentPlan
     ? (currentPlan.members || []).find((m) => m.userId === user.id || m.name === user.name)
     : null;
-  const isCompletedToday = memberInCurrentPlan ? memberInCurrentPlan.todayCompleted : false;
+  const currentUtc8Date = getUTC8DateString();
+  const isCompletedToday = memberInCurrentPlan
+    ? Boolean(memberInCurrentPlan.todayCompleted && memberInCurrentPlan.lastCompletedDate === currentUtc8Date)
+    : false;
 
   return (
     <div

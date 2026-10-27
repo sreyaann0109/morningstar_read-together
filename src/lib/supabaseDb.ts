@@ -270,7 +270,7 @@ export async function supabaseGetAllUsers(): Promise<UserProfile[]> {
   });
 }
 
-export async function supabaseSaveUsers(users: UserProfile[], fullSync = true) {
+export async function supabaseSaveUsers(users: UserProfile[], fullSync = false) {
   const supabase = getSupabase();
   if (!supabase) return;
 

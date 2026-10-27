@@ -96,3 +96,40 @@ export function formatRelativeTime(timeStr?: string, entityId?: string): string 
   const diffWeeks = Math.floor(diffDays / 7);
   return `${diffWeeks}w`;
 }
+
+/**
+ * 依據真實追求歷史記錄 (dailyHistory) 精確計算連續追求天數 (Streak)
+ * 1. 若今日已打卡追求 (dailyHistory[today] > 0)：由今日往前回溯計算連續天數
+ * 2. 若今日尚未打卡：檢視昨日是否有追求。若昨日有追求，連續紀錄仍保持（等待今日追求）；若昨日無追求，連續紀錄中斷為 0
+ * 嚴格杜絕幽靈天數與未更新卻假造統計，唯有實際追求方納入統計！
+ */
+export function calculateStreakDaysFromHistory(
+  dailyHistory: Record<string, number> | undefined,
+  currentDateStr: string = getUTC8DateString()
+): number {
+  if (!dailyHistory || typeof dailyHistory !== 'object') return 0;
+
+  const todayUnits = dailyHistory[currentDateStr] || 0;
+  let streak = 0;
+  let checkDateStr = currentDateStr;
+
+  if (todayUnits > 0) {
+    while ((dailyHistory[checkDateStr] || 0) > 0) {
+      streak++;
+      checkDateStr = addDaysUTC8(checkDateStr, -1);
+    }
+  } else {
+    const yesterdayStr = addDaysUTC8(currentDateStr, -1);
+    if ((dailyHistory[yesterdayStr] || 0) > 0) {
+      checkDateStr = yesterdayStr;
+      while ((dailyHistory[checkDateStr] || 0) > 0) {
+        streak++;
+        checkDateStr = addDaysUTC8(checkDateStr, -1);
+      }
+    } else {
+      streak = 0;
+    }
+  }
+
+  return streak;
+}

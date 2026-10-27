@@ -3,28 +3,33 @@
 import React from 'react';
 import { X, Flame, Trophy, Calendar } from 'lucide-react';
 import { UserProfile } from '../types';
-import { getUTC8DateString, addDaysUTC8 } from '../lib/dateUtils';
+import { getUTC8DateString, addDaysUTC8, calculateStreakDaysFromHistory } from '../lib/dateUtils';
 
 interface StatsModalProps {
   isOpen: boolean;
   onClose: () => void;
   user: UserProfile;
+  dailyHistory?: Record<string, number>;
 }
 
 const WEEKDAY_NAMES = ['日', '一', '二', '三', '四', '五', '六'];
 
-export const StatsModal: React.FC<StatsModalProps> = ({ isOpen, onClose, user }) => {
+export const StatsModal: React.FC<StatsModalProps> = ({ isOpen, onClose, user, dailyHistory }) => {
   if (!isOpen) return null;
 
   // Dynamically generate the exact last 7 calendar days ending today in UTC+8
   const todayStr = getUTC8DateString();
+  const effectiveDailyHistory = dailyHistory || user.dailyHistory || {};
+  const effectiveStreak = calculateStreakDaysFromHistory(effectiveDailyHistory, todayStr);
+
   const last7Days = Array.from({ length: 7 }, (_, idx) => {
     const daysAgo = 6 - idx; // 6, 5, 4, 3, 2, 1, 0
     const dStr = addDaysUTC8(todayStr, -daysAgo);
     const [, m, d] = dStr.split('-').map(Number);
     const dayOfWeek = new Date(`${dStr}T00:00:00+08:00`).getDay();
     const weekday = WEEKDAY_NAMES[dayOfWeek];
-    const isCompleted = user.streakDays > daysAgo;
+    const units = effectiveDailyHistory[dStr] || 0;
+    const isCompleted = units > 0;
     return {
       dateLabel: `${m}/${d}`,
       dayLabel: daysAgo === 0 ? '今天' : `週${weekday}`,
@@ -62,7 +67,7 @@ export const StatsModal: React.FC<StatsModalProps> = ({ isOpen, onClose, user })
             <p className="text-xs text-stone-500">{user.email || '同伴同行'}</p>
             <div className="flex items-center gap-1.5 mt-1 text-xs font-semibold text-amber-700">
               <Flame className="w-4 h-4 fill-amber-500 text-amber-600" />
-              <span>已連續追求 {user.streakDays} 天</span>
+              <span>已連續追求 {effectiveStreak} 天</span>
             </div>
           </div>
         </div>
@@ -71,7 +76,7 @@ export const StatsModal: React.FC<StatsModalProps> = ({ isOpen, onClose, user })
         <div className="grid grid-cols-3 gap-2.5 sm:gap-3 mb-6">
           <div className="bg-amber-50/60 border border-amber-200/60 rounded-2xl p-3 sm:p-3.5 text-center">
             <span className="block text-xl sm:text-2xl font-bold text-amber-800">
-              {user.streakDays}
+              {effectiveStreak}
             </span>
             <span className="text-[11px] sm:text-xs text-amber-900/70 font-medium">連續追求天數</span>
           </div>
@@ -134,14 +139,14 @@ export const StatsModal: React.FC<StatsModalProps> = ({ isOpen, onClose, user })
           <div className="space-y-2.5">
             <div
               className={`flex items-center gap-3 p-3 rounded-2xl border ${
-                user.streakDays >= 7
+                effectiveStreak >= 7
                   ? 'bg-amber-50/60 border-amber-200/60'
                   : 'bg-stone-50 border-stone-200/70 opacity-85'
               }`}
             >
               <div
                 className={`w-9 h-9 rounded-xl flex items-center justify-center text-lg ${
-                  user.streakDays >= 7
+                  effectiveStreak >= 7
                     ? 'bg-amber-500 text-white'
                     : 'bg-stone-200 text-stone-600'
                 }`}
@@ -151,13 +156,13 @@ export const StatsModal: React.FC<StatsModalProps> = ({ isOpen, onClose, user })
               <div className="flex-1">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-bold text-stone-900">晨星初現</span>
-                  {user.streakDays >= 7 ? (
+                  {effectiveStreak >= 7 ? (
                     <span className="text-[10px] text-amber-700 font-semibold bg-amber-100 px-2 py-0.5 rounded-full">
                       已達成
                     </span>
                   ) : (
                     <span className="text-[10px] text-stone-500">
-                      進度 {Math.min(user.streakDays, 7)}/7 天
+                      進度 {Math.min(effectiveStreak, 7)}/7 天
                     </span>
                   )}
                 </div>
@@ -167,14 +172,14 @@ export const StatsModal: React.FC<StatsModalProps> = ({ isOpen, onClose, user })
 
             <div
               className={`flex items-center gap-3 p-3 rounded-2xl border ${
-                user.streakDays >= 14
+                effectiveStreak >= 14
                   ? 'bg-amber-50/60 border-amber-200/60'
                   : 'bg-stone-50 border-stone-200/70 opacity-85'
               }`}
             >
               <div
                 className={`w-9 h-9 rounded-xl flex items-center justify-center text-lg ${
-                  user.streakDays >= 14
+                  effectiveStreak >= 14
                     ? 'bg-amber-500 text-white'
                     : 'bg-stone-200 text-stone-600'
                 }`}
@@ -184,13 +189,13 @@ export const StatsModal: React.FC<StatsModalProps> = ({ isOpen, onClose, user })
               <div className="flex-1">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-bold text-stone-900">靈裡得力</span>
-                  {user.streakDays >= 14 ? (
+                  {effectiveStreak >= 14 ? (
                     <span className="text-[10px] text-amber-700 font-semibold bg-amber-100 px-2 py-0.5 rounded-full">
                       已達成
                     </span>
                   ) : (
                     <span className="text-[10px] text-stone-500">
-                      進度 {Math.min(user.streakDays, 14)}/14 天
+                      進度 {Math.min(effectiveStreak, 14)}/14 天
                     </span>
                   )}
                 </div>
@@ -200,14 +205,14 @@ export const StatsModal: React.FC<StatsModalProps> = ({ isOpen, onClose, user })
 
             <div
               className={`flex items-center gap-3 p-3 rounded-2xl border ${
-                user.streakDays >= 30
+                effectiveStreak >= 30
                   ? 'bg-amber-50/60 border-amber-200/60'
                   : 'bg-stone-50 border-stone-200/70 opacity-85'
               }`}
             >
               <div
                 className={`w-9 h-9 rounded-xl flex items-center justify-center text-lg ${
-                  user.streakDays >= 30
+                  effectiveStreak >= 30
                     ? 'bg-amber-500 text-white'
                     : 'bg-stone-200 text-stone-600'
                 }`}
@@ -217,13 +222,13 @@ export const StatsModal: React.FC<StatsModalProps> = ({ isOpen, onClose, user })
               <div className="flex-1">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-bold text-stone-900">竭力奔跑</span>
-                  {user.streakDays >= 30 ? (
+                  {effectiveStreak >= 30 ? (
                     <span className="text-[10px] text-amber-700 font-semibold bg-amber-100 px-2 py-0.5 rounded-full">
                       已達成
                     </span>
                   ) : (
                     <span className="text-[10px] text-stone-500">
-                      進度 {Math.min(user.streakDays, 30)}/30 天
+                      進度 {Math.min(effectiveStreak, 30)}/30 天
                     </span>
                   )}
                 </div>

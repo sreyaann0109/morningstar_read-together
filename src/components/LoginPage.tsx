@@ -26,6 +26,25 @@ interface LoginPageProps {
 
 const AVATAR_OPTIONS = ['🦁', '🐑', '🕊️', '🦅', '🌾', '🌿', '💧', '🔥', '📖', '⛺'];
 
+// 解析 Google OAuth JWT 憑證 payload
+function parseJwtPayload(token: string): { email: string; name?: string; picture?: string; sub?: string } | null {
+  try {
+    const parts = token.split('.');
+    if (parts.length < 2) return null;
+    const base64Url = parts[1];
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const jsonPayload = decodeURIComponent(
+      atob(base64)
+        .split('')
+        .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+        .join('')
+    );
+    return JSON.parse(jsonPayload);
+  } catch (e) {
+    return null;
+  }
+}
+
 export const LoginPage: React.FC<LoginPageProps> = ({ allUsers, onLoginSuccess, siteSettings }) => {
   const effectiveAllowEmail = siteSettings ? siteSettings.allowEmailReset : true;
   const effectiveAllowAdmin = siteSettings ? siteSettings.allowAdminAssistedReset : true;
@@ -103,6 +122,142 @@ export const LoginPage: React.FC<LoginPageProps> = ({ allUsers, onLoginSuccess, 
     }, 1000);
     return () => clearTimeout(timer);
   }, [resendCountdown]);
+
+  // Google 快速登入狀態與回調處理
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+
+  const handleGoogleCredentialResponse = async (response: any) => {
+    try {
+      if (!response || !response.credential) {
+        throw new Error('未接收到 Google 授權憑證');
+      }
+      setIsGoogleLoading(true);
+      setLoginError(null);
+      setRegError(null);
+
+      const payload = parseJwtPayload(response.credential);
+      if (!payload || !payload.email) {
+        throw new Error('無法取得 Google 帳號 Email 資訊');
+      }
+
+      const googleEmail = payload.email.toLowerCase().trim();
+      const googleName = payload.name || googleEmail.split('@')[0] || '聖徒';
+
+      // 1. 比對現有使用者中是否已有該信箱
+      const combined = getCombinedUsers();
+      const matched = combined.find(
+        (u) => u.email.toLowerCase().trim() === googleEmail
+      );
+
+      if (matched) {
+        // 直接登入既有帳號，追求進度、帳幕與權限完全保留
+        onLoginSuccess(matched, false);
+        return;
+      }
+
+      // 2. 自動為初次登入之聖徒建立專屬檔案
+      const newUserId = `user-g-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`;
+      const newUserProfile: UserProfile = {
+        id: newUserId,
+        name: googleName,
+        email: googleEmail,
+        password: '', // Google OAuth 授權，免密碼
+        streakDays: 0,
+        totalChaptersRead: 0,
+        totalSharesCount: 0,
+        totalAmenReceived: 0,
+        avatar: '🕊️',
+        role: 'user',
+        joinedInviteCodes: [],
+        sanctuary: {
+          placedRelicIds: ['relic-sun', 'relic-shield', 'relic-scroll', 'relic-crown'],
+          motto: '同那清心呼求主的人，竭力追求公義、信、愛、和平。',
+          theme: 'dawn',
+        },
+      };
+
+      try {
+        localStorage.setItem(`morningstar_user_${newUserId}_profile`, JSON.stringify(newUserProfile));
+        const regStr = localStorage.getItem('morningstar_registered_users');
+        let updatedReg: UserProfile[] = [];
+        if (regStr) {
+          const list: UserProfile[] = JSON.parse(regStr);
+          if (Array.isArray(list)) {
+            updatedReg = [...list, newUserProfile];
+          }
+        } else {
+          updatedReg = [newUserProfile];
+        }
+        localStorage.setItem('morningstar_registered_users', JSON.stringify(updatedReg));
+        setRegisteredUsers(updatedReg);
+        await syncUsersToBackend([...allUsers, newUserProfile]);
+      } catch (e) {
+        console.error('Failed to sync new Google user to backend:', e);
+      }
+
+      onLoginSuccess(newUserProfile, true);
+    } catch (err: any) {
+      console.error('Google Sign-in failed:', err);
+      setLoginError(err.message || 'Google 登入失敗，請稍後重試。');
+    } finally {
+      setIsGoogleLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (mode !== 'login' && mode !== 'register') return;
+
+    const clientId =
+      process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ||
+      '1021252042341-arg3f5db6tbm6virngfmkk2i4dpipe7g.apps.googleusercontent.com';
+
+    if (!clientId) return;
+
+    const initializeGsi = () => {
+      if (typeof window === 'undefined' || !(window as any).google?.accounts?.id) return;
+
+      try {
+        (window as any).google.accounts.id.initialize({
+          client_id: clientId,
+          callback: handleGoogleCredentialResponse,
+          auto_select: false,
+          cancel_on_tap_outside: true,
+        });
+
+        const btnElement = document.getElementById('googleSignInBtn');
+        if (btnElement) {
+          btnElement.innerHTML = '';
+          (window as any).google.accounts.id.renderButton(btnElement, {
+            theme: 'outline',
+            size: 'large',
+            width: btnElement.parentElement?.offsetWidth || 340,
+            text: mode === 'register' ? 'signup_with' : 'continue_with',
+            shape: 'pill',
+            logo_alignment: 'left',
+          });
+        }
+      } catch (e) {
+        console.error('Google GSI Init Error:', e);
+      }
+    };
+
+    if ((window as any).google?.accounts?.id) {
+      initializeGsi();
+    } else {
+      const existingScript = document.getElementById('google-gsi-script');
+      if (!existingScript) {
+        const script = document.createElement('script');
+        script.id = 'google-gsi-script';
+        script.src = 'https://accounts.google.com/gsi/client';
+        script.async = true;
+        script.defer = true;
+        script.onload = initializeGsi;
+        document.body.appendChild(script);
+      } else {
+        existingScript.addEventListener('load', initializeGsi);
+      }
+    }
+  }, [mode, allUsers]);
 
   const getCombinedUsers = (sourceUsers: UserProfile[] = allUsers): UserProfile[] => {
     const userMap = new Map<string, UserProfile>();
@@ -634,6 +789,56 @@ export const LoginPage: React.FC<LoginPageProps> = ({ allUsers, onLoginSuccess, 
                       <span>登入帳號</span>
                     </button>
 
+                    {/* Google 快速登入區塊 */}
+                    <div className="space-y-3 pt-2">
+                      <div className="relative flex py-1 items-center">
+                        <div className="flex-grow border-t border-stone-200"></div>
+                        <span className="flex-shrink mx-3 text-xs text-stone-400 font-medium">或使用 Google 快速登入</span>
+                        <div className="flex-grow border-t border-stone-200"></div>
+                      </div>
+
+                      <div className="flex flex-col items-center justify-center w-full min-h-[44px]">
+                        {isGoogleLoading ? (
+                          <div className="w-full flex items-center justify-center py-2.5 px-4 rounded-full border border-stone-200 bg-stone-50 text-stone-600 text-sm gap-2">
+                            <Loader2 className="w-4 h-4 animate-spin text-amber-600" />
+                            <span>正在透過 Google 驗證身分...</span>
+                          </div>
+                        ) : (
+                          <div id="googleSignInBtn" className="w-full flex justify-center">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if ((window as any).google?.accounts?.id) {
+                                  (window as any).google.accounts.id.prompt();
+                                }
+                              }}
+                              className="w-full flex items-center justify-center gap-3 py-2.5 px-4 rounded-full border border-stone-300 bg-white hover:bg-stone-50 text-stone-700 text-sm font-semibold transition-all shadow-2xs hover:shadow-xs"
+                            >
+                              <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
+                                <path
+                                  fill="#4285F4"
+                                  d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                                />
+                                <path
+                                  fill="#34A853"
+                                  d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                                />
+                                <path
+                                  fill="#FBBC05"
+                                  d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
+                                />
+                                <path
+                                  fill="#EA4335"
+                                  d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
+                                />
+                              </svg>
+                              <span>使用 Google 帳號快速登入</span>
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
                     {/* Small Text Links for Forgot Password & Registration */}
                     <div className="flex items-center justify-between pt-1 text-xs">
                       {(effectiveAllowEmail || effectiveAllowAdmin) ? (
@@ -801,6 +1006,56 @@ export const LoginPage: React.FC<LoginPageProps> = ({ allUsers, onLoginSuccess, 
                       <Sparkles className="w-4 h-4" />
                       <span>完成註冊並進入平台</span>
                     </button>
+
+                    {/* Google 快速註冊區塊 */}
+                    <div className="space-y-3 pt-2">
+                      <div className="relative flex py-1 items-center">
+                        <div className="flex-grow border-t border-stone-200"></div>
+                        <span className="flex-shrink mx-3 text-xs text-stone-400 font-medium">或使用 Google 快速註冊</span>
+                        <div className="flex-grow border-t border-stone-200"></div>
+                      </div>
+
+                      <div className="flex flex-col items-center justify-center w-full min-h-[44px]">
+                        {isGoogleLoading ? (
+                          <div className="w-full flex items-center justify-center py-2.5 px-4 rounded-full border border-stone-200 bg-stone-50 text-stone-600 text-sm gap-2">
+                            <Loader2 className="w-4 h-4 animate-spin text-amber-600" />
+                            <span>正在透過 Google 建立帳號...</span>
+                          </div>
+                        ) : (
+                          <div id="googleSignInBtn" className="w-full flex justify-center">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if ((window as any).google?.accounts?.id) {
+                                  (window as any).google.accounts.id.prompt();
+                                }
+                              }}
+                              className="w-full flex items-center justify-center gap-3 py-2.5 px-4 rounded-full border border-stone-300 bg-white hover:bg-stone-50 text-stone-700 text-sm font-semibold transition-all shadow-2xs hover:shadow-xs"
+                            >
+                              <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
+                                <path
+                                  fill="#4285F4"
+                                  d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                                />
+                                <path
+                                  fill="#34A853"
+                                  d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                                />
+                                <path
+                                  fill="#FBBC05"
+                                  d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
+                                />
+                                <path
+                                  fill="#EA4335"
+                                  d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
+                                />
+                              </svg>
+                              <span>使用 Google 帳號快速註冊</span>
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
 
                     <div className="text-center pt-1">
                       <button

@@ -410,9 +410,23 @@ npm run build
       * **⑤ 專屬本機備援持久化 (Dedicated Storage Fallback)**：
         - 每次儲存同步原子化寫入專屬本地鍵（`getUserStorageKey(uid, 'sanctuary')` 與 `getUserStorageKey(uid, 'plan_sanctuaries')`），離線與頁面刷新皆可立時精準復原。
 
+* **v1.1.3 (2026-10-28)**：
+  * **Google 帳號快速登入 (Google Identity Services OAuth 2.0)**：
+    * 整合 Google Identity Services (GIS) 登入機制，支援使用既有 Google 帳號一鍵登入。
+    * 實裝自動帳號融合（Account Merging），以 Email 比對已存在之聖徒檔案，完整繼承追求帳幕、進度、信物與系統權限；新使用者則自動註冊並同步至 Supabase 雲端資料庫。
+  * **追求真實歷史校準與幽靈連勝清除 (Streak & History Integrity)**：
+    * 徹底清除 `loadUserDailyHistory` 預設生成之虛構假資料，無紀錄嚴格回歸空物件 `{}`。
+    * 重構 `calculateStreakDaysFromHistory` 演算法，嚴格以台北時間（UTC+8）自今日/昨日逐日往回檢驗連續性，杜絕虛報。
+    * 「今日已完成」判斷嚴格綁定台北時間 `lastCompletedDate === currentUtc8Date`。
+  * **雲端資料庫使用者防誤刪保護 (Safe Database Sync)**：
+    * 修復 `supabaseSaveUsers` 預設 `fullSync = false`，僅執行安全 upsert，杜絕單人更新誤刪其他聖徒資料之連鎖風險。
+  * **追求地圖與最近七天紀錄跨裝置雲端整合 (Pursuit Map & 7-Day Stats Cloud Sync)**：
+    * 修復 `StatsModal` 正確接收 `dailyPursuitHistory`，消除統計顯示為 0 之錯誤。
+    * 實裝本地快取、遠端歷史與專題成員打卡紀錄（`m.lastCompletedDate`）之三方深度聚合合併，達成跨裝置 100% 即時一致。
+
 ---
 
 *規格書制定維護：晨星共行同工服事組*  
-*最新修訂時間：2026-10-26*
+*最新修訂時間：2026-10-28*
 
 
