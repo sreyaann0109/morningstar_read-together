@@ -14,6 +14,7 @@
   * [2. 根除「未每日更新卻統計有進度」之幽靈連勝與假資料](#2-根除未每日更新卻統計有進度之幽靈連勝與假資料)
   * [3. 修復 Supabase `supabaseSaveUsers` 誤刪其他聖徒資料之連鎖風險](#3-修復-supabase-supabasesaveusers-誤刪其他聖徒資料之連鎖風險)
   * [4. 修復追求地圖與「最近七天紀錄」跨裝置雲端連線同步顯示 0 之問題](#4-修復追求地圖與最近七天紀錄跨裝置雲端連線同步顯示-0-之問題)
+  * [5. 本機開發伺服器快取衝突導致 localhost 卡死 (Dev Server Chunk 404)](#5-本機開發伺服器快取衝突導致-localhost-卡死-dev-server-chunk-404)
 * [v1.1.2 修復紀錄 (2026-10-26)](#v112-修復紀錄-2026-10-26)
   * [1. 追求帳幕自訂佈置零回溯雲端持久化 (五重架構級安全防護)](#1-追求帳幕自訂佈置零回溯雲端持久化-五重架構級安全防護)
 * [v1.1.1 修復紀錄 (2026-10-25)](#v111-修復紀錄-2026-10-25)
@@ -74,6 +75,17 @@
     - `plan.members[].lastCompletedDate`（各追求計畫中已打卡完成之真實日期）
     - 合併後統一存回 `authoritativeDailyHistory` 並同步寫入 Supabase，確保跨裝置、跨使用者皆能 100% 即時呈現完整追求地圖與七天紀錄。
 * **影響檔案**：[`src/components/StatsModal.tsx`](src/components/StatsModal.tsx), [`src/app/page.tsx`](src/app/page.tsx)
+
+### 5. 本機開發伺服器快取衝突導致 localhost 卡死 (Dev Server Chunk 404)
+* **問題描述**：使用者在瀏覽器訪問 `http://localhost:3000` 時頁面卡住、白屏無回應。
+* **原因剖析**：
+  * 先前為驗證發布版本執行了 `npm run build`，生產建置重構覆寫了 `.next` 快取目錄，導致背景常駐運行的 `next dev` 開發伺服器找不到先前的開發版 chunks（前端請求 `app/page.js`、`main-app.js` 全數傳回 404），進而導致 dev 行程崩潰中斷退出。
+* **解決方案**：
+  * 清除殘留快取 `rm -rf .next`。
+  * 重新以常態背景守護模式（`BypassSandbox: true`，確保 Supabase 雲端網路通暢）啟動 `next dev`。
+  * 經驗證 `GET /api/data` 立即回復 `200 OK`，雲端資料庫連線與熱載入恢復正常。
+* **防護守則**：執行 `npm run build` 進行生產驗證時，若本機有 `next dev` 在運行，完成後應即時重啟 dev 伺服器並清理 `.next` 快取。
+* **影響檔案**：運行環境與建置腳本
 
 ---
 
