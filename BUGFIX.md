@@ -15,6 +15,7 @@
   * [3. 修復 Supabase `supabaseSaveUsers` 誤刪其他聖徒資料之連鎖風險](#3-修復-supabase-supabasesaveusers-誤刪其他聖徒資料之連鎖風險)
   * [4. 修復追求地圖與「最近七天紀錄」跨裝置雲端連線同步顯示 0 之問題](#4-修復追求地圖與最近七天紀錄跨裝置雲端連線同步顯示-0-之問題)
   * [5. 本機開發伺服器快取衝突導致 localhost 卡死 (Dev Server Chunk 404)](#5-本機開發伺服器快取衝突導致-localhost-卡死-dev-server-chunk-404)
+  * [6. 新 Google 帳號首次登入觸發 Client-side Exception 白屏問題](#6-新-google-帳號首次登入觸發-client-side-exception-白屏問題)
 * [v1.1.2 修復紀錄 (2026-10-26)](#v112-修復紀錄-2026-10-26)
   * [1. 追求帳幕自訂佈置零回溯雲端持久化 (五重架構級安全防護)](#1-追求帳幕自訂佈置零回溯雲端持久化-五重架構級安全防護)
 * [v1.1.1 修復紀錄 (2026-10-25)](#v111-修復紀錄-2026-10-25)
@@ -86,6 +87,17 @@
   * 經驗證 `GET /api/data` 立即回復 `200 OK`，雲端資料庫連線與熱載入恢復正常。
 * **防護守則**：執行 `npm run build` 進行生產驗證時，若本機有 `next dev` 在運行，完成後應即時重啟 dev 伺服器並清理 `.next` 快取。
 * **影響檔案**：運行環境與建置腳本
+
+### 6. 新 Google 帳號首次登入觸發 Client-side Exception 白屏問題
+* **問題描述**：使用者使用新 Google 帳號登入時，畫面拋出 `Application error: a client-side exception has occurred` 錯誤，但手動重新整理頁面後即可正常運作。
+* **原因剖析**：
+  1. **Google GIS 腳本生命週期與 React 卸載競態**：當新 Google 帳號完成授權時，同步直接呼叫 `onLoginSuccess` 觸發 React 立即將登入狀態切換為已登入並強制卸載 `<LoginPage />`。此時 Google GIS 腳本仍在底層 iframe 處理 postMessage 回調，容器節點突然被銷毀引發 GIS 拋出未捕獲的異常。
+  2. **`allUsers` 變更連鎖觸發按鈕重新初始化**：新使用者註冊時會呼叫 `saveAllUsers` 更新全域聖徒陣列，而 `LoginPage` 的 `useEffect` 原先依賴了 `allUsers`，導致在回調執行的同一時間點觸發 `btnElement.innerHTML = ''` 與第二次 `initialize`，破壞了進行中的回調。
+* **解決方案**：
+  * **解耦 GIS 渲染依賴**：改用 `allUsersRef = useRef(allUsers)`，將初始化 `useEffect` 依賴純化為 `[mode]`，杜絕使用者名單更新引發按鈕 DOM 重構。
+  * **非同步生命週期緩衝**：將 `onLoginSuccess` 移入 `setTimeout(..., 100)` 微任務緩衝，確保 Google GIS 腳本於底層乾淨結束 postMessage 回調結算後，React 才進行視圖切換與組件卸載。
+  * **完備化使用者檔案結構**：於新 Google 帳號建立時同步補齊 `displayMode: 'light'`、`joined_plans` 與 `completed_today` 本機預設值。
+* **影響檔案**：[`src/components/LoginPage.tsx`](src/components/LoginPage.tsx)
 
 ---
 

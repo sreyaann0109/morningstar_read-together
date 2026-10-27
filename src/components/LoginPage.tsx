@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Mail,
   Lock,
@@ -123,6 +123,11 @@ export const LoginPage: React.FC<LoginPageProps> = ({ allUsers, onLoginSuccess, 
     return () => clearTimeout(timer);
   }, [resendCountdown]);
 
+  const allUsersRef = useRef(allUsers);
+  useEffect(() => {
+    allUsersRef.current = allUsers;
+  }, [allUsers]);
+
   // Google 快速登入狀態與回調處理
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 
@@ -144,14 +149,16 @@ export const LoginPage: React.FC<LoginPageProps> = ({ allUsers, onLoginSuccess, 
       const googleName = payload.name || googleEmail.split('@')[0] || '聖徒';
 
       // 1. 比對現有使用者中是否已有該信箱
-      const combined = getCombinedUsers();
+      const combined = getCombinedUsers(allUsersRef.current);
       const matched = combined.find(
         (u) => u.email.toLowerCase().trim() === googleEmail
       );
 
       if (matched) {
-        // 直接登入既有帳號，追求進度、帳幕與權限完全保留
-        onLoginSuccess(matched, false);
+        // 直接登入既有帳號，延遲 100ms 讓 Google GIS 腳本優雅結束 postMessage 回調後再切換 React 狀態
+        setTimeout(() => {
+          onLoginSuccess(matched, false);
+        }, 100);
         return;
       }
 
@@ -168,6 +175,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ allUsers, onLoginSuccess, 
         totalAmenReceived: 0,
         avatar: '🕊️',
         role: 'user',
+        displayMode: 'light',
         joinedInviteCodes: [],
         sanctuary: {
           placedRelicIds: ['relic-sun', 'relic-shield', 'relic-scroll', 'relic-crown'],
@@ -178,6 +186,8 @@ export const LoginPage: React.FC<LoginPageProps> = ({ allUsers, onLoginSuccess, 
 
       try {
         localStorage.setItem(`morningstar_user_${newUserId}_profile`, JSON.stringify(newUserProfile));
+        localStorage.setItem(`morningstar_user_${newUserId}_joined_plans`, JSON.stringify([]));
+        localStorage.setItem(`morningstar_user_${newUserId}_completed_today`, JSON.stringify(false));
         const regStr = localStorage.getItem('morningstar_registered_users');
         let updatedReg: UserProfile[] = [];
         if (regStr) {
@@ -190,12 +200,15 @@ export const LoginPage: React.FC<LoginPageProps> = ({ allUsers, onLoginSuccess, 
         }
         localStorage.setItem('morningstar_registered_users', JSON.stringify(updatedReg));
         setRegisteredUsers(updatedReg);
-        await syncUsersToBackend([...allUsers, newUserProfile]);
+        await syncUsersToBackend([...allUsersRef.current, newUserProfile]);
       } catch (e) {
         console.error('Failed to sync new Google user to backend:', e);
       }
 
-      onLoginSuccess(newUserProfile, true);
+      // 延遲 100ms 移交登入狀態，確保 Google GIS 腳本底層生命週期乾淨結算，杜絕組件強制卸載引發之 Client Exception
+      setTimeout(() => {
+        onLoginSuccess(newUserProfile, true);
+      }, 100);
     } catch (err: any) {
       console.error('Google Sign-in failed:', err);
       setLoginError(err.message || 'Google 登入失敗，請稍後重試。');
@@ -257,7 +270,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ allUsers, onLoginSuccess, 
         existingScript.addEventListener('load', initializeGsi);
       }
     }
-  }, [mode, allUsers]);
+  }, [mode]);
 
   const getCombinedUsers = (sourceUsers: UserProfile[] = allUsers): UserProfile[] => {
     const userMap = new Map<string, UserProfile>();
