@@ -88,15 +88,27 @@
 * **防護守則**：執行 `npm run build` 進行生產驗證時，若本機有 `next dev` 在運行，完成後應即時重啟 dev 伺服器並清理 `.next` 快取。
 * **影響檔案**：運行環境與建置腳本
 
-### 6. 新 Google 帳號首次登入觸發 Client-side Exception 白屏問題
-* **問題描述**：使用者使用新 Google 帳號登入時，畫面拋出 `Application error: a client-side exception has occurred` 錯誤，但手動重新整理頁面後即可正常運作。
+### 6. 新 Google 帳號首次登入觸發 Client-side Exception (removeChild NotFoundError)
+* **問題描述**：使用者使用新 Google 帳號登入時，畫面拋出 `Unhandled Runtime Error: NotFoundError: Failed to execute 'removeChild' on 'Node': The node to be removed is not a child of this node.` 崩潰白屏，但手動重新整理頁面後即可正常運作。
 * **原因剖析**：
-  1. **Google GIS 腳本生命週期與 React 卸載競態**：當新 Google 帳號完成授權時，同步直接呼叫 `onLoginSuccess` 觸發 React 立即將登入狀態切換為已登入並強制卸載 `<LoginPage />`。此時 Google GIS 腳本仍在底層 iframe 處理 postMessage 回調，容器節點突然被銷毀引發 GIS 拋出未捕獲的異常。
-  2. **`allUsers` 變更連鎖觸發按鈕重新初始化**：新使用者註冊時會呼叫 `saveAllUsers` 更新全域聖徒陣列，而 `LoginPage` 的 `useEffect` 原先依賴了 `allUsers`，導致在回調執行的同一時間點觸發 `btnElement.innerHTML = ''` 與第二次 `initialize`，破壞了進行中的回調。
+  1. **React 虛擬 DOM 與第三方 Google GIS DOM 竄改衝突（根本病因）**：
+     - 在 `LoginPage` 中，原先 JSX 寫法為 `{isGoogleLoading ? <Loader /> : <div id="googleSignInBtn"><button>...</button></div>}`。
+     - Google Identity Services 載入時執行 `btnElement.innerHTML = ''`，在 React 背後強行清空了 `<button>` 子節點並塞入 Google iframe。
+     - 當登入中 `isGoogleLoading` 切換為 `true` 或登入成功組件卸載時，React 試圖遍歷並卸載虛擬 DOM 中記憶的 `<button>` 節點，調用 `parentNode.removeChild(buttonNode)`；但該節點早被 Google GIS 抹除，導致瀏覽器原生拋出 `NotFoundError: The node to be removed is not a child of this node` 致命錯誤。
+  2. **`googleSignInBtn` DOM ID 重複衝突**：
+     - 登入（Login）與註冊（Register）表單同時宣告了同名的 `id="googleSignInBtn"`，導致 `document.getElementById` 指向錯亂。
+  3. **`allUsers` 變更連鎖觸發按鈕在回調中重複初始化**：
+     - 新使用者註冊更新 `allUsers` 時，觸發了依賴 `allUsers` 的 `useEffect` 重複執行 `renderButton`，破壞了進行中的回調。
 * **解決方案**：
-  * **解耦 GIS 渲染依賴**：改用 `allUsersRef = useRef(allUsers)`，將初始化 `useEffect` 依賴純化為 `[mode]`，杜絕使用者名單更新引發按鈕 DOM 重構。
-  * **非同步生命週期緩衝**：將 `onLoginSuccess` 移入 `setTimeout(..., 100)` 微任務緩衝，確保 Google GIS 腳本於底層乾淨結束 postMessage 回調結算後，React 才進行視圖切換與組件卸載。
-  * **完備化使用者檔案結構**：於新 Google 帳號建立時同步補齊 `displayMode: 'light'`、`joined_plans` 與 `completed_today` 本機預設值。
+  * **非侵入式純淨容器與浮層載入器 (Non-Intrusive Container Pattern)**：
+    - 將 Google 按鈕容器純化為空 `<div id="googleSignInBtn" className="w-full flex justify-center" />`，JSX 內部絕不放任何 React 子節點，讓 React 虛擬 DOM 永遠視其為空節點，徹底阻斷 React `removeChild` 衝突。
+    - 載入狀態改用絕對定位覆蓋浮層（`absolute inset-0 z-10`），杜絕條件式卸載 DOM。
+  * **獨立分離 DOM ID**：
+    - 登入表單使用 `googleSignInBtn`，註冊表單使用 `googleSignUpBtn`，依模式精確渲染。
+  * **解耦 GIS 渲染依賴**：
+    - 改用 `allUsersRef = useRef(allUsers)`，將初始化 `useEffect` 依賴純化為 `[mode]`。
+  * **非同步生命週期緩衝**：
+    - 將 `onLoginSuccess` 移入 `setTimeout(..., 100)` 微任務緩衝，確保 Google GIS 腳本於底層乾淨結束 postMessage 回調結算後，React 才進行視圖切換與組件卸載。
 * **影響檔案**：[`src/components/LoginPage.tsx`](src/components/LoginPage.tsx)
 
 ---
