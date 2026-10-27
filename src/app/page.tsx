@@ -294,6 +294,11 @@ export default function Home() {
   const notificationsRef = useRef<AppNotification[]>(notifications);
   const siteSettingsRef = useRef<SiteSettings>(siteSettings);
   const lastSettingsModifiedAtRef = useRef<number>(0);
+  const isLoggedInRef = useRef<boolean>(isLoggedIn);
+
+  useEffect(() => {
+    isLoggedInRef.current = isLoggedIn;
+  }, [isLoggedIn]);
 
   useEffect(() => {
     userRef.current = user;
@@ -426,6 +431,48 @@ export default function Home() {
 
     return () => clearInterval(timer);
   }, [progressUndo?.planId, progressUndo !== null]);
+
+  // Forced Logout Handler (核心強制登出機制：銷毀被刪除使用者的本地快取、關閉所有浮動彈窗並立即退回登入頁面)
+  const triggerForcedLogout = (customMsg?: string) => {
+    setIsAuthModalOpen(false);
+    setIsThemesDrawerOpen(false);
+    setIsPlanSelectorOpen(false);
+    setIsStatsModalOpen(false);
+    setIsSanctuaryCustomizeOpen(false);
+    setIsRelicsCollectionOpen(false);
+    setIsEditPursuitOpen(false);
+    setIsSetProgressOpen(false);
+    setIsShareModalOpen(false);
+    setIsJoinByCodeOpen(false);
+    setViewingCompanion(null);
+    setIsLoggedIn(false);
+    isLoggedInRef.current = false;
+    setIsAdminMode(false);
+    const deletedUid = userRef.current.id;
+    setUser(defaultUser);
+    userRef.current = defaultUser;
+    setJoinedPlanIds([]);
+    setIsCompletedToday(false);
+    setSelectedPlanId('');
+    setDailyPursuitHistory({});
+
+    try {
+      sessionStorage.setItem('morningstar_is_logged_in', 'false');
+      sessionStorage.removeItem('morningstar_current_user');
+      localStorage.setItem('morningstar_is_logged_in', 'false');
+      localStorage.removeItem('morningstar_current_user');
+      if (deletedUid) {
+        localStorage.removeItem(getUserStorageKey(deletedUid, 'profile'));
+        localStorage.removeItem(getUserStorageKey(deletedUid, 'joined_plans'));
+        localStorage.removeItem(getUserStorageKey(deletedUid, 'completed_today'));
+        localStorage.removeItem(getUserStorageKey(deletedUid, 'daily_units_history'));
+        localStorage.removeItem(getUserStorageKey(deletedUid, 'sanctuary'));
+        localStorage.removeItem(getUserStorageKey(deletedUid, 'plan_sanctuaries'));
+      }
+    } catch (e) {}
+
+    showToast(customMsg || '⚠️ 您的帳號已被管理同工移除，系統已強制為您登出。');
+  };
 
   // Sync displayMode class onto document.body & html so portals and scrollbars match
   useEffect(() => {
@@ -569,7 +616,18 @@ export default function Home() {
         }
         if (Array.isArray(backendData.users) && backendData.users.length > 0) {
           const currentUid = userRef.current.id;
-          const currentEmail = userRef.current.email.toLowerCase();
+          const currentEmail = userRef.current.email ? userRef.current.email.toLowerCase().trim() : '';
+
+          // 核心強制登出機制：若當前已登入使用者已被管理員從雲端刪除，立即強制登出並銷毀本地快取
+          if (isLoggedInRef.current && currentUid && currentUid !== 'user-123') {
+            const isStillInDatabase = backendData.users.some(
+              (u) => u.id === currentUid || (u.email && currentEmail && u.email.toLowerCase().trim() === currentEmail)
+            );
+            if (!isStillInDatabase) {
+              triggerForcedLogout('⚠️ 您的帳號已被管理同工移除，系統已為您安全登出。');
+              return;
+            }
+          }
 
           const mergedUsers = backendData.users.map((u) => {
             if (u.id === currentUid || u.email.toLowerCase() === currentEmail) {
@@ -704,6 +762,19 @@ export default function Home() {
           } catch (e) {}
         }
       });
+
+      // 跨分頁/視窗登出同步監聽
+      const handleStorageChange = (e: StorageEvent) => {
+        if (e.key === 'morningstar_is_logged_in' && e.newValue === 'false') {
+          if (isLoggedInRef.current) {
+            triggerForcedLogout('👋 已自其他視窗或分頁登出當前身份。');
+          }
+        }
+      };
+      window.addEventListener('storage', handleStorageChange);
+      return () => {
+        window.removeEventListener('storage', handleStorageChange);
+      };
     } catch (e) {
       console.error('LocalStorage error:', e);
       setMounted(true);
@@ -729,7 +800,18 @@ export default function Home() {
         }
         if (Array.isArray(backendData.users) && backendData.users.length > 0) {
           const currentUid = userRef.current.id;
-          const currentEmail = userRef.current.email.toLowerCase();
+          const currentEmail = userRef.current.email ? userRef.current.email.toLowerCase().trim() : '';
+
+          // 核心強制登出機制：若當前已登入使用者已被管理員從雲端刪除，立即強制登出並銷毀本地快取
+          if (isLoggedInRef.current && currentUid && currentUid !== 'user-123') {
+            const isStillInDatabase = backendData.users.some(
+              (u) => u.id === currentUid || (u.email && currentEmail && u.email.toLowerCase().trim() === currentEmail)
+            );
+            if (!isStillInDatabase) {
+              triggerForcedLogout('⚠️ 您的帳號已被管理同工移除，系統已為您安全登出。');
+              return;
+            }
+          }
 
           const mergedUsers = backendData.users.map((u) => {
             if (u.id === currentUid || u.email.toLowerCase() === currentEmail) {
@@ -1130,6 +1212,7 @@ export default function Home() {
       userRef.current = activeProfile;
       setUser(activeProfile);
       setIsLoggedIn(true);
+      isLoggedInRef.current = true;
       if (activeProfile.role !== 'admin') {
         setIsAdminMode(false);
       }
@@ -1161,6 +1244,7 @@ export default function Home() {
   const handleLogout = () => {
     setIsAuthModalOpen(false);
     setIsLoggedIn(false);
+    isLoggedInRef.current = false;
     setIsAdminMode(false);
     setJoinedPlanIds([]);
     setIsCompletedToday(false);

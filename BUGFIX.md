@@ -15,7 +15,8 @@
   * [3. 修復 Supabase `supabaseSaveUsers` 誤刪其他聖徒資料之連鎖風險](#3-修復-supabase-supabasesaveusers-誤刪其他聖徒資料之連鎖風險)
   * [4. 修復追求地圖與「最近七天紀錄」跨裝置雲端連線同步顯示 0 之問題](#4-修復追求地圖與最近七天紀錄跨裝置雲端連線同步顯示-0-之問題)
   * [5. 本機開發伺服器快取衝突導致 localhost 卡死 (Dev Server Chunk 404)](#5-本機開發伺服器快取衝突導致-localhost-卡死-dev-server-chunk-404)
-  * [6. 新 Google 帳號首次登入觸發 Client-side Exception 白屏問題](#6-新-google-帳號首次登入觸發-client-side-exception-白屏問題)
+  * [6. 新 Google 帳號首次登入觸發 Client-side Exception (removeChild NotFoundError)](#6-新-google-帳號首次登入觸發-client-side-exception-removechild-notfounderror)
+  * [7. 管理員刪除人員即時跨裝置強制登出機制 (Real-time Forced Logout on User Deletion)](#7-管理員刪除人員即時跨裝置強制登出機制-real-time-forced-logout-on-user-deletion)
 * [v1.1.2 修復紀錄 (2026-10-26)](#v112-修復紀錄-2026-10-26)
   * [1. 追求帳幕自訂佈置零回溯雲端持久化 (五重架構級安全防護)](#1-追求帳幕自訂佈置零回溯雲端持久化-五重架構級安全防護)
 * [v1.1.1 修復紀錄 (2026-10-25)](#v111-修復紀錄-2026-10-25)
@@ -110,6 +111,20 @@
   * **非同步生命週期緩衝**：
     - 將 `onLoginSuccess` 移入 `setTimeout(..., 100)` 微任務緩衝，確保 Google GIS 腳本於底層乾淨結束 postMessage 回調結算後，React 才進行視圖切換與組件卸載。
 * **影響檔案**：[`src/components/LoginPage.tsx`](src/components/LoginPage.tsx)
+
+### 7. 管理員刪除人員即時跨裝置強制登出機制 (Real-time Forced Logout on User Deletion)
+* **問題描述**：管理員在控制台刪除某位聖徒或 Google 帳號後，該人員在其自己的裝置（手機或不同瀏覽器）上仍保持已登入狀態，甚至定時輪詢會將已刪除帳號再次同步回雲端。
+* **原因剖析**：
+  * 原先定時輪詢與掛載拉取雲端資料時，僅在雲端找到該使用者時進行合併更新；若雲端已無該使用者紀錄（已被刪除），系統未作任何判斷，導致被刪除的使用者裝置繼續使用本地 `localStorage` 與 `sessionStorage` 的過期憑證。
+* **解決方案**：
+  * **主動校驗雲端留存狀態**：於初次掛載（Mount Fetch）及每 3.5 秒定時輪詢中，校驗當前已登入之 `currentUid` 與 `currentEmail` 是否仍存在於 Supabase 雲端資料庫 `backendData.users` 中。
+  * **立即強制登出 (Forced Logout)**：
+    - 一旦確認雲端已無該使用者紀錄，立即調用 `triggerForcedLogout()`。
+    - 徹底銷毀其 `sessionStorage`、`localStorage` 中的 `profile`、`joined_plans`、`completed_today`、`daily_units_history`、`sanctuary` 與 `plan_sanctuaries` 快取。
+    - 強制關閉全站所有開啟中的浮動彈窗，重置身分為 `defaultUser`，切換 `isLoggedIn = false` 退回登入畫面。
+    - 彈出溫馨提示：`⚠️ 您的帳號已被管理同工移除，系統已為您安全登出。`
+  * **跨分頁即時聯動監聽**：加入 `window.addEventListener('storage')` 監聽 `morningstar_is_logged_in`，同裝置多分頁即刻同步登出。
+* **影響檔案**：[`src/app/page.tsx`](src/app/page.tsx)
 
 ---
 

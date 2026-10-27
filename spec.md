@@ -48,7 +48,7 @@
 
 ### 2.2 單一主分支部署策略 (Single-Branch Strategy: `main`)
 * **`main` 分支（Production & Main Development）**：
-  * 當前版本標籤：`v1.1.2`
+  * 當前版本標籤：`v1.1.3`
   * 綁定線上生產環境網域：`https://morningstar-read-together.vercel.app/`
   * 全站所有新功能開發、測試驗證、UI 微調、修復與版本發布一律直接在 `main` 主分支作業。
   * 保持「本機驗證無誤 ➔ Conventional Commit ➔ 使用者確認 push ➔ Vercel 自動部署」之簡潔流暢工作流。
@@ -401,12 +401,18 @@ npm run build
 * **v1.1.3 (2026-10-28)**：
   * **Google 帳號快速登入整合 (Google Identity Services OAuth 2.0)**：
     * 支援既有 Google 帳號一鍵登入，並具備智慧帳號融合機制，無縫保留追求帳幕、進度與權限。
+    * 修復 Google GIS 侵入式修改 DOM 引發 React `removeChild` `NotFoundError` 崩潰之非同步卸載競爭問題。
+  * **管理員刪除人員即時跨裝置強制登出機制 (Real-time Forced Logout on User Deletion)**：
+    * 支援定時輪詢（3.5 秒）、初次載入與跨分頁 storage 聯動三重即時防線。
+    * 管理員在後台刪除帳號時，被刪除端自動銷毀本地儲存憑證、退回登入頁面並關閉全站浮動彈窗，徹底杜絕舊快取回寫復活。
   * **追求真實歷史校準與幽靈連勝清除 (Streak & History Integrity)**：
     * 嚴格以台北時間（UTC+8）連續天數演算法為唯一基準，杜絕任何未打卡虛報。
   * **雲端資料庫安全儲存防護 (Safe Database Upsert)**：
     * 修正 Supabase 使用者資料同步策略，全面杜絕單人更新誤刪其他聖徒資料之連鎖風險。
   * **追求地圖與最近七天紀錄跨裝置雲端整合 (Pursuit Map & 7-Day Stats Cloud Sync)**：
     * 實裝三方深度聚合合併（本地、遠端與成員打卡紀錄），達成跨裝置 100% 即時一致。
+  * **建立獨立 Bug 查閱與修復登錄紀律 (`BUGFIX.md`)**：
+    * 確立發現 Bug 優先查閱、修復完成即時登錄與規格書專注架構之開發規範。
     * *詳細問題病因分析與修復歷程請參閱 [`BUGFIX.md`](BUGFIX.md#v113-修復紀錄-2026-10-28)。*
 
 ---
