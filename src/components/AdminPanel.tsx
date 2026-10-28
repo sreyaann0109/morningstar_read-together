@@ -1531,14 +1531,14 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                         {u.passwordResetRequested && (
                           <div className="text-xs font-bold bg-amber-500 text-white px-3 py-1.5 rounded-xl flex items-center gap-1.5 animate-pulse">
                             <AlertCircle className="w-4 h-4" />
-                            <span>⚠️ 該聖徒正在申請忘記密碼（待管理員核發 10 位臨時密碼）</span>
+                            <span>⚠️ 該聖徒正在申請忘記密碼（待管理員核發臨時密碼）</span>
                           </div>
                         )}
 
                         {u.mustChangePassword && !u.passwordResetRequested && (
                           <div className="text-xs font-bold bg-amber-100 text-amber-900 border border-amber-300 px-3 py-1.5 rounded-xl flex items-center gap-1.5">
                             <KeyRound className="w-4 h-4 text-amber-700" />
-                            <span>🔑 已核發 10 位臨時密碼（等待聖徒登入更改為新密碼）</span>
+                            <span>🔑 已核發臨時密碼（等待聖徒登入更改為新密碼）</span>
                           </div>
                         )}
 
@@ -1631,7 +1631,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                           <div className="p-3.5 rounded-2xl bg-amber-50/90 border border-amber-300 space-y-2.5 shadow-2xs">
                             <span className="text-xs font-bold text-amber-950 flex items-center gap-1.5">
                               <KeyRound className="w-4 h-4 text-amber-600" />
-                              10 位臨時登入密碼：
+                              臨時登入密碼：
                             </span>
                             <div className="text-xl font-mono font-extrabold tracking-widest text-amber-950 bg-white py-2 px-4 rounded-xl border border-amber-300 shadow-2xs select-all text-center">
                               {u.tempPassword}
@@ -1707,7 +1707,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                               >
                                 <span className="flex items-center gap-2">
                                   <KeyRound className="w-3.5 h-3.5" />
-                                  產生 10 位英數臨時密碼
+                                  產生英數臨時密碼
                                 </span>
                                 <span className="text-[10px] text-amber-100">提供該員登入重設</span>
                               </button>
@@ -1787,10 +1787,10 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
               <div className="bg-gradient-to-r from-amber-500/10 via-amber-200/20 to-transparent border border-amber-300/80 rounded-3xl p-4 sm:p-5 shadow-2xs space-y-2">
                 <div className="flex items-center gap-2 text-amber-950 font-bold text-sm">
                   <KeyRound className="w-4 h-4 text-amber-600 flex-shrink-0" />
-                  <span>忘記密碼與 10 位臨時密碼管理中心</span>
+                  <span>忘記密碼與臨時密碼管理中心</span>
                 </div>
                 <p className="text-xs text-stone-600 leading-relaxed">
-                  當聖徒在登入頁點選「忘記密碼」並輸入註冊信箱後，系統會在此自動產生專屬的 10 位隨機臨時密碼。管理員可直接複製提供給該聖徒。聖徒登入後將強制要求設定專屬新密碼，新密碼設定完成後，此處的臨時密碼便會自動清除。
+                  當聖徒在登入頁點選「忘記密碼」並輸入註冊信箱後，系統會在此自動產生專屬的隨機臨時密碼。管理員可直接複製提供給該聖徒。聖徒登入後將強制要求設定專屬新密碼，新密碼設定完成後，此處的臨時密碼便會自動清除。
                 </p>
               </div>
 
@@ -1813,7 +1813,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                   <div className="flex items-center justify-between p-3 rounded-2xl bg-stone-50 border border-stone-200/80">
                     <div>
                       <div className="flex items-center gap-1.5">
-                        <span className="font-bold text-stone-800">信箱 6 位數驗證碼</span>
+                        <span className="font-bold text-stone-800">信箱驗證碼</span>
                         <span className={`text-[10px] font-bold px-1.5 py-0.2 rounded-full ${
                           localSettings.allowEmailReset ? 'bg-emerald-100 text-emerald-800' : 'bg-stone-200 text-stone-600'
                         }`}>
@@ -1904,7 +1904,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
 
                   {usersWithPendingReset.map((u) => {
                     const isExpanded = expandedResetUserIds.has(u.id);
-                    const messageText = `親愛的【${u.name}】弟兄/姊妹平安：您在晨星共行的 10 位臨時登入密碼為：${u.tempPassword || '（待產生）'}。請使用註冊信箱（${u.email}）配合此臨時密碼登入，登入後系統將引導您設定專屬新密碼。`;
+                    const messageText = `親愛的【${u.name}】弟兄/姊妹平安：您在晨星共行的臨時登入密碼為：${u.tempPassword || '（待產生）'}。請使用註冊信箱（${u.email}）配合此臨時密碼登入，登入後系統將引導您設定專屬新密碼。`;
 
                     return (
                       <div
@@ -1985,7 +1985,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                             {u.tempPassword ? (
                               <div className="space-y-3 p-4 rounded-2xl bg-amber-50 border border-amber-300">
                                 <span className="text-xs font-bold text-amber-950 block">
-                                  專屬 10 位隨機臨時密碼：
+                                  專屬隨機臨時密碼：
                                 </span>
                                 <div className="text-2xl font-mono font-extrabold tracking-widest text-amber-950 bg-white py-3 px-4 rounded-xl border border-amber-300 shadow-2xs select-all text-center">
                                   {u.tempPassword}
@@ -2008,7 +2008,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                                     ) : (
                                       <Copy className="w-4 h-4" />
                                     )}
-                                    <span>{copiedTempId === u.id ? '已複製密碼！' : '一鍵複製 10 位臨時密碼'}</span>
+                                    <span>{copiedTempId === u.id ? '已複製密碼！' : '一鍵複製臨時密碼'}</span>
                                   </button>
 
                                   {onResetUserPassword && (
@@ -2018,7 +2018,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                                       className="w-full py-2 px-4 rounded-xl border border-stone-200 bg-white hover:bg-amber-100 text-stone-700 text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors"
                                     >
                                       <RotateCcw className="w-3.5 h-3.5 text-stone-400" />
-                                      <span>換一組新的 10 位臨時密碼</span>
+                                      <span>換一組新的臨時密碼</span>
                                     </button>
                                   )}
 
@@ -2050,7 +2050,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                                   className="w-full py-2.5 px-4 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold flex items-center justify-center gap-2 shadow-2xs transition-colors"
                                 >
                                   <KeyRound className="w-4 h-4" />
-                                  <span>立即為其產生 10 位臨時密碼</span>
+                                  <span>立即為其產生臨時密碼</span>
                                 </button>
                               )
                             )}
@@ -2211,7 +2211,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                 <div className="space-y-3">
                   <div className="flex items-center justify-between gap-4">
                     <div>
-                      <span className="text-xs font-bold text-stone-800 block">信箱 6 位數驗證碼自主重設</span>
+                      <span className="text-xs font-bold text-stone-800 block">信箱驗證碼自主重設</span>
                       <span className="text-[11px] text-stone-500 block">允許聖徒在登入頁自行輸入電子信箱收取驗證碼，重設新密碼</span>
                     </div>
                     <button
@@ -2232,7 +2232,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                   <div className="flex items-center justify-between gap-4 pt-2 border-t border-stone-50">
                     <div>
                       <span className="text-xs font-bold text-stone-800 block">聯繫管理員一鍵核發臨時密碼</span>
-                      <span className="text-[11px] text-stone-500 block">允許聖徒提交找回申請，由管理員在後台點擊一鍵產生 10 位安全臨時密碼</span>
+                      <span className="text-[11px] text-stone-500 block">允許聖徒提交找回申請，由管理員在後台點擊一鍵產生安全臨時密碼</span>
                     </div>
                     <button
                       type="button"
@@ -2417,13 +2417,13 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                 <KeyRound className="w-5 h-5 text-amber-700" />
               </div>
               <div>
-                <h3 className="font-bold text-stone-900 text-sm">已產生 10 位臨時密碼</h3>
+                <h3 className="font-bold text-stone-900 text-sm">已產生臨時密碼</h3>
                 <p className="text-xs text-stone-500">對象：【{tempCodeModal.userName}】</p>
               </div>
             </div>
 
             <div className="p-4 bg-stone-50 rounded-2xl border border-stone-200/80 text-center space-y-2">
-              <p className="text-xs text-stone-500">請複製以下 10 位臨時密碼提供給該聖徒：</p>
+              <p className="text-xs text-stone-500">請複製以下臨時密碼提供給該聖徒：</p>
               <div className="text-2xl font-mono font-extrabold tracking-widest text-amber-900 select-all bg-white py-2.5 px-3 rounded-xl border border-amber-300 shadow-2xs">
                 {tempCodeModal.tempCode}
               </div>

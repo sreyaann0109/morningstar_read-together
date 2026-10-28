@@ -442,7 +442,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ allUsers, onLoginSuccess, 
 
       const targetDisplay = data.email || data.targetEmail || target;
       setForgotInfoMsg(
-        `驗證碼已成功寄送至您的信箱「${targetDisplay}」！\n請至您的電子信箱收取 6 位數驗證碼，並於 10 分鐘內輸入完成重設。`
+        `驗證碼已成功寄送至您的信箱「${targetDisplay}」！\n請至您的電子信箱收取驗證碼，並於 10 分鐘內輸入完成重設。`
       );
     } catch (err: any) {
       setForgotError(err?.message || '網路連線異常，請稍後再試。');
@@ -458,7 +458,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ allUsers, onLoginSuccess, 
 
     const code = forgotInputCode.trim();
     if (!code || code.length !== 6) {
-      setForgotError('請輸入正確的 6 位數驗證碼。');
+      setForgotError('請輸入正確的驗證碼。');
       return;
     }
 
@@ -584,7 +584,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ allUsers, onLoginSuccess, 
     } catch (e) {}
 
     setAdminReqSuccessMsg(
-      `已為「${targetUser.name}」(${targetUser.email}) 提交重設申請！\n系統已自動為您產生 10 位臨時密碼並已送達管理員面板。請向管理員索取臨時密碼，登入後即可設定您的新密碼。`
+      `已為「${targetUser.name}」(${targetUser.email}) 提交重設申請！\n系統已自動為您產生臨時密碼並已送達管理員面板。請向管理員索取臨時密碼，登入後即可設定您的新密碼。`
     );
   };
 
@@ -1094,7 +1094,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ allUsers, onLoginSuccess, 
                                 className="w-full text-sm rounded-xl border border-stone-200 p-3 focus:outline-none focus:border-amber-500"
                               />
                               <p className="text-[11px] text-stone-500 mt-1.5 leading-relaxed">
-                                系統將會寄送 6 位數安全驗證碼至此信箱，請確保信箱可正常收信。
+                                系統將會寄送安全驗證碼至此信箱，請確保信箱可正常收信。
                               </p>
                             </div>
 
@@ -1151,7 +1151,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ allUsers, onLoginSuccess, 
                               <div className="flex items-center justify-between mb-1">
                                 <label className="text-xs font-semibold text-stone-700 flex items-center gap-1.5">
                                   <KeyRound className="w-3.5 h-3.5 text-amber-600" />
-                                  <span>6 位數驗證碼</span>
+                                  <span>驗證碼</span>
                                 </label>
                                 <button
                                   type="button"
@@ -1168,7 +1168,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ allUsers, onLoginSuccess, 
                                 maxLength={6}
                                 value={forgotInputCode}
                                 onChange={(e) => setForgotInputCode(e.target.value.replace(/\D/g, ''))}
-                                placeholder="請輸入 6 位數字驗證碼"
+                                placeholder="請輸入驗證碼"
                                 className="w-full text-base tracking-widest font-mono font-bold rounded-xl border border-stone-200 p-2.5 focus:outline-none focus:border-amber-500 text-center"
                               />
                             </div>
@@ -1340,7 +1340,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ allUsers, onLoginSuccess, 
                         <span>需先完成密碼更新</span>
                       </div>
                       <p className="text-[11px] text-stone-600 leading-relaxed">
-                        親愛的 <strong className="text-stone-900">{forceChangeUser.name}</strong> 聖徒，管理員已為您的帳號產生 10 位臨時密碼。為了保障您的追求記錄與帳號安全，請在此設定全新的個人專屬密碼方可進入系統。
+                        親愛的 <strong className="text-stone-900">{forceChangeUser.name}</strong> 聖徒，管理員已為您的帳號產生臨時密碼。為了保障您的追求記錄與帳號安全，請在此設定全新的個人專屬密碼方可進入系統。
                       </p>
                     </div>
 

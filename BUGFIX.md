@@ -20,6 +20,7 @@
   * [8. 全面校正追求統計「虛增加一 (+1)」之邏輯偏差與跨日殘留問題](#8-全面校正追求統計虛增加一-1之邏輯偏差與跨日殘留問題)
   * [9. 實裝追求主題獨立每日閱讀歷史 (Theme-Isolated Daily History) 與即時統計基準](#9-實裝追求主題獨立每日閱讀歷史-theme-isolated-daily-history-與即時統計基準)
   * [10. 重設進度未徹底清空雲端每日歷史與主題歷程導致統計殘留](#10-重設進度未徹底清空雲端每日歷史與主題歷程導致統計殘留)
+  * [11. 移除忘記密碼與臨時密碼文案中之字數/位數標記 (Generic Auth Copy Refinement)](#11-移除忘記密碼與臨時密碼文案中之字數/位數標記-generic-auth-copy-refinement)
 * [v1.1.2 修復紀錄 (2026-10-26)](#v112-修復紀錄-2026-10-26)
   * [1. 追求帳幕自訂佈置零回溯雲端持久化 (五重架構級安全防護)](#1-追求帳幕自訂佈置零回溯雲端持久化-五重架構級安全防護)
 * [v1.1.1 修復紀錄 (2026-10-25)](#v111-修復紀錄-2026-10-25)
@@ -217,6 +218,25 @@
 * **影響檔案**：
   * [`src/app/page.tsx`](src/app/page.tsx)
   * [`src/lib/supabaseDb.ts`](src/lib/supabaseDb.ts)
+  * [`BUGFIX.md`](BUGFIX.md)
+
+### 11. 移除忘記密碼與臨時密碼文案中之字數/位數標記 (Generic Auth Copy Refinement)
+* **問題描述**：使用者回報「忘記密碼不用顯示幾位認證碼或密碼」，期望介面不要鎖死或過度強調「6 位數」、「10 位」等具體字數說明，使文案更加簡潔大方且具彈性。
+* **原因剖析**：
+  * 原先在驗證碼寄送通知、輸入欄位標籤、佔位符號、後台核發臨時密碼按鈕、彈窗提示與發信模板中，多處硬編碼「6 位數驗證碼」及「10 位臨時密碼」，造成視覺干擾與不必要的文案限制。
+* **解決方案**：
+  * **保留後端驗證邏輯與長度安全機制**：維持驗證碼 6 位數字與臨時密碼英數亂數產生器的運作不受影響。
+  * **全面精簡介面文案**：
+    - 將所有「6 位數驗證碼」、「6 位數字驗證碼」統一精簡為「驗證碼」或「安全驗證碼」。
+    - 將所有「10 位臨時密碼」、「10 位英數臨時密碼」、「10 位安全臨時密碼」統一精簡為「臨時密碼」或「隨機臨時密碼」。
+    - 同步更新電子郵件通知模板（[`src/lib/email.ts`](src/lib/email.ts)）、後台管理中心（[`src/components/AdminPanel.tsx`](src/components/AdminPanel.tsx)）、登入與找回密碼頁面（[`src/components/LoginPage.tsx`](src/components/LoginPage.tsx)）、主頁 Toast 通知（[`src/app/page.tsx`](src/app/page.tsx)）以及型別註解（[`src/types/index.ts`](src/types/index.ts)、[`src/lib/password.ts`](src/lib/password.ts)）。
+* **影響檔案**：
+  * [`src/components/LoginPage.tsx`](src/components/LoginPage.tsx)
+  * [`src/components/AdminPanel.tsx`](src/components/AdminPanel.tsx)
+  * [`src/app/page.tsx`](src/app/page.tsx)
+  * [`src/lib/email.ts`](src/lib/email.ts)
+  * [`src/lib/password.ts`](src/lib/password.ts)
+  * [`src/types/index.ts`](src/types/index.ts)
   * [`BUGFIX.md`](BUGFIX.md)
 
 ---

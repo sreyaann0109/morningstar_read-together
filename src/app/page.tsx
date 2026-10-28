@@ -2081,7 +2081,7 @@ export default function Home() {
         sessionStorage.setItem('morningstar_current_user', JSON.stringify(updatedTarget));
       }
 
-      showToast(`🔑 已為【${userName}】產生 10 位臨時密碼並已複製！`);
+      showToast(`🔑 已為【${userName}】產生臨時密碼並已複製！`);
       return tempCode;
     } catch (e) {
       console.error('Failed to reset user password to temp code:', e);

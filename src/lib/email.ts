@@ -62,7 +62,7 @@ export async function sendPasswordResetEmail(
         親愛的 <strong>${recipientName}</strong> 聖徒，您好：
       </p>
       <p style="color: #57534e; font-size: 13px; line-height: 1.6;">
-        我們收到了您在「晨星共行」平台重設密碼的申請。請在驗證碼輸入欄填寫以下 6 位數驗證碼：
+        我們收到了您在「晨星共行」平台重設密碼的申請。請在驗證碼輸入欄填寫以下驗證碼：
       </p>
 
       <div style="text-align: center; margin: 26px 0; padding: 20px; background-color: #fef3c7; border: 1.5px dashed #d97706; border-radius: 14px;">

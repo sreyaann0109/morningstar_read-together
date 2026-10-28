@@ -58,7 +58,7 @@ export async function verifyPasswordWeb(plainPassword: string, storedHash?: stri
 }
 
 /**
- * 產生 10 位高安全度英數隨機臨時密碼（排除易混淆字元如 0, O, 1, l, I）
+ * 產生高安全度英數隨機臨時密碼（排除易混淆字元如 0, O, 1, l, I）
  */
 export function generateRandomTempPassword(length = 10): string {
   const chars = '23456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz';

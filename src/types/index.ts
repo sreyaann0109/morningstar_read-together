@@ -124,7 +124,7 @@ export interface UserProfile {
   planDailyHistory?: Record<string, Record<string, number>>; // 各追求主題獨立每日追求歷史 (Key: planId -> YYYY-MM-DD -> 篇數)
   passwordResetRequested?: boolean; // 是否送出了忘記密碼申請 (待管理員一鍵重設)
   mustChangePassword?: boolean; // 是否需強制更改密碼後方可進入
-  tempPassword?: string; // 系統產生的 10 位臨時密碼，直到使用者重設完成後清除
+  tempPassword?: string; // 系統產生的臨時密碼，直到使用者重設完成後清除
 }
 
 export type SanctuaryTheme = 'dawn' | 'night' | 'meadow' | 'temple';
@@ -147,7 +147,7 @@ export interface SpiritualRelic {
 }
 
 export interface SiteSettings {
-  allowEmailReset: boolean; // 開放信箱 6 位數驗證碼重設密碼
+  allowEmailReset: boolean; // 開放信箱驗證碼重設密碼
   allowAdminAssistedReset: boolean; // 開放聯繫管理員一鍵申請臨時密碼
   allowUserRegistration: boolean; // 開放新聖徒線上自主註冊 (關閉時僅由管理員在後台手動新增人員)
   allowSharingPosts: boolean; // 開放聖徒發表今日摸著與亮光
