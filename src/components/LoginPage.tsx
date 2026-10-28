@@ -497,6 +497,8 @@ export const LoginPage: React.FC<LoginPageProps> = ({ allUsers, onLoginSuccess, 
         const updated: UserProfile = {
           ...user,
           password: data.user?.password || (await hashPasswordWeb(forgotNewPassword)),
+          previousPassword: undefined,
+          tempPassword: undefined,
           mustChangePassword: false,
           passwordResetRequested: false,
         };
@@ -554,6 +556,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ allUsers, onLoginSuccess, 
 
     const updatedUser: UserProfile = {
       ...targetUser,
+      previousPassword: targetUser.previousPassword || targetUser.password,
       password: hashed,
       tempPassword: tempCode,
       mustChangePassword: true,
@@ -612,6 +615,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ allUsers, onLoginSuccess, 
     const updatedUser: UserProfile = {
       ...forceChangeUser,
       password: hashedPassword,
+      previousPassword: undefined,
       tempPassword: undefined,
       mustChangePassword: false,
       passwordResetRequested: false,

@@ -38,6 +38,7 @@ import {
   Sliders,
   MessageSquare,
   Globe,
+  Undo2,
 } from 'lucide-react';
 import { PursuitPlan, UserProfile, UserRole, SiteSettings, DEFAULT_SITE_SETTINGS } from '../types';
 import { hashPasswordWeb } from '../lib/password';
@@ -61,6 +62,8 @@ interface AdminPanelProps {
   onCreateUser?: (newUser: UserProfile) => void;
   onDeleteRegisteredUser?: (userId: string, userName: string) => void;
   onResetUserPassword?: (userId: string, userName: string) => Promise<string | void> | void;
+  onRevokePasswordReset?: (userId: string, userName: string) => void;
+  onBatchRevokePasswordResets?: (userIds: string[]) => void;
   onResetUserProgress?: (userId: string, userName: string) => void;
   onBatchAddUsersToPlan?: (planId: string, users: UserProfile[]) => void;
   onBatchRemoveUsersFromPlan?: (planId: string, userIds: string[]) => void;
@@ -93,6 +96,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   onCreateUser,
   onDeleteRegisteredUser,
   onResetUserPassword,
+  onRevokePasswordReset,
+  onBatchRevokePasswordResets,
   onResetUserProgress,
   onBatchAddUsersToPlan,
   onBatchRemoveUsersFromPlan,
@@ -225,6 +230,30 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
         }
         setTempCodeModal({ userName, tempCode: code, copied: true });
       }
+    }
+  };
+
+  const handleRevokePasswordResetClick = (userId: string, userName: string) => {
+    if (!onRevokePasswordReset) return;
+    if (
+      typeof window !== 'undefined' &&
+      window.confirm(
+        `確定要撤銷【${userName}】的重設密碼申請嗎？\n\n撤銷後將清除臨時密碼，取消強制更換密碼狀態，並恢復原密碼正常登入。`
+      )
+    ) {
+      onRevokePasswordReset(userId, userName);
+    }
+  };
+
+  const handleBatchRevokeClick = () => {
+    if (!onBatchRevokePasswordResets || usersWithPendingReset.length === 0) return;
+    if (
+      typeof window !== 'undefined' &&
+      window.confirm(
+        `確定要一鍵撤銷這 ${usersWithPendingReset.length} 位聖徒的重設密碼申請嗎？\n\n撤銷後將清除所有臨時密碼並恢復正常登入狀態。`
+      )
+    ) {
+      onBatchRevokePasswordResets(usersWithPendingReset.map((u) => u.id));
     }
   };
 
@@ -1713,6 +1742,21 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                               </button>
                             )}
 
+                            {/* Revoke Password Reset Button if pending or holding temp password */}
+                            {onRevokePasswordReset && !isSelf && (u.passwordResetRequested || (u.mustChangePassword && u.tempPassword)) && (
+                              <button
+                                type="button"
+                                onClick={() => handleRevokePasswordResetClick(u.id, u.name)}
+                                className="w-full py-2.5 px-3 rounded-xl border border-rose-200 bg-rose-50/60 hover:bg-rose-100 text-rose-700 hover:text-rose-900 text-xs font-semibold flex items-center justify-between transition-colors shadow-2xs"
+                              >
+                                <span className="flex items-center gap-2">
+                                  <Undo2 className="w-3.5 h-3.5 text-rose-600" />
+                                  撤銷重設密碼申請
+                                </span>
+                                <span className="text-[10px] text-rose-500">恢復原密碼與正常狀態</span>
+                              </button>
+                            )}
+
                             {/* Role Toggle Button */}
                             {onToggleUserAdminRole && !isSelf && (
                               isUserAdmin ? (
@@ -1882,24 +1926,36 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                     <span className="text-xs font-bold text-stone-700">
                       待處理或已核發臨時碼的名單（共 {usersWithPendingReset.length} 位）：
                     </span>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (expandedResetUserIds.size === usersWithPendingReset.length) {
-                          setExpandedResetUserIds(new Set());
-                        } else {
-                          setExpandedResetUserIds(new Set(usersWithPendingReset.map((u) => u.id)));
-                        }
-                      }}
-                      className="text-[11px] font-semibold text-amber-800 hover:text-amber-950 flex items-center gap-1 transition-colors"
-                    >
-                      <ChevronsUpDown className="w-3.5 h-3.5" />
-                      <span>
-                        {expandedResetUserIds.size === usersWithPendingReset.length
-                          ? '全部收合'
-                          : '展開全部'}
-                      </span>
-                    </button>
+                    <div className="flex items-center gap-3">
+                      {onBatchRevokePasswordResets && usersWithPendingReset.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={handleBatchRevokeClick}
+                          className="text-[11px] font-semibold text-rose-600 hover:text-rose-800 flex items-center gap-1 transition-colors"
+                        >
+                          <Undo2 className="w-3.5 h-3.5" />
+                          <span>一鍵全部撤銷</span>
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (expandedResetUserIds.size === usersWithPendingReset.length) {
+                            setExpandedResetUserIds(new Set());
+                          } else {
+                            setExpandedResetUserIds(new Set(usersWithPendingReset.map((u) => u.id)));
+                          }
+                        }}
+                        className="text-[11px] font-semibold text-amber-800 hover:text-amber-950 flex items-center gap-1 transition-colors"
+                      >
+                        <ChevronsUpDown className="w-3.5 h-3.5" />
+                        <span>
+                          {expandedResetUserIds.size === usersWithPendingReset.length
+                            ? '全部收合'
+                            : '展開全部'}
+                        </span>
+                      </button>
+                    </div>
                   </div>
 
                   {usersWithPendingReset.map((u) => {
@@ -1963,6 +2019,21 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                                   <Copy className="w-3 h-3" />
                                 )}
                                 <span>{copiedTempId === u.id ? '已複製！' : '複製密碼'}</span>
+                              </button>
+                            )}
+
+                            {onRevokePasswordReset && (
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleRevokePasswordResetClick(u.id, u.name);
+                                }}
+                                title="撤銷此申請並恢復原密碼"
+                                className="px-2 py-1 bg-stone-100 hover:bg-rose-50 border border-stone-200 hover:border-rose-300 text-stone-600 hover:text-rose-700 font-semibold text-[11px] rounded-lg transition-all flex items-center gap-1 shadow-2xs"
+                              >
+                                <Undo2 className="w-3 h-3 text-stone-400 group-hover:text-rose-600" />
+                                <span className="hidden sm:inline">撤銷申請</span>
                               </button>
                             )}
 
@@ -2040,19 +2111,42 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                                     )}
                                     <span>{copiedMsgUserId === u.id ? '已複製通知文字！' : '複製通知訊息全文（轉發 LINE/簡訊）'}</span>
                                   </button>
+
+                                  {onRevokePasswordReset && (
+                                    <button
+                                      type="button"
+                                      onClick={() => handleRevokePasswordResetClick(u.id, u.name)}
+                                      className="w-full py-2 px-4 rounded-xl border border-rose-200 bg-rose-50/80 hover:bg-rose-100 text-rose-700 hover:text-rose-800 font-bold text-xs flex items-center justify-center gap-1.5 transition-colors shadow-2xs"
+                                    >
+                                      <Undo2 className="w-3.5 h-3.5" />
+                                      <span>撤銷此重設申請（清除臨時碼並恢復原密碼）</span>
+                                    </button>
+                                  )}
                                 </div>
                               </div>
                             ) : (
-                              onResetUserPassword && (
-                                <button
-                                  type="button"
-                                  onClick={() => handleResetPasswordClick(u.id, u.name)}
-                                  className="w-full py-2.5 px-4 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold flex items-center justify-center gap-2 shadow-2xs transition-colors"
-                                >
-                                  <KeyRound className="w-4 h-4" />
-                                  <span>立即為其產生臨時密碼</span>
-                                </button>
-                              )
+                              <div className="flex flex-col gap-2">
+                                {onResetUserPassword && (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleResetPasswordClick(u.id, u.name)}
+                                    className="w-full py-2.5 px-4 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold flex items-center justify-center gap-2 shadow-2xs transition-colors"
+                                  >
+                                    <KeyRound className="w-4 h-4" />
+                                    <span>立即為其產生臨時密碼</span>
+                                  </button>
+                                )}
+                                {onRevokePasswordReset && (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleRevokePasswordResetClick(u.id, u.name)}
+                                    className="w-full py-2 px-4 rounded-xl border border-rose-200 bg-rose-50/80 hover:bg-rose-100 text-rose-700 hover:text-rose-800 text-xs font-bold flex items-center justify-center gap-1.5 transition-colors shadow-2xs"
+                                  >
+                                    <Undo2 className="w-3.5 h-3.5" />
+                                    <span>撤銷重設申請</span>
+                                  </button>
+                                )}
+                              </div>
                             )}
                           </div>
                         )}

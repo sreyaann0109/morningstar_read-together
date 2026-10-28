@@ -125,6 +125,7 @@ export interface UserProfile {
   passwordResetRequested?: boolean; // 是否送出了忘記密碼申請 (待管理員一鍵重設)
   mustChangePassword?: boolean; // 是否需強制更改密碼後方可進入
   tempPassword?: string; // 系統產生的臨時密碼，直到使用者重設完成後清除
+  previousPassword?: string; // 申請重設前的原始密碼 Hash（若管理員撤銷申請時可即時還原）
 }
 
 export type SanctuaryTheme = 'dawn' | 'night' | 'meadow' | 'temple';

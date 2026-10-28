@@ -242,17 +242,20 @@ export async function supabaseGetAllUsers(): Promise<UserProfile[]> {
 
     let cleanSanctuary = undefined;
     if (rawSanctuary) {
-      const { _tempPassword, _joinedInviteCodes, _planSanctuaries, _dailyHistory, _planDailyHistory, ...rest } = rawSanctuary;
+      const { _tempPassword, _previousPassword, _joinedInviteCodes, _planSanctuaries, _dailyHistory, _planDailyHistory, ...rest } = rawSanctuary;
       if (Object.keys(rest).length > 0 && (rest.theme !== undefined || rest.placedRelicIds !== undefined || rest.motto !== undefined || rest.treeStage !== undefined)) {
         cleanSanctuary = rest as any;
       }
     }
+    const previousPassword = rawSanctuary?._previousPassword || undefined;
+
     return {
       id: r.id,
       name: r.name,
       email: r.email,
       password: r.password,
       tempPassword,
+      previousPassword,
       joinedInviteCodes,
       locality: r.locality,
       streakDays: Number(r.streak_days) || 0,
@@ -308,6 +311,7 @@ export async function supabaseSaveUsers(users: UserProfile[], fullSync = false) 
       _planDailyHistory: u.planDailyHistory || {},
       ...(u.planSanctuaries ? { _planSanctuaries: u.planSanctuaries } : {}),
       ...(u.tempPassword ? { _tempPassword: u.tempPassword } : {}),
+      ...(u.previousPassword ? { _previousPassword: u.previousPassword } : {}),
       ...(u.joinedInviteCodes ? { _joinedInviteCodes: u.joinedInviteCodes } : {}),
     };
 

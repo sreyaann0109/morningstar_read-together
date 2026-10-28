@@ -21,6 +21,7 @@
   * [9. 實裝追求主題獨立每日閱讀歷史 (Theme-Isolated Daily History) 與即時統計基準](#9-實裝追求主題獨立每日閱讀歷史-theme-isolated-daily-history-與即時統計基準)
   * [10. 重設進度未徹底清空雲端每日歷史與主題歷程導致統計殘留](#10-重設進度未徹底清空雲端每日歷史與主題歷程導致統計殘留)
   * [11. 移除忘記密碼與臨時密碼文案中之字數/位數標記 (Generic Auth Copy Refinement)](#11-移除忘記密碼與臨時密碼文案中之字數/位數標記-generic-auth-copy-refinement)
+  * [12. 管理員撤銷重設密碼申請與原密碼安全還原機制 (Admin Revoke Password Reset & Reversion)](#12-管理員撤銷重設密碼申請與原密碼安全還原機制-admin-revoke-password-reset--reversion)
 * [v1.1.2 修復紀錄 (2026-10-26)](#v112-修復紀錄-2026-10-26)
   * [1. 追求帳幕自訂佈置零回溯雲端持久化 (五重架構級安全防護)](#1-追求帳幕自訂佈置零回溯雲端持久化-五重架構級安全防護)
 * [v1.1.1 修復紀錄 (2026-10-25)](#v111-修復紀錄-2026-10-25)
@@ -237,6 +238,28 @@
   * [`src/lib/email.ts`](src/lib/email.ts)
   * [`src/lib/password.ts`](src/lib/password.ts)
   * [`src/types/index.ts`](src/types/index.ts)
+  * [`BUGFIX.md`](BUGFIX.md)
+
+### 12. 管理員撤銷重設密碼申請與原密碼安全還原機制 (Admin Revoke Password Reset & Reversion)
+* **問題描述**：聖徒若因誤觸、他人誤填信箱、或隨後自行記起原始密碼，重設密碼申請會一直掛在管理員後台面板；管理員原先無法主動「撤銷」重設申請，且一旦發出申請，原始密碼即被臨時密碼覆蓋，無法安全復原。
+* **原因剖析**：
+  1. 系統未提供管理員取消或駁回重設申請的機制，導致該帳號始終停留在 `passwordResetRequested: true` 或 `mustChangePassword: true`。
+  2. 原密碼在生成臨時密碼時被即時覆寫為臨時密碼 Hash，缺乏快照機制（`previousPassword`），導致撤銷申請時無法還原使用者原密碼。
+* **解決方案**：
+  1. **原始密碼快照備存 (`UserProfile.previousPassword`)**：
+     - 在聖徒送出忘記密碼申請或管理員產生臨時密碼時，自動將原密碼安全保存於 `u.previousPassword`，並透過 Supabase `packedSanctuary._previousPassword` 進行雲端持久化備援。
+  2. **管理員單人與批量撤銷操作**：
+     - **密碼管理中心專區**：在每位待重設聖徒列提供「撤銷申請」快捷按鈕；在詳情展開卡中提供「撤銷此重設申請（清除臨時碼並恢復原密碼）」；名單大於 1 位時更提供「一鍵全部撤銷」。
+     - **聖徒名冊管理彈窗**：在聖徒個人管理詳情中提供「撤銷重設密碼申請」按鈕。
+  3. **原狀態零延遲即時還原**：
+     - 點擊撤銷時彈出確認提示，確認後立即清空 `tempPassword`、重設 `mustChangePassword = false`、`passwordResetRequested = false`，並將 `u.password` 還原為 `u.previousPassword`，清空 `previousPassword`。
+     - 同步更新本地 `localStorage`、主頁狀態與 Supabase PostgreSQL 資料庫，彈出成功提示。
+* **影響檔案**：
+  * [`src/types/index.ts`](src/types/index.ts)
+  * [`src/lib/supabaseDb.ts`](src/lib/supabaseDb.ts)
+  * [`src/components/LoginPage.tsx`](src/components/LoginPage.tsx)
+  * [`src/components/AdminPanel.tsx`](src/components/AdminPanel.tsx)
+  * [`src/app/page.tsx`](src/app/page.tsx)
   * [`BUGFIX.md`](BUGFIX.md)
 
 ---

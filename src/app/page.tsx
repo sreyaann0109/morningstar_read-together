@@ -2059,6 +2059,7 @@ export default function Home() {
       const defaultHashed = await hashPasswordWeb(tempCode);
       const updatedTarget: UserProfile = {
         ...target,
+        previousPassword: target.previousPassword || target.password,
         password: defaultHashed,
         tempPassword: tempCode,
         mustChangePassword: true,
@@ -2086,6 +2087,75 @@ export default function Home() {
     } catch (e) {
       console.error('Failed to reset user password to temp code:', e);
       return '';
+    }
+  };
+
+  // Admin: Revoke password reset request, restore original password, and reset flags
+  const handleRevokePasswordReset = (userId: string, userName: string) => {
+    try {
+      const currentUsers = allUsersRef.current;
+      const target = currentUsers.find((u) => u.id === userId);
+      if (!target) return;
+
+      const restoredPassword = target.previousPassword || target.password;
+      const updatedTarget: UserProfile = {
+        ...target,
+        password: restoredPassword,
+        previousPassword: undefined,
+        tempPassword: undefined,
+        mustChangePassword: false,
+        passwordResetRequested: false,
+      };
+
+      // 1. Update individual user profile storage
+      localStorage.setItem(getUserStorageKey(userId, 'profile'), JSON.stringify(updatedTarget));
+
+      // 2. Update registered users & sync to cloud
+      const nextUsers = currentUsers.map((u) => (u.id === userId ? updatedTarget : u));
+      saveAllUsers(nextUsers);
+
+      // 3. If current logged-in user is target, update active user state
+      if (userId === user.id) {
+        setUser(updatedTarget);
+        sessionStorage.setItem('morningstar_current_user', JSON.stringify(updatedTarget));
+      }
+
+      showToast(`✅ 已成功撤銷【${userName}】的重設密碼申請，帳號已恢復正常登入狀態。`);
+    } catch (e) {
+      console.error('Failed to revoke password reset request:', e);
+      showToast('❌ 撤銷重設密碼申請失敗，請稍後再試。');
+    }
+  };
+
+  // Admin: Batch revoke multiple password reset requests
+  const handleBatchRevokePasswordResets = (userIds: string[]) => {
+    try {
+      const currentUsers = allUsersRef.current;
+      const targetSet = new Set(userIds);
+      const nextUsers = currentUsers.map((u) => {
+        if (!targetSet.has(u.id)) return u;
+        const restoredPassword = u.previousPassword || u.password;
+        const updated: UserProfile = {
+          ...u,
+          password: restoredPassword,
+          previousPassword: undefined,
+          tempPassword: undefined,
+          mustChangePassword: false,
+          passwordResetRequested: false,
+        };
+        localStorage.setItem(getUserStorageKey(u.id, 'profile'), JSON.stringify(updated));
+        if (u.id === user.id) {
+          setUser(updated);
+          sessionStorage.setItem('morningstar_current_user', JSON.stringify(updated));
+        }
+        return updated;
+      });
+
+      saveAllUsers(nextUsers);
+      showToast(`✅ 已成功批量撤銷 ${userIds.length} 位聖徒的重設密碼申請。`);
+    } catch (e) {
+      console.error('Failed to batch revoke password reset requests:', e);
+      showToast('❌ 批量撤銷失敗，請稍後再試。');
     }
   };
 
@@ -3458,6 +3528,8 @@ export default function Home() {
             onCreateUser={handleCreateUser}
             onDeleteRegisteredUser={handleDeleteRegisteredUser}
             onResetUserPassword={handleResetUserPassword}
+            onRevokePasswordReset={handleRevokePasswordReset}
+            onBatchRevokePasswordResets={handleBatchRevokePasswordResets}
             onResetUserProgress={handleResetUserProgress}
             onBatchAddUsersToPlan={handleBatchAddUsersToPlan}
             onBatchRemoveUsersFromPlan={handleBatchRemoveUsersFromPlan}
