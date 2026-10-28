@@ -21,6 +21,8 @@ export const StatsModal: React.FC<StatsModalProps> = ({ isOpen, onClose, user, d
   const todayStr = getUTC8DateString();
   const effectiveDailyHistory = dailyHistory || user.dailyHistory || {};
   const effectiveStreak = calculateStreakDaysFromHistory(effectiveDailyHistory, todayStr);
+  const computedTotalUnits = Object.values(effectiveDailyHistory).reduce((sum, n) => sum + (n || 0), 0);
+  const displayTotalUnits = computedTotalUnits > 0 ? computedTotalUnits : (user.totalChaptersRead || 0);
 
   const last7Days = Array.from({ length: 7 }, (_, idx) => {
     const daysAgo = 6 - idx; // 6, 5, 4, 3, 2, 1, 0
@@ -82,7 +84,7 @@ export const StatsModal: React.FC<StatsModalProps> = ({ isOpen, onClose, user, d
           </div>
           <div className="bg-stone-50 border border-stone-200/60 rounded-2xl p-3 sm:p-3.5 text-center">
             <span className="block text-xl sm:text-2xl font-bold text-stone-800">
-              {user.totalChaptersRead}
+              {displayTotalUnits}
             </span>
             <span className="text-[11px] sm:text-xs text-stone-500 font-medium">累積追求篇數</span>
           </div>

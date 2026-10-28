@@ -192,9 +192,37 @@ const loadUserData = (targetUser: UserProfile, sourcePlansOverride?: PursuitPlan
   }
 };
 
-// 追求地圖：讀取個人每日追求單位歷史記錄（優先使用雲端資料庫 targetUser.dailyHistory）
-const loadUserDailyHistory = (targetUser: UserProfile): Record<string, number> => {
-  // 1. 優先使用雲端資料庫中的 dailyHistory
+// 追求地圖：讀取個人每日追求單位歷史記錄（支援跟隨特定主題 targetPlanId）
+const loadUserDailyHistory = (
+  targetUser: UserProfile,
+  targetPlanId?: string,
+  plans?: PursuitPlan[]
+): Record<string, number> => {
+  // 1. 若指定主題，優先從該主題的 member.dailyHistory 或 user.planDailyHistory 讀取
+  if (targetPlanId) {
+    if (plans) {
+      const plan = plans.find((p) => p.id === targetPlanId);
+      const member = plan?.members?.find((m) => m.userId === targetUser.id || m.name === targetUser.name);
+      if (member?.dailyHistory && Object.keys(member.dailyHistory).length > 0) {
+        return member.dailyHistory;
+      }
+    }
+    if (targetUser.planDailyHistory?.[targetPlanId] && Object.keys(targetUser.planDailyHistory[targetPlanId]).length > 0) {
+      return targetUser.planDailyHistory[targetPlanId];
+    }
+    // 本地專屬追求主題快取備援
+    try {
+      const planStored = localStorage.getItem(getUserStorageKey(targetUser.id, `plan_${targetPlanId}_daily_units`));
+      if (planStored) {
+        const parsed = JSON.parse(planStored);
+        if (parsed && typeof parsed === 'object' && Object.keys(parsed).length > 0) {
+          return parsed;
+        }
+      }
+    } catch (e) {}
+  }
+
+  // 2. 優先使用雲端資料庫中的 dailyHistory (全域/聚合)
   if (
     targetUser.dailyHistory &&
     typeof targetUser.dailyHistory === 'object' &&
@@ -206,7 +234,7 @@ const loadUserDailyHistory = (targetUser: UserProfile): Record<string, number> =
     return targetUser.dailyHistory;
   }
 
-  // 2. 本地快取 (localStorage) 作為離線或過渡備援
+  // 3. 本地快取 (localStorage) 作為離線或過渡備援
   try {
     const stored = localStorage.getItem(getUserStorageKey(targetUser.id, 'daily_units_history'));
     if (stored !== null) {
@@ -217,7 +245,7 @@ const loadUserDailyHistory = (targetUser: UserProfile): Record<string, number> =
     }
   } catch (e) {}
 
-  // 3. 若無歷史追求紀錄，嚴格回傳空物件，絕不假造幽靈打卡數據！
+  // 4. 若無歷史追求紀錄，嚴格回傳空物件，絕不假造幽靈打卡數據！
   return {};
 };
 
@@ -319,6 +347,14 @@ export default function Home() {
     siteSettingsRef.current = siteSettings;
   }, [siteSettings]);
 
+  // Synchronize active plan daily pursuit history when selectedPlanId changes
+  useEffect(() => {
+    if (selectedPlanId && user?.id) {
+      const planDaily = loadUserDailyHistory(user, selectedPlanId, plansRef.current);
+      setDailyPursuitHistory(planDaily || {});
+    }
+  }, [selectedPlanId, user?.id]);
+
   // Modals & Navigation
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [isThemesDrawerOpen, setIsThemesDrawerOpen] = useState(false);
@@ -363,6 +399,8 @@ export default function Home() {
     prevCurrentUnitTitle?: string;
     prevTotalChaptersRead: number;
     prevTodayCompleted: boolean;
+    prevMemberDailyHistory?: Record<string, number>;
+    prevDailyHistory?: Record<string, number>;
     newCompletedUnits: number;
     secondsRemaining: number;
   }
@@ -664,23 +702,37 @@ export default function Home() {
               (u) => u.id === currentUser.id || u.email.toLowerCase() === currentUser.email.toLowerCase()
             );
             if (remote) {
-              // 追求地圖與打卡歷史：融合雲端資料庫 user.dailyHistory、本地紀錄與所有主題計劃已完成紀錄
+              // 追求地圖與打卡歷史：融合雲端資料庫各主題獨立 member.dailyHistory、user.planDailyHistory 與聚合 dailyHistory
               const currentUtc8 = getUTC8DateString();
+              const mergedPlanDailyHistory: Record<string, Record<string, number>> = {
+                ...(currentUser.planDailyHistory || {}),
+                ...(remote.planDailyHistory || {}),
+              };
+
               const mergedDailyHistory: Record<string, number> = {
                 ...(currentUser.dailyHistory || {}),
                 ...(remote.dailyHistory || {}),
               };
 
-              // 若使用者在任何主題中已標記完成，將該完成日期納入追求歷史
+              // 逐一萃取各主題中聖徒獨立記錄之 member.dailyHistory
               if (Array.isArray(backendData.plans)) {
                 backendData.plans.forEach((pl) => {
                   const m = (pl.members || []).find((mem) => mem.userId === currentUser.id || mem.name === currentUser.name);
                   if (m) {
-                    if (m.lastCompletedDate) {
-                      mergedDailyHistory[m.lastCompletedDate] = Math.max(mergedDailyHistory[m.lastCompletedDate] || 0, 1);
+                    const themeDaily = m.dailyHistory && typeof m.dailyHistory === 'object' ? { ...m.dailyHistory } : {};
+                    // 若尚無 member.dailyHistory 但有歷史完成記錄，補登到主題歷史
+                    if (Object.keys(themeDaily).length === 0 && m.lastCompletedDate) {
+                      themeDaily[m.lastCompletedDate] = Math.max(1, m.completedUnits || 1);
                     }
-                    if (m.todayCompleted && m.lastCompletedDate === currentUtc8) {
-                      mergedDailyHistory[currentUtc8] = Math.max(mergedDailyHistory[currentUtc8] || 0, 1);
+                    if (Object.keys(themeDaily).length > 0) {
+                      mergedPlanDailyHistory[pl.id] = {
+                        ...(mergedPlanDailyHistory[pl.id] || {}),
+                        ...themeDaily,
+                      };
+                      // 累加匯入全域聚合歷史
+                      Object.entries(themeDaily).forEach(([dKey, val]) => {
+                        mergedDailyHistory[dKey] = Math.max(mergedDailyHistory[dKey] || 0, val);
+                      });
                     }
                   }
                 });
@@ -705,14 +757,16 @@ export default function Home() {
                 sanctuary: authoritativeSanctuary,
                 planSanctuaries: Object.keys(mergedPlanSanctuaries).length > 0 ? mergedPlanSanctuaries : undefined,
                 dailyHistory: authoritativeDailyHistory,
+                planDailyHistory: Object.keys(mergedPlanDailyHistory).length > 0 ? mergedPlanDailyHistory : undefined,
                 streakDays: authoritativeStreak,
                 role: remote.role || currentUser.role,
               };
               userRef.current = updated;
-              if (authoritativeDailyHistory) {
-                setDailyPursuitHistory(authoritativeDailyHistory);
+              const activeThemeDaily = (selectedPlanId && mergedPlanDailyHistory[selectedPlanId]) || authoritativeDailyHistory;
+              if (activeThemeDaily) {
+                setDailyPursuitHistory(activeThemeDaily);
                 try {
-                  localStorage.setItem(getUserStorageKey(currentUser.id, 'daily_units_history'), JSON.stringify(authoritativeDailyHistory));
+                  localStorage.setItem(getUserStorageKey(currentUser.id, 'daily_units_history'), JSON.stringify(activeThemeDaily));
                 } catch (e) {}
               }
 
@@ -848,23 +902,37 @@ export default function Home() {
               (u) => u.id === currentUser.id || u.email.toLowerCase() === currentUser.email.toLowerCase()
             );
             if (remote) {
-              // 追求地圖與打卡歷史：融合雲端資料庫 user.dailyHistory、本地紀錄與所有主題計劃已完成紀錄
+              // 追求地圖與打卡歷史：融合雲端資料庫各主題獨立 member.dailyHistory、user.planDailyHistory 與聚合 dailyHistory
               const currentUtc8 = getUTC8DateString();
+              const mergedPlanDailyHistory: Record<string, Record<string, number>> = {
+                ...(currentUser.planDailyHistory || {}),
+                ...(remote.planDailyHistory || {}),
+              };
+
               const mergedDailyHistory: Record<string, number> = {
                 ...(currentUser.dailyHistory || {}),
                 ...(remote.dailyHistory || {}),
               };
 
-              // 若使用者在任何主題中已標記完成，將該完成日期納入追求歷史
+              // 逐一萃取各主題中聖徒獨立記錄之 member.dailyHistory
               if (Array.isArray(backendData.plans)) {
                 backendData.plans.forEach((pl) => {
                   const m = (pl.members || []).find((mem) => mem.userId === currentUser.id || mem.name === currentUser.name);
                   if (m) {
-                    if (m.lastCompletedDate) {
-                      mergedDailyHistory[m.lastCompletedDate] = Math.max(mergedDailyHistory[m.lastCompletedDate] || 0, 1);
+                    const themeDaily = m.dailyHistory && typeof m.dailyHistory === 'object' ? { ...m.dailyHistory } : {};
+                    // 若尚無 member.dailyHistory 但有歷史完成記錄，補登到主題歷史
+                    if (Object.keys(themeDaily).length === 0 && m.lastCompletedDate) {
+                      themeDaily[m.lastCompletedDate] = Math.max(1, m.completedUnits || 1);
                     }
-                    if (m.todayCompleted && m.lastCompletedDate === currentUtc8) {
-                      mergedDailyHistory[currentUtc8] = Math.max(mergedDailyHistory[currentUtc8] || 0, 1);
+                    if (Object.keys(themeDaily).length > 0) {
+                      mergedPlanDailyHistory[pl.id] = {
+                        ...(mergedPlanDailyHistory[pl.id] || {}),
+                        ...themeDaily,
+                      };
+                      // 累加匯入全域聚合歷史
+                      Object.entries(themeDaily).forEach(([dKey, val]) => {
+                        mergedDailyHistory[dKey] = Math.max(mergedDailyHistory[dKey] || 0, val);
+                      });
                     }
                   }
                 });
@@ -889,14 +957,16 @@ export default function Home() {
                 sanctuary: authoritativeSanctuary,
                 planSanctuaries: Object.keys(mergedPlanSanctuaries).length > 0 ? mergedPlanSanctuaries : undefined,
                 dailyHistory: authoritativeDailyHistory,
+                planDailyHistory: Object.keys(mergedPlanDailyHistory).length > 0 ? mergedPlanDailyHistory : undefined,
                 streakDays: authoritativeStreak,
                 role: remote.role || currentUser.role,
               };
               userRef.current = updated;
-              if (authoritativeDailyHistory) {
-                setDailyPursuitHistory(authoritativeDailyHistory);
+              const activeThemeDaily = (selectedPlanId && mergedPlanDailyHistory[selectedPlanId]) || authoritativeDailyHistory;
+              if (activeThemeDaily) {
+                setDailyPursuitHistory(activeThemeDaily);
                 try {
-                  localStorage.setItem(getUserStorageKey(currentUser.id, 'daily_units_history'), JSON.stringify(authoritativeDailyHistory));
+                  localStorage.setItem(getUserStorageKey(currentUser.id, 'daily_units_history'), JSON.stringify(activeThemeDaily));
                 } catch (e) {}
               }
 
@@ -1108,7 +1178,8 @@ export default function Home() {
   const currentUtc8Date = getUTC8DateString();
   const currentSelfMember = rawCurrentPlan?.members?.find((m) => m.userId === user.id);
   const isCurrentPlanCompletedToday = currentSelfMember
-    ? Boolean(currentSelfMember.todayCompleted) && currentSelfMember.lastCompletedDate === currentUtc8Date
+    ? (currentSelfMember.dailyHistory?.[currentUtc8Date] || 0) > 0 ||
+      (Boolean(currentSelfMember.todayCompleted) && currentSelfMember.lastCompletedDate === currentUtc8Date)
     : false;
 
   // Filter posts to all joined pursuit plans of the current user (plus currentPlan)
@@ -1142,8 +1213,14 @@ export default function Home() {
     return members.map((m) => {
       const isSelf = m.userId === user.id;
       const matchedUser = isSelf ? user : allUsers.find((u) => u.id === m.userId);
-      const completed = Boolean(m.todayCompleted && m.lastCompletedDate === currentUtc8Date);
-      const streak = matchedUser
+      const memberDailyHistory = m.dailyHistory || matchedUser?.planDailyHistory?.[rawCurrentPlan.id] || undefined;
+      const completed = Boolean(
+        (memberDailyHistory?.[currentUtc8Date] || 0) > 0 ||
+        (m.todayCompleted && m.lastCompletedDate === currentUtc8Date)
+      );
+      const streak = memberDailyHistory && Object.keys(memberDailyHistory).length > 0
+        ? calculateStreakDaysFromHistory(memberDailyHistory, currentUtc8Date)
+        : matchedUser
         ? calculateStreakDaysFromHistory(matchedUser.dailyHistory, currentUtc8Date)
         : (m.streakDays || 0);
       const avatar = matchedUser ? matchedUser.avatar : m.avatar;
@@ -1172,9 +1249,30 @@ export default function Home() {
         totalUnits: memberTotalUnits,
         unitName: memberUnitName,
         currentUnitTitle: memberCurrentUnitTitle,
+        dailyHistory: memberDailyHistory,
       };
     });
   })();
+
+  // Active theme daily history: strictly isolated for the currently selected plan
+  const activePlanDailyHistory = useMemo(() => {
+    if (!currentPlan?.id) return dailyPursuitHistory;
+    return loadUserDailyHistory(user, currentPlan.id, plans);
+  }, [user, currentPlan?.id, plans, dailyPursuitHistory]);
+
+  const activePlanStreak = useMemo(() => {
+    if (activePlanDailyHistory && Object.keys(activePlanDailyHistory).length > 0) {
+      return calculateStreakDaysFromHistory(activePlanDailyHistory, currentUtc8Date);
+    }
+    return user.streakDays;
+  }, [activePlanDailyHistory, currentUtc8Date, user.streakDays]);
+
+  const activePlanTotalUnits = useMemo(() => {
+    if (activePlanDailyHistory && Object.keys(activePlanDailyHistory).length > 0) {
+      return Object.values(activePlanDailyHistory).reduce((sum, n) => sum + (n || 0), 0);
+    }
+    return user.totalChaptersRead;
+  }, [activePlanDailyHistory, user.totalChaptersRead]);
 
   // Auth & Personal Settings Handlers
   const handleLogin = (newUser: UserProfile, isNewRegistration?: boolean) => {
@@ -2202,10 +2300,11 @@ export default function Home() {
     } catch (e) {}
 
     let chapterDelta = 1;
+    let updatedPlans = plansRef.current;
 
     // Update in plan members as well (per-user independent progress)
     if (activePlanId) {
-      const updatedPlans = plansRef.current.map((p) => {
+      updatedPlans = plansRef.current.map((p) => {
         if (p.id === activePlanId) {
           const currentMemberUnits = getUserPlan(p, user.id).completedUnits;
 
@@ -2243,20 +2342,34 @@ export default function Home() {
           }
 
           const toggleDateStr = getUTC8DateString();
-          let updatedMembers = (p.members || []).map((m) =>
-            m.userId === user.id
-              ? {
-                  ...m,
-                  todayCompleted: nextState,
-                  lastCompletedDate: nextState ? toggleDateStr : undefined,
-                  completedUnits: newCompleted,
-                  currentUnitTitle,
-                  currentVerses,
-                  lastActive: '今日 剛剛',
-                }
-              : m
-          );
+          let updatedMembers = (p.members || []).map((m) => {
+            if (m.userId === user.id) {
+              const prevDaily = m.dailyHistory && typeof m.dailyHistory === 'object' ? { ...m.dailyHistory } : {};
+              const curUnits = prevDaily[toggleDateStr] || 0;
+              const nextUnits = nextState ? curUnits + (chapterDelta || 1) : Math.max(0, curUnits - (chapterDelta || 1));
+              if (nextUnits > 0) {
+                prevDaily[toggleDateStr] = nextUnits;
+              } else {
+                delete prevDaily[toggleDateStr];
+              }
+              const memberStreak = calculateStreakDaysFromHistory(prevDaily, toggleDateStr);
+              const lastDate = nextState ? toggleDateStr : Object.keys(prevDaily).sort().pop();
+              return {
+                ...m,
+                todayCompleted: nextState,
+                lastCompletedDate: lastDate,
+                completedUnits: newCompleted,
+                currentUnitTitle,
+                currentVerses,
+                streakDays: memberStreak,
+                dailyHistory: prevDaily,
+                lastActive: '今日 剛剛',
+              };
+            }
+            return m;
+          });
           if (!updatedMembers.some((m) => m.userId === user.id)) {
+            const initialDaily = nextState ? { [toggleDateStr]: chapterDelta || 1 } : {};
             updatedMembers.push({
               userId: user.id,
               name: user.name,
@@ -2265,12 +2378,13 @@ export default function Home() {
               joinedAt: toggleDateStr,
               todayCompleted: nextState,
               lastCompletedDate: nextState ? toggleDateStr : undefined,
-              streakDays: user.streakDays,
+              streakDays: nextState ? 1 : 0,
               lastActive: '今日 剛剛',
               encouragedToday: false,
               completedUnits: newCompleted,
               currentUnitTitle,
               currentVerses,
+              dailyHistory: initialDaily,
             });
           }
 
@@ -2291,27 +2405,46 @@ export default function Home() {
     }
 
     const todayStr = getUTC8DateString();
-    const curVal = dailyPursuitHistory[todayStr] || 0;
-    const nextVal = nextState ? curVal + (chapterDelta || 1) : Math.max(0, curVal - (chapterDelta || 1));
-    const nextDailyHistory = { ...dailyPursuitHistory };
-    if (nextVal > 0) {
-      nextDailyHistory[todayStr] = nextVal;
-    } else {
-      delete nextDailyHistory[todayStr];
+    // 依據各主題 updatedPlans 中的真實 member.dailyHistory 聚合全域 dailyHistory
+    const aggregateDaily: Record<string, number> = {};
+    const updatedPlanDailyHistory: Record<string, Record<string, number>> = {
+      ...(user.planDailyHistory || {}),
+    };
+    if (activePlanId) {
+      const activePlan = updatedPlans.find((p) => p.id === activePlanId);
+      const activeMem = activePlan?.members?.find((m) => m.userId === user.id);
+      if (activeMem?.dailyHistory) {
+        updatedPlanDailyHistory[activePlanId] = activeMem.dailyHistory;
+      }
     }
-    setDailyPursuitHistory(nextDailyHistory);
+    updatedPlans.forEach((p) => {
+      const mem = p.members?.find((m) => m.userId === user.id);
+      if (mem?.dailyHistory) {
+        updatedPlanDailyHistory[p.id] = mem.dailyHistory;
+        Object.entries(mem.dailyHistory).forEach(([dKey, val]) => {
+          aggregateDaily[dKey] = Math.max(aggregateDaily[dKey] || 0, Number(val) || 0);
+        });
+      }
+    });
+
+    const currentThemeDaily = (activePlanId && updatedPlanDailyHistory[activePlanId]) || aggregateDaily;
+    setDailyPursuitHistory(currentThemeDaily);
     try {
-      localStorage.setItem(getUserStorageKey(user.id, 'daily_units_history'), JSON.stringify(nextDailyHistory));
+      localStorage.setItem(getUserStorageKey(user.id, 'daily_units_history'), JSON.stringify(currentThemeDaily));
+      if (activePlanId) {
+        localStorage.setItem(getUserStorageKey(user.id, `plan_${activePlanId}_daily_units`), JSON.stringify(currentThemeDaily));
+      }
     } catch (e) {}
 
-    const calculatedStreak = calculateStreakDaysFromHistory(nextDailyHistory, todayStr);
+    const calculatedStreak = calculateStreakDaysFromHistory(aggregateDaily, todayStr);
 
     if (nextState) {
       updateCurrentUserAndSync((prev) => ({
         ...prev,
         streakDays: calculatedStreak,
         totalChaptersRead: prev.totalChaptersRead + (chapterDelta || 1),
-        dailyHistory: nextDailyHistory,
+        dailyHistory: aggregateDaily,
+        planDailyHistory: updatedPlanDailyHistory,
       }));
       showToast('✨ 今日追求完成！晨星在心裡出現，追求帳幕已累積屬靈信物！');
     } else {
@@ -2319,7 +2452,8 @@ export default function Home() {
         ...prev,
         streakDays: calculatedStreak,
         totalChaptersRead: Math.max(0, prev.totalChaptersRead - (chapterDelta || 1)),
-        dailyHistory: nextDailyHistory,
+        dailyHistory: aggregateDaily,
+        planDailyHistory: updatedPlanDailyHistory,
       }));
       showToastWithAction(
         '已取消今日打卡狀態',
@@ -2363,6 +2497,7 @@ export default function Home() {
       nextVerses = loc.displayText;
     }
 
+    const currentMemberRecord = rawTargetPlan.members?.find((m) => m.userId === user.id);
     const snapshot: ProgressUndoSnapshot = {
       planId: targetPlan.id,
       planTitle: targetPlan.title,
@@ -2371,6 +2506,8 @@ export default function Home() {
       prevCurrentUnitTitle: targetPlan.currentUnitTitle,
       prevTotalChaptersRead: user.totalChaptersRead,
       prevTodayCompleted: prevPlanCompleted,
+      prevMemberDailyHistory: currentMemberRecord?.dailyHistory ? { ...currentMemberRecord.dailyHistory } : undefined,
+      prevDailyHistory: user.dailyHistory ? { ...user.dailyHistory } : undefined,
       newCompletedUnits: boundedChapter,
       secondsRemaining: 10,
     };
@@ -2379,20 +2516,27 @@ export default function Home() {
     // Update plans (per-user independent progress)
     const updatedPlans = plansRef.current.map((p) => {
       if (p.id === activePlanId) {
-        let updatedMembers = (p.members || []).map((m) =>
-          m.userId === user.id
-            ? {
-                ...m,
-                todayCompleted: true,
-                lastCompletedDate: batchDateStr,
-                completedUnits: boundedChapter,
-                currentUnitTitle: nextUnitTitle,
-                currentVerses: nextVerses,
-                lastActive: '今日 剛剛',
-              }
-            : m
-        );
+        let updatedMembers = (p.members || []).map((m) => {
+          if (m.userId === user.id) {
+            const memberPrevDaily = m.dailyHistory && typeof m.dailyHistory === 'object' ? { ...m.dailyHistory } : {};
+            memberPrevDaily[batchDateStr] = (memberPrevDaily[batchDateStr] || 0) + deltaChapters;
+            const memberStreak = calculateStreakDaysFromHistory(memberPrevDaily, batchDateStr);
+            return {
+              ...m,
+              todayCompleted: true,
+              lastCompletedDate: batchDateStr,
+              completedUnits: boundedChapter,
+              currentUnitTitle: nextUnitTitle,
+              currentVerses: nextVerses,
+              streakDays: memberStreak,
+              dailyHistory: memberPrevDaily,
+              lastActive: '今日 剛剛',
+            };
+          }
+          return m;
+        });
         if (!updatedMembers.some((m) => m.userId === user.id)) {
+          const initialDaily = { [batchDateStr]: deltaChapters };
           updatedMembers.push({
             userId: user.id,
             name: user.name,
@@ -2401,12 +2545,13 @@ export default function Home() {
             joinedAt: batchDateStr,
             todayCompleted: true,
             lastCompletedDate: batchDateStr,
-            streakDays: user.streakDays,
+            streakDays: 1,
             lastActive: '今日 剛剛',
             encouragedToday: false,
             completedUnits: boundedChapter,
             currentUnitTitle: nextUnitTitle,
             currentVerses: nextVerses,
+            dailyHistory: initialDaily,
           });
         }
         return {
@@ -2425,21 +2570,46 @@ export default function Home() {
     } catch (e) {}
 
     const todayStr = getUTC8DateString();
-    const curVal = dailyPursuitHistory[todayStr] || 0;
-    const nextDailyHistory = { ...dailyPursuitHistory, [todayStr]: curVal + deltaChapters };
-    setDailyPursuitHistory(nextDailyHistory);
+    // 依據各主題 updatedPlans 中的真實 member.dailyHistory 聚合全域 dailyHistory
+    const aggregateDaily: Record<string, number> = {};
+    const updatedPlanDailyHistory: Record<string, Record<string, number>> = {
+      ...(user.planDailyHistory || {}),
+    };
+    if (activePlanId) {
+      const activePlan = updatedPlans.find((p) => p.id === activePlanId);
+      const activeMem = activePlan?.members?.find((m) => m.userId === user.id);
+      if (activeMem?.dailyHistory) {
+        updatedPlanDailyHistory[activePlanId] = activeMem.dailyHistory;
+      }
+    }
+    updatedPlans.forEach((p) => {
+      const mem = p.members?.find((m) => m.userId === user.id);
+      if (mem?.dailyHistory) {
+        updatedPlanDailyHistory[p.id] = mem.dailyHistory;
+        Object.entries(mem.dailyHistory).forEach(([dKey, val]) => {
+          aggregateDaily[dKey] = Math.max(aggregateDaily[dKey] || 0, Number(val) || 0);
+        });
+      }
+    });
+
+    const currentThemeDaily = (activePlanId && updatedPlanDailyHistory[activePlanId]) || aggregateDaily;
+    setDailyPursuitHistory(currentThemeDaily);
     try {
-      localStorage.setItem(getUserStorageKey(user.id, 'daily_units_history'), JSON.stringify(nextDailyHistory));
+      localStorage.setItem(getUserStorageKey(user.id, 'daily_units_history'), JSON.stringify(currentThemeDaily));
+      if (activePlanId) {
+        localStorage.setItem(getUserStorageKey(user.id, `plan_${activePlanId}_daily_units`), JSON.stringify(currentThemeDaily));
+      }
     } catch (e) {}
 
-    const calculatedStreak = calculateStreakDaysFromHistory(nextDailyHistory, todayStr);
+    const calculatedStreak = calculateStreakDaysFromHistory(aggregateDaily, todayStr);
 
     // Update user and sync to backend
     updateCurrentUserAndSync((prev) => ({
       ...prev,
       totalChaptersRead: prev.totalChaptersRead + deltaChapters,
       streakDays: calculatedStreak,
-      dailyHistory: nextDailyHistory,
+      dailyHistory: aggregateDaily,
+      planDailyHistory: updatedPlanDailyHistory,
     }));
 
     setIsCompletedToday(true);
@@ -2461,16 +2631,23 @@ export default function Home() {
 
     const updatedPlans = plansRef.current.map((p) => {
       if (p.id === snap.planId) {
-        const updatedMembers = (p.members || []).map((m) =>
-          m.userId === user.id
-            ? {
-                ...m,
-                todayCompleted: snap.prevTodayCompleted,
-                completedUnits: snap.prevCompletedUnits,
-                currentUnitTitle: snap.prevCurrentUnitTitle || `第 ${Math.min(snap.prevCompletedUnits + 1, p.totalUnits)} ${snapUnit}`,
-              }
-            : m
-        );
+        const updatedMembers = (p.members || []).map((m) => {
+          if (m.userId === user.id) {
+            const restoredDaily = snap.prevMemberDailyHistory ? { ...snap.prevMemberDailyHistory } : undefined;
+            const restoredStreak = restoredDaily
+              ? calculateStreakDaysFromHistory(restoredDaily, getUTC8DateString())
+              : user.streakDays;
+            return {
+              ...m,
+              todayCompleted: snap.prevTodayCompleted,
+              completedUnits: snap.prevCompletedUnits,
+              currentUnitTitle: snap.prevCurrentUnitTitle || `第 ${Math.min(snap.prevCompletedUnits + 1, p.totalUnits)} ${snapUnit}`,
+              dailyHistory: restoredDaily,
+              streakDays: restoredStreak,
+            };
+          }
+          return m;
+        });
         return {
           ...p,
           members: updatedMembers,
@@ -2486,26 +2663,43 @@ export default function Home() {
 
     const deltaRevert = snap.newCompletedUnits - snap.prevCompletedUnits;
     const todayStr = getUTC8DateString();
-    const curVal = dailyPursuitHistory[todayStr] || 0;
-    const nextVal = Math.max(0, curVal - deltaRevert);
-    const nextDailyHistory = { ...dailyPursuitHistory };
-    if (nextVal > 0) {
-      nextDailyHistory[todayStr] = nextVal;
+
+    const aggregateDaily: Record<string, number> = {};
+    const updatedPlanDailyHistory: Record<string, Record<string, number>> = {
+      ...(user.planDailyHistory || {}),
+    };
+    if (snap.prevMemberDailyHistory) {
+      updatedPlanDailyHistory[snap.planId] = snap.prevMemberDailyHistory;
     } else {
-      delete nextDailyHistory[todayStr];
+      delete updatedPlanDailyHistory[snap.planId];
     }
-    setDailyPursuitHistory(nextDailyHistory);
+    updatedPlans.forEach((p) => {
+      const mem = p.members?.find((m) => m.userId === user.id);
+      if (mem?.dailyHistory) {
+        updatedPlanDailyHistory[p.id] = mem.dailyHistory;
+        Object.entries(mem.dailyHistory).forEach(([dKey, val]) => {
+          aggregateDaily[dKey] = Math.max(aggregateDaily[dKey] || 0, Number(val) || 0);
+        });
+      }
+    });
+
+    const currentThemeDaily = (snap.planId && updatedPlanDailyHistory[snap.planId]) || aggregateDaily;
+    setDailyPursuitHistory(currentThemeDaily);
     try {
-      localStorage.setItem(getUserStorageKey(user.id, 'daily_units_history'), JSON.stringify(nextDailyHistory));
+      localStorage.setItem(getUserStorageKey(user.id, 'daily_units_history'), JSON.stringify(currentThemeDaily));
+      if (snap.planId) {
+        localStorage.setItem(getUserStorageKey(user.id, `plan_${snap.planId}_daily_units`), JSON.stringify(currentThemeDaily));
+      }
     } catch (e) {}
 
-    const calculatedStreak = calculateStreakDaysFromHistory(nextDailyHistory, todayStr);
+    const calculatedStreak = calculateStreakDaysFromHistory(aggregateDaily, todayStr);
 
     updateCurrentUserAndSync((prev) => ({
       ...prev,
       totalChaptersRead: Math.max(0, prev.totalChaptersRead - deltaRevert),
       streakDays: calculatedStreak,
-      dailyHistory: nextDailyHistory,
+      dailyHistory: aggregateDaily,
+      planDailyHistory: updatedPlanDailyHistory,
     }));
 
     setIsCompletedToday(snap.prevTodayCompleted);
@@ -3129,9 +3323,9 @@ export default function Home() {
       }
     : DEFAULT_SANCTUARY_CONFIG;
 
-  const viewingCompanionDailyHistory = viewingCompanionUser
-    ? loadUserDailyHistory(viewingCompanionUser)
-    : {};
+  const viewingCompanionDailyHistory = viewingCompanion?.dailyHistory || (viewingCompanionUser
+    ? loadUserDailyHistory(viewingCompanionUser, currentPlan?.id, plans)
+    : {});
 
   const displayThemeClass =
     user.displayMode === 'warm'
@@ -3447,7 +3641,7 @@ export default function Home() {
                         ? '章'
                         : '篇')
                     }
-                    dailyHistory={dailyPursuitHistory}
+                    dailyHistory={activePlanDailyHistory}
                     todayCompleted={isCurrentPlanCompletedToday}
                   />
                 </div>
@@ -3469,11 +3663,11 @@ export default function Home() {
 
                   <div className="grid grid-cols-3 gap-2 text-center py-2 bg-stone-50 rounded-2xl border border-stone-100">
                     <div>
-                      <div className="text-lg font-bold text-amber-700">{user.streakDays}</div>
+                      <div className="text-lg font-bold text-amber-700">{activePlanStreak}</div>
                       <div className="text-[10px] text-stone-500">連續天數</div>
                     </div>
                     <div className="border-x border-stone-200">
-                      <div className="text-lg font-bold text-stone-800">{user.totalChaptersRead}</div>
+                      <div className="text-lg font-bold text-stone-800">{activePlanTotalUnits}</div>
                       <div className="text-[10px] text-stone-500">已讀篇數</div>
                     </div>
                     <div>
@@ -3486,7 +3680,7 @@ export default function Home() {
                     <HeartHandshake className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
                     <p className="leading-relaxed">
                       「同那清心呼求主的人，竭力追求公義、信、愛、和平。」連續追求第{' '}
-                      <strong className="text-amber-700">{user.streakDays}</strong> 天！
+                      <strong className="text-amber-700">{activePlanStreak}</strong> 天！
                     </p>
                   </div>
                 </div>
@@ -3620,7 +3814,7 @@ export default function Home() {
         isOpen={isStatsModalOpen}
         onClose={() => setIsStatsModalOpen(false)}
         user={user}
-        dailyHistory={dailyPursuitHistory}
+        dailyHistory={activePlanDailyHistory}
       />
 
       {/* Sanctuary Modals */}

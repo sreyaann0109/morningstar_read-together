@@ -88,7 +88,7 @@
 * `unit_name` (text)：追求單位名稱（聖經類預設為「章」，信息類預設為「篇」）。
 * `total_units` (int4)：主題總單位數（半年新約固定為 260）。
 * `completed_units` (int4)：預設進度基準。
-* `members_json` (jsonb)：參與該主題之聖徒名單陣列，內含每位聖徒之獨立進度：
+* `members_json` (jsonb)：參與該主題之聖徒名單陣列，內含每位聖徒之獨立進度與主題獨立每日閱讀歷史：
   ```json
   [
     {
@@ -98,7 +98,17 @@
       "completedUnits": 24,
       "currentUnitTitle": "馬太福音 第 25 章",
       "currentVerses": "馬太福音 第 25 ～ 26 章",
-      "joinedAt": "2026-10-20T08:00:00Z"
+      "joinedAt": "2026-10-20T08:00:00Z",
+      "todayCompleted": true,
+      "lastCompletedDate": "2026-10-28",
+      "streakDays": 5,
+      "dailyHistory": {
+        "2026-10-24": 2,
+        "2026-10-25": 2,
+        "2026-10-26": 2,
+        "2026-10-27": 2,
+        "2026-10-28": 2
+      }
     }
   ]
   ```
@@ -116,7 +126,7 @@
 * `total_chapters_read` (int4)：累計追求總章/篇數。
 * `total_shares_count` (int4)：累計分享摸著亮光次數。
 * `total_amen_received` (int4)：累計榮獲同伴「阿們」次數。
-* `sanctuary_json` (jsonb)：神聖帳幕陳設配置（信物清單、宣告題詞與主題）。
+* `sanctuary_json` (jsonb)：神聖帳幕陳設配置（信物清單、宣告題詞與主題），並打包 `_planDailyHistory` 作為各主題每日歷史之跨裝置快速還原備援。
 
 ### 3.3 `posts`（摸著與亮光動態分享表）
 * `id` (text, PK)：分享篇章唯一識別碼。
@@ -169,6 +179,17 @@
   * 管理員在個人追求視圖（今日追求卡片、動態牆、切換追求主題彈窗）中，**嚴格僅能看到自己已加入的主題，絕不顯示自己所沒有加入的追求主題**。
   * 管理員若尚未加入任何追求主題，追求首頁將呈現引導至「管理控制台」之清爽引導畫面，絕不疊加他人主題。
   * 管理員可於控制台中隨時將自己加入任一主題成員，加入後方於個人追求首頁中顯示。
+
+#### 4.2.1 追求主題獨立每日閱讀歷史 (Theme-Isolated Daily History) 與即時統計基準
+* **全站主題隔離儲存 (Full Theme Isolation)**：
+  * 每位成員在各追求計畫中的打卡紀錄完全獨立隔離於 `ThematicMember.dailyHistory`（格式：`Record<"YYYY-MM-DD", number>`，記錄各日期已讀篇/章數）。
+  * 聖徒在主題 A 的打卡推進絕不污染主題 B，切換主題時熱力圖、統計數據與進度條即時重繪為該主題之真實數據。
+* **統計基準嚴格錨定每日歷史 (Statistics Strictly Driven by Daily History)**：
+  * **今日已追求判定**：嚴格比對 `(member.dailyHistory?.[currentUtc8Date] || 0) > 0`（以 UTC+8 台北時間當日記錄為唯一真相，輔以 `todayCompleted && lastCompletedDate === currentUtc8Date` 備援），徹底根絕跨日未清空之幽靈狀態。
+  * **連續天數 (Streak Days)**：由 `calculateStreakDaysFromHistory(memberDailyHistory, currentUtc8Date)` 動態回溯計算，杜絕未打卡卻虛報連勝天數。
+  * **累積追求篇數**：優先由 `Object.values(memberDailyHistory).reduce(...)` 加總真實打卡篇數，回歸 100% 真實資料。
+  * **追求熱力圖 (`PursuitMap`)**：首頁熱力圖直接綁定當前主題獨立之 `activePlanDailyHistory`；同伴追求地圖綁定該同伴在該主題之 `dailyHistory`。
+  * **追求歷程彈窗 (`StatsModal`)**：最近 7 天圓圈狀態與連續天數直接依據當前主題之每日歷史動態生成。
 
 ### 4.3 追求主題標準化與 6-Emoji 邀請碼管理
 * **標題樣式統一**：首頁「當前追求主題」卡片採用圓角圖示、標準標題與鼓勵副標，消除突兀字首。

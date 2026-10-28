@@ -238,10 +238,11 @@ export async function supabaseGetAllUsers(): Promise<UserProfile[]> {
     const joinedInviteCodes = Array.isArray(rawSanctuary?._joinedInviteCodes) ? rawSanctuary._joinedInviteCodes : undefined;
     const planSanctuaries = rawSanctuary?._planSanctuaries && typeof rawSanctuary._planSanctuaries === 'object' ? rawSanctuary._planSanctuaries : undefined;
     const dailyHistory = rawSanctuary?._dailyHistory && typeof rawSanctuary._dailyHistory === 'object' ? rawSanctuary._dailyHistory : undefined;
+    const planDailyHistory = rawSanctuary?._planDailyHistory && typeof rawSanctuary._planDailyHistory === 'object' ? rawSanctuary._planDailyHistory : undefined;
 
     let cleanSanctuary = undefined;
     if (rawSanctuary) {
-      const { _tempPassword, _joinedInviteCodes, _planSanctuaries, _dailyHistory, ...rest } = rawSanctuary;
+      const { _tempPassword, _joinedInviteCodes, _planSanctuaries, _dailyHistory, _planDailyHistory, ...rest } = rawSanctuary;
       if (Object.keys(rest).length > 0 && (rest.theme !== undefined || rest.placedRelicIds !== undefined || rest.motto !== undefined || rest.treeStage !== undefined)) {
         cleanSanctuary = rest as any;
       }
@@ -264,6 +265,7 @@ export async function supabaseGetAllUsers(): Promise<UserProfile[]> {
       sanctuary: cleanSanctuary,
       planSanctuaries,
       dailyHistory,
+      planDailyHistory,
       passwordResetRequested: Boolean(r.password_reset_requested),
       mustChangePassword: Boolean(r.must_change_password),
     };
@@ -296,12 +298,14 @@ export async function supabaseSaveUsers(users: UserProfile[], fullSync = false) 
       u.sanctuary ||
       u.planSanctuaries ||
       u.dailyHistory ||
+      u.planDailyHistory ||
       u.tempPassword ||
       (u.joinedInviteCodes && u.joinedInviteCodes.length > 0)
         ? {
             ...(u.sanctuary || {}),
             ...(u.planSanctuaries ? { _planSanctuaries: u.planSanctuaries } : {}),
             ...(u.dailyHistory ? { _dailyHistory: u.dailyHistory } : {}),
+            ...(u.planDailyHistory ? { _planDailyHistory: u.planDailyHistory } : {}),
             ...(u.tempPassword ? { _tempPassword: u.tempPassword } : {}),
             ...(u.joinedInviteCodes ? { _joinedInviteCodes: u.joinedInviteCodes } : {}),
           }

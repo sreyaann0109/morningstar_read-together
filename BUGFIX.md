@@ -18,6 +18,7 @@
   * [6. 新 Google 帳號首次登入觸發 Client-side Exception (removeChild NotFoundError)](#6-新-google-帳號首次登入觸發-client-side-exception-removechild-notfounderror)
   * [7. 管理員刪除人員即時跨裝置強制登出機制 (Real-time Forced Logout on User Deletion)](#7-管理員刪除人員即時跨裝置強制登出機制-real-time-forced-logout-on-user-deletion)
   * [8. 全面校正追求統計「虛增加一 (+1)」之邏輯偏差與跨日殘留問題](#8-全面校正追求統計虛增加一-1之邏輯偏差與跨日殘留問題)
+  * [9. 實裝追求主題獨立每日閱讀歷史 (Theme-Isolated Daily History) 與即時統計基準](#9-實裝追求主題獨立每日閱讀歷史-theme-isolated-daily-history-與即時統計基準)
 * [v1.1.2 修復紀錄 (2026-10-26)](#v112-修復紀錄-2026-10-26)
   * [1. 追求帳幕自訂佈置零回溯雲端持久化 (五重架構級安全防護)](#1-追求帳幕自訂佈置零回溯雲端持久化-五重架構級安全防護)
 * [v1.1.1 修復紀錄 (2026-10-25)](#v111-修復紀錄-2026-10-25)
@@ -163,6 +164,37 @@
   * [`src/components/AdminPanel.tsx`](src/components/AdminPanel.tsx)
   * [`src/app/page.tsx`](src/app/page.tsx)
   * [`src/data/ntBibleData.ts`](src/data/ntBibleData.ts)
+
+### 9. 實裝追求主題獨立每日閱讀歷史 (Theme-Isolated Daily History) 與即時統計基準
+* **問題描述**：使用者要求「在資料庫紀錄哪一天讀了多少（跟隨主題），統計資料就根據這個」。原系統之每日追求紀錄（`dailyHistory`）以全域單一對映儲存，不同追求主題間互相干擾混淆，且全站統計（今日打卡完成狀態、連續天數 streak、累計篇數、週進度 7 日圈圈、追求熱力圖）未能 100% 嚴格以該主題每日閱讀歷史為單一真相來源（Single Source of Truth）。
+* **原因剖析**：
+  1. **主題間資料未隔離**：聖徒若同時參與《新約一年一遍》與《晨興聖言》，在任一主題打卡會直接寫入全域 `user.dailyHistory`，導致切換至另一主題時，追求熱力圖與週進度仍然顯示其他主題之打卡點。
+  2. **缺少主題專屬每日打卡歷史容器**：`ThematicMember` 僅記錄累計 `completedUnits` 與 `lastCompletedDate`，缺乏 `dailyHistory: Record<string, number>` 紀錄「哪一天讀了多少章/篇」。
+  3. **統計邏輯散落且依賴布林值快照**：今日已完成狀態與連續天數計算若僅依賴非同步儲存的 `todayCompleted` 布林值，容易受跨日未重設、裝置時差影響。
+* **架構級解決方案**：
+  1. **型別定義與資料模型擴充 (`src/types/index.ts`)**：
+     - `ThematicMember` 新增 `dailyHistory?: Record<string, number>`：精確記錄該成員在該主題中每一天（`YYYY-MM-DD`）所讀章/篇數。
+     - `Companion` 新增 `dailyHistory?: Record<string, number>`：供帳幕互訪與同伴列表直接存取。
+     - `UserProfile` 新增 `planDailyHistory?: Record<string, Record<string, number>>`：以 `planId` 為鍵之第二層主題獨立閱讀歷史容器。
+  2. **雲端序列化零遷移無縫持久化 (`src/lib/supabaseDb.ts`)**：
+     - 利用 Supabase PostgreSQL 的 `plans.members_json` (jsonb) 天然支援物件欄位擴展特性，自動序列化與反序列化 `m.dailyHistory`，**完全不需更動資料庫 Schema 或執行遷移腳本**。
+     - 於 `users.sanctuary_json` 內部打包 `_planDailyHistory` 提供雙重安全備援，即使跨裝置換機亦可毫秒級恢復各主題閱讀歷史。
+  3. **動態打卡推進與進度回原 (`src/app/page.tsx`)**：
+     - `handleToggleComplete` 與 `handleSetProgressBatch`：打卡或批量更新進度時，直接精確計算增量 `deltaChapters`，寫入該成員在當前主題的 `m.dailyHistory[dateStr]`。
+     - 連續天數 `streakDays` 立即由 `calculateStreakDaysFromHistory(prevDaily, todayStr)` 即時演算。
+     - 10 秒防呆復原 `handleUndoProgress`：還原快照中之 `prevMemberDailyHistory`，精準消除當次增量。
+  4. **全站統計 100% 錨定主題閱讀歷史**：
+     - **今日完成判定**：`isCurrentPlanCompletedToday`、`currentCompanions`、`SanctuaryCard` 與 `AdminPanel` 全面更新為 `Boolean((m.dailyHistory?.[currentUtc8Date] || 0) > 0 || (m.todayCompleted && m.lastCompletedDate === currentUtc8Date))`。
+     - **追求熱力圖 (`PursuitMap`)**：傳入當前主題獨立之 `activePlanDailyHistory`，切換主題時熱力圖即刻切換為該主題的專屬歷程。
+     - **歷程彈窗 (`StatsModal`)**：連續天數由 `effectiveDailyHistory` 動態計算，累積篇數若有每日紀錄則由 `computedTotalUnits` 加總得出，週進度 7 日圈圈直接映射 `effectiveDailyHistory[dStr] > 0`。
+     - **同伴帳幕地圖 (`CompanionSanctuaryModal`)**：傳入該同伴在該主題之 `dailyHistory`，忠實展現同伴之主題追求熱力。
+* **影響檔案**：
+  * [`src/types/index.ts`](src/types/index.ts)
+  * [`src/lib/supabaseDb.ts`](src/lib/supabaseDb.ts)
+  * [`src/app/page.tsx`](src/app/page.tsx)
+  * [`src/components/StatsModal.tsx`](src/components/StatsModal.tsx)
+  * [`src/components/AdminPanel.tsx`](src/components/AdminPanel.tsx)
+  * [`src/components/SanctuaryCard.tsx`](src/components/SanctuaryCard.tsx)
 
 ---
 

@@ -437,7 +437,15 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   const totalAmen = allUsers.reduce((acc, u) => acc + (u.totalAmenReceived || 0), 0);
   const totalMemberships = plans.reduce((acc, p) => acc + (p.members?.length || 0), 0);
   const totalCompletedToday = plans.reduce(
-    (acc, p) => acc + (p.members?.filter((m) => Boolean(m.todayCompleted && m.lastCompletedDate === currentUtc8Date)).length || 0),
+    (acc, p) =>
+      acc +
+      (p.members?.filter(
+        (m) =>
+          Boolean(
+            (m.dailyHistory?.[currentUtc8Date] || 0) > 0 ||
+            (m.todayCompleted && m.lastCompletedDate === currentUtc8Date)
+          )
+      ).length || 0),
     0
   );
 
@@ -734,7 +742,13 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                     const isExpanded = expandedPlanIds.has(plan.id);
                     const isSelected = selectedPlanIds.has(plan.id);
                     const members = plan.members || [];
-                    const completedCount = members.filter((m) => Boolean(m.todayCompleted && m.lastCompletedDate === currentUtc8Date)).length;
+                    const completedCount = members.filter(
+                      (m) =>
+                        Boolean(
+                          (m.dailyHistory?.[currentUtc8Date] || 0) > 0 ||
+                          (m.todayCompleted && m.lastCompletedDate === currentUtc8Date)
+                        )
+                    ).length;
                     const totalMembers = members.length;
                     const completionPercentage =
                       totalMembers > 0 ? Math.round((completedCount / totalMembers) * 100) : 0;
@@ -2136,7 +2150,14 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                   <div className="space-y-2.5 divide-y divide-stone-100">
                     {plans.map((p) => {
                       const mCount = p.members?.length || 0;
-                      const cCount = p.members?.filter((m) => Boolean(m.todayCompleted && m.lastCompletedDate === currentUtc8Date)).length || 0;
+                      const cCount =
+                        p.members?.filter(
+                          (m) =>
+                            Boolean(
+                              (m.dailyHistory?.[currentUtc8Date] || 0) > 0 ||
+                              (m.todayCompleted && m.lastCompletedDate === currentUtc8Date)
+                            )
+                        ).length || 0;
                       const rate = mCount > 0 ? Math.round((cCount / mCount) * 100) : 0;
                       return (
                         <div key={p.id} className="pt-2.5 first:pt-0 space-y-1">
@@ -2584,7 +2605,10 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                                   <span className="font-bold text-stone-900 truncate">
                                     {m.name}
                                   </span>
-                                  {Boolean(m.todayCompleted && m.lastCompletedDate === currentUtc8Date) ? (
+                                  {Boolean(
+                                    (m.dailyHistory?.[currentUtc8Date] || 0) > 0 ||
+                                    (m.todayCompleted && m.lastCompletedDate === currentUtc8Date)
+                                  ) ? (
                                     <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.2 rounded border border-emerald-200">
                                       ✓今日已追求
                                     </span>

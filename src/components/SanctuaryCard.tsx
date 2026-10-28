@@ -83,7 +83,10 @@ export const SanctuaryCard: React.FC<SanctuaryCardProps> = ({
     : null;
   const currentUtc8Date = getUTC8DateString();
   const isCompletedToday = memberInCurrentPlan
-    ? Boolean(memberInCurrentPlan.todayCompleted && memberInCurrentPlan.lastCompletedDate === currentUtc8Date)
+    ? Boolean(
+        (memberInCurrentPlan.dailyHistory?.[currentUtc8Date] || 0) > 0 ||
+        (memberInCurrentPlan.todayCompleted && memberInCurrentPlan.lastCompletedDate === currentUtc8Date)
+      )
     : false;
 
   return (

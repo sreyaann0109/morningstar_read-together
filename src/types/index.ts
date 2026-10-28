@@ -15,6 +15,7 @@ export interface ThematicMember {
   completedUnits?: number;
   currentUnitTitle?: string;
   currentVerses?: string;
+  dailyHistory?: Record<string, number>; // 該主題專屬每日打卡追求篇/章數 (YYYY-MM-DD -> 篇數)
 }
 
 export interface PursuitPlan {
@@ -98,6 +99,7 @@ export interface Companion {
   totalUnits?: number;
   unitName?: string;
   currentUnitTitle?: string;
+  dailyHistory?: Record<string, number>; // 該同伴於該主題之每日打卡追求歷史
 }
 
 export type DisplayMode = 'light' | 'warm' | 'dark';
@@ -118,7 +120,8 @@ export interface UserProfile {
   joinedInviteCodes?: string[]; // 已加入主題之 6-Emoji 邀請碼
   sanctuary?: SanctuaryConfig; // 個人追求帳幕自訂陳設
   planSanctuaries?: Record<string, SanctuaryConfig>; // 各追求主題專屬帳幕自訂陳設
-  dailyHistory?: Record<string, number>; // 追求地圖每日追求歷史紀錄 (Key: YYYY-MM-DD -> 篇/章數)
+  dailyHistory?: Record<string, number>; // 全主題聚合每日追求歷史紀錄 (Key: YYYY-MM-DD -> 篇/章數)
+  planDailyHistory?: Record<string, Record<string, number>>; // 各追求主題獨立每日追求歷史 (Key: planId -> YYYY-MM-DD -> 篇數)
   passwordResetRequested?: boolean; // 是否送出了忘記密碼申請 (待管理員一鍵重設)
   mustChangePassword?: boolean; // 是否需強制更改密碼後方可進入
   tempPassword?: string; // 系統產生的 10 位臨時密碼，直到使用者重設完成後清除
