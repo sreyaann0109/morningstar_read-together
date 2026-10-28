@@ -294,22 +294,22 @@ export async function supabaseSaveUsers(users: UserProfile[], fullSync = false) 
   if (users.length === 0) return;
 
   const rows = users.map((u) => {
-    const packedSanctuary =
-      u.sanctuary ||
-      u.planSanctuaries ||
-      u.dailyHistory ||
-      u.planDailyHistory ||
-      u.tempPassword ||
-      (u.joinedInviteCodes && u.joinedInviteCodes.length > 0)
-        ? {
-            ...(u.sanctuary || {}),
-            ...(u.planSanctuaries ? { _planSanctuaries: u.planSanctuaries } : {}),
-            ...(u.dailyHistory ? { _dailyHistory: u.dailyHistory } : {}),
-            ...(u.planDailyHistory ? { _planDailyHistory: u.planDailyHistory } : {}),
-            ...(u.tempPassword ? { _tempPassword: u.tempPassword } : {}),
-            ...(u.joinedInviteCodes ? { _joinedInviteCodes: u.joinedInviteCodes } : {}),
-          }
-        : null;
+    const rawSanctuaryConfig = u.sanctuary || {};
+    const cleanSanctuaryConfig: Record<string, any> = {};
+    Object.keys(rawSanctuaryConfig).forEach((k) => {
+      if (!k.startsWith('_')) {
+        cleanSanctuaryConfig[k] = (rawSanctuaryConfig as any)[k];
+      }
+    });
+
+    const packedSanctuary = {
+      ...cleanSanctuaryConfig,
+      _dailyHistory: u.dailyHistory || {},
+      _planDailyHistory: u.planDailyHistory || {},
+      ...(u.planSanctuaries ? { _planSanctuaries: u.planSanctuaries } : {}),
+      ...(u.tempPassword ? { _tempPassword: u.tempPassword } : {}),
+      ...(u.joinedInviteCodes ? { _joinedInviteCodes: u.joinedInviteCodes } : {}),
+    };
 
     return {
       id: u.id,

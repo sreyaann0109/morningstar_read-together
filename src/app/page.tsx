@@ -1737,15 +1737,23 @@ export default function Home() {
 
     const nextUsers = allUsersRef.current.map((u) => {
       if (idSet.has(u.id)) {
-        const resetU = { ...u, streakDays: 0, totalChaptersRead: 0, dailyHistory: {} };
+        const resetU: UserProfile = {
+          ...u,
+          streakDays: 0,
+          totalChaptersRead: 0,
+          dailyHistory: {},
+          planDailyHistory: {},
+        };
         try {
           localStorage.setItem(getUserStorageKey(u.id, 'profile'), JSON.stringify(resetU));
           localStorage.setItem(getUserStorageKey(u.id, 'completed_today'), JSON.stringify(false));
+          localStorage.removeItem(getUserStorageKey(u.id, 'completed_today_date'));
           localStorage.setItem(getUserStorageKey(u.id, 'daily_units_history'), JSON.stringify({}));
           plansRef.current.forEach((pl) => {
             try {
               localStorage.removeItem(getUserStorageKey(u.id, `plan_${pl.id}_completed_units`));
               localStorage.removeItem(getUserStorageKey(u.id, `plan_${pl.id}_completed_today`));
+              localStorage.removeItem(getUserStorageKey(u.id, `plan_${pl.id}_daily_units`));
             } catch (e) {}
           });
         } catch (e) {}
@@ -1764,9 +1772,11 @@ export default function Home() {
               ...m,
               streakDays: 0,
               todayCompleted: false,
+              lastCompletedDate: undefined,
               completedUnits: 0,
-              currentUnitTitle: '第 1 篇',
+              currentUnitTitle: (p.category === 'bible' || p.category.includes('nt')) ? '第 1 章' : '第 1 篇',
               encouragedToday: false,
+              dailyHistory: {},
             }
           : m
       ),
@@ -1774,11 +1784,23 @@ export default function Home() {
     savePlans(updatedPlans);
 
     if (idSet.has(user.id)) {
-      setUser((prev) => ({ ...prev, streakDays: 0, totalChaptersRead: 0, dailyHistory: {} }));
+      setUser((prev) => ({
+        ...prev,
+        streakDays: 0,
+        totalChaptersRead: 0,
+        dailyHistory: {},
+        planDailyHistory: {},
+      }));
       setIsCompletedToday(false);
       setDailyPursuitHistory({});
       try {
-        sessionStorage.setItem('morningstar_current_user', JSON.stringify({ ...user, streakDays: 0, totalChaptersRead: 0, dailyHistory: {} }));
+        sessionStorage.setItem('morningstar_current_user', JSON.stringify({
+          ...user,
+          streakDays: 0,
+          totalChaptersRead: 0,
+          dailyHistory: {},
+          planDailyHistory: {},
+        }));
       } catch (e) {}
     }
 
@@ -2118,6 +2140,7 @@ export default function Home() {
       streakDays: 0,
       totalChaptersRead: 0,
       dailyHistory: {},
+      planDailyHistory: {},
     };
 
     const nextUsers = currentUsers.map((u) => (u.id === userId ? updatedTarget : u));
@@ -2126,7 +2149,15 @@ export default function Home() {
     try {
       localStorage.setItem(getUserStorageKey(userId, 'profile'), JSON.stringify(updatedTarget));
       localStorage.setItem(getUserStorageKey(userId, 'completed_today'), JSON.stringify(false));
+      localStorage.removeItem(getUserStorageKey(userId, 'completed_today_date'));
       localStorage.setItem(getUserStorageKey(userId, 'daily_units_history'), JSON.stringify({}));
+      currentPlans.forEach((pl) => {
+        try {
+          localStorage.removeItem(getUserStorageKey(userId, `plan_${pl.id}_completed_units`));
+          localStorage.removeItem(getUserStorageKey(userId, `plan_${pl.id}_completed_today`));
+          localStorage.removeItem(getUserStorageKey(userId, `plan_${pl.id}_daily_units`));
+        } catch (e) {}
+      });
     } catch (e) {}
 
     if (userId === user.id) {
@@ -2148,14 +2179,17 @@ export default function Home() {
           try {
             localStorage.removeItem(getUserStorageKey(userId, `plan_${p.id}_completed_units`));
             localStorage.removeItem(getUserStorageKey(userId, `plan_${p.id}_completed_today`));
+            localStorage.removeItem(getUserStorageKey(userId, `plan_${p.id}_daily_units`));
           } catch (e) {}
           return {
             ...m,
             todayCompleted: false,
+            lastCompletedDate: undefined,
             streakDays: 0,
             completedUnits: 0,
-            currentUnitTitle: '第 1 篇',
+            currentUnitTitle: (p.category === 'bible' || p.category.includes('nt')) ? '第 1 章' : '第 1 篇',
             encouragedToday: false,
+            dailyHistory: {},
           };
         }
         return m;

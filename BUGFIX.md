@@ -19,6 +19,7 @@
   * [7. 管理員刪除人員即時跨裝置強制登出機制 (Real-time Forced Logout on User Deletion)](#7-管理員刪除人員即時跨裝置強制登出機制-real-time-forced-logout-on-user-deletion)
   * [8. 全面校正追求統計「虛增加一 (+1)」之邏輯偏差與跨日殘留問題](#8-全面校正追求統計虛增加一-1之邏輯偏差與跨日殘留問題)
   * [9. 實裝追求主題獨立每日閱讀歷史 (Theme-Isolated Daily History) 與即時統計基準](#9-實裝追求主題獨立每日閱讀歷史-theme-isolated-daily-history-與即時統計基準)
+  * [10. 重設進度未徹底清空雲端每日歷史與主題歷程導致統計殘留](#10-重設進度未徹底清空雲端每日歷史與主題歷程導致統計殘留)
 * [v1.1.2 修復紀錄 (2026-10-26)](#v112-修復紀錄-2026-10-26)
   * [1. 追求帳幕自訂佈置零回溯雲端持久化 (五重架構級安全防護)](#1-追求帳幕自訂佈置零回溯雲端持久化-五重架構級安全防護)
 * [v1.1.1 修復紀錄 (2026-10-25)](#v111-修復紀錄-2026-10-25)
@@ -195,6 +196,28 @@
   * [`src/components/StatsModal.tsx`](src/components/StatsModal.tsx)
   * [`src/components/AdminPanel.tsx`](src/components/AdminPanel.tsx)
   * [`src/components/SanctuaryCard.tsx`](src/components/SanctuaryCard.tsx)
+
+### 10. 重設進度未徹底清空雲端每日歷史與主題歷程導致統計殘留
+* **問題描述**：使用者回報「我把資料清除重設進度，統計沒有重設，是不是資料庫也沒有」。執行重設進度或清空瀏覽器快取後，連續追求天數、累計已讀篇數、追求熱力圖、今日打卡狀態依然殘留舊資料，未歸零。
+* **原因剖析**：
+  1. **重設函式未清理主題專屬歷史**：`handleResetUserProgress` 與 `handleBatchResetUserProgress` 僅重設了 `streakDays: 0, totalChaptersRead: 0, completedUnits: 0`，但未將成員物件內的 `m.dailyHistory` 清空為 `{}`，亦未將 `m.lastCompletedDate` 清空為 `undefined`，且未重設 `target.planDailyHistory = {}`。
+  2. **本地主題快取未清除**：重設時未移除 `localStorage` 中的 `plan_${planId}_daily_units`，使得 `loadUserDailyHistory` 仍能讀回舊打卡點。
+  3. **資料庫未同步抹除**：因送出給 Supabase 的成員清單與聖徒封包中仍保有 `dailyHistory` 與 `_planDailyHistory`，雲端資料庫（`plans.members_json` 與 `users.sanctuary_json`）繼續保存該員的歷史記錄；前端背景輪詢或重整頁面時，資料庫資料立即將舊統計與熱力圖復原。
+  4. **雲端序列化底層殘留防護**：`supabaseSaveUsers` 在打包 `packedSanctuary` 時，若 `u.sanctuary` 曾意外混入舊私有欄位（以 `_` 開頭），會覆蓋清空後的空值。
+* **解決方案**：
+  1. **重設函式全維度歸零 (`src/app/page.tsx`)**：
+     - 單人與批量重設時，將 `user.dailyHistory` 與 `user.planDailyHistory` 徹底指派為 `{}`。
+     - 於所有追求主題的成員物件中，明確指派 `m.dailyHistory = {}`、`m.lastCompletedDate = undefined`、`m.todayCompleted = false`、`m.completedUnits = 0`、`m.streakDays = 0`。
+     - 清除 `localStorage` 中所有主題鍵（`plan_${p.id}_completed_units`、`plan_${p.id}_completed_today`、`plan_${p.id}_daily_units`、`completed_today_date`）。
+     - 同步調用 `saveAllUsers` 與 `savePlans`，即刻原子化推播至雲端 Supabase 資料庫，保證資料庫一併歸零。
+  2. **雲端打包徹底過濾私有欄位 (`src/lib/supabaseDb.ts`)**：
+     - 在 `supabaseSaveUsers` 中過濾所有開頭為 `_` 的舊殘留鍵，確保清空後的 `_dailyHistory: {}` 與 `_planDailyHistory: {}` 權威寫入 Supabase。
+  3. **資料庫髒資料清理驗證**：
+     - 已透過管理腳本校準雲端資料庫中該帳號的主題歷史與篇數，確認各追求主題進度與統計全數歸零。
+* **影響檔案**：
+  * [`src/app/page.tsx`](src/app/page.tsx)
+  * [`src/lib/supabaseDb.ts`](src/lib/supabaseDb.ts)
+  * [`BUGFIX.md`](BUGFIX.md)
 
 ---
 
