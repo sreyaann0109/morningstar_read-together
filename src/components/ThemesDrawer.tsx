@@ -249,7 +249,7 @@ export const ThemesDrawer: React.FC<ThemesDrawerProps> = ({
                       <div className="space-y-1.5 pt-1">
                         <div className="flex items-center justify-between text-[11px]">
                           <span className="font-medium text-amber-900 dark:text-amber-300">
-                            第 {Math.min(p.completedUnits + 1, p.totalUnits)} {unit} / 共 {p.totalUnits} {unit}
+                            已追求 {p.completedUnits} / {p.totalUnits} {unit}
                           </span>
                           <span className="font-mono text-stone-500 dark:text-stone-400 font-semibold">
                             {percent}%

@@ -679,7 +679,7 @@ export default function Home() {
                     if (m.lastCompletedDate) {
                       mergedDailyHistory[m.lastCompletedDate] = Math.max(mergedDailyHistory[m.lastCompletedDate] || 0, 1);
                     }
-                    if (m.todayCompleted && (!m.lastCompletedDate || m.lastCompletedDate === currentUtc8)) {
+                    if (m.todayCompleted && m.lastCompletedDate === currentUtc8) {
                       mergedDailyHistory[currentUtc8] = Math.max(mergedDailyHistory[currentUtc8] || 0, 1);
                     }
                   }
@@ -863,7 +863,7 @@ export default function Home() {
                     if (m.lastCompletedDate) {
                       mergedDailyHistory[m.lastCompletedDate] = Math.max(mergedDailyHistory[m.lastCompletedDate] || 0, 1);
                     }
-                    if (m.todayCompleted && (!m.lastCompletedDate || m.lastCompletedDate === currentUtc8)) {
+                    if (m.todayCompleted && m.lastCompletedDate === currentUtc8) {
                       mergedDailyHistory[currentUtc8] = Math.max(mergedDailyHistory[currentUtc8] || 0, 1);
                     }
                   }
@@ -2190,7 +2190,10 @@ export default function Home() {
     const activePlanId = rawCurrentPlan?.id || selectedPlanId;
     const rawTargetPlan = plansRef.current.find((p) => p.id === activePlanId);
     const currentMember = rawTargetPlan?.members?.find((m) => m.userId === user.id);
-    const prevPlanCompleted = currentMember ? Boolean(currentMember.todayCompleted) : isCompletedToday;
+    const todayUtc8Str = getUTC8DateString();
+    const prevPlanCompleted = currentMember
+      ? Boolean(currentMember.todayCompleted && currentMember.lastCompletedDate === todayUtc8Str)
+      : isCompletedToday;
     const nextState = !prevPlanCompleted;
 
     setIsCompletedToday(nextState);
@@ -2636,9 +2639,9 @@ export default function Home() {
       totalSharesCount: prev.totalSharesCount + 1,
       streakDays: calculateStreakDaysFromHistory(prev.dailyHistory),
       totalChaptersRead:
-        sharedUnitNum !== null
-          ? Math.max(prev.totalChaptersRead, sharedUnitNum)
-          : prev.totalChaptersRead + 1,
+        sharedUnitNum !== null && sharedUnitNum > prev.totalChaptersRead
+          ? sharedUnitNum
+          : prev.totalChaptersRead,
     }));
 
     showToast('🌟 亮光分享已發布！同伴們能看見並同聲阿們！');

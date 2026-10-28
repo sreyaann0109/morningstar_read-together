@@ -17,6 +17,7 @@
   * [5. 本機開發伺服器快取衝突導致 localhost 卡死 (Dev Server Chunk 404)](#5-本機開發伺服器快取衝突導致-localhost-卡死-dev-server-chunk-404)
   * [6. 新 Google 帳號首次登入觸發 Client-side Exception (removeChild NotFoundError)](#6-新-google-帳號首次登入觸發-client-side-exception-removechild-notfounderror)
   * [7. 管理員刪除人員即時跨裝置強制登出機制 (Real-time Forced Logout on User Deletion)](#7-管理員刪除人員即時跨裝置強制登出機制-real-time-forced-logout-on-user-deletion)
+  * [8. 全面校正追求統計「虛增加一 (+1)」之邏輯偏差與跨日殘留問題](#8-全面校正追求統計虛增加一-1之邏輯偏差與跨日殘留問題)
 * [v1.1.2 修復紀錄 (2026-10-26)](#v112-修復紀錄-2026-10-26)
   * [1. 追求帳幕自訂佈置零回溯雲端持久化 (五重架構級安全防護)](#1-追求帳幕自訂佈置零回溯雲端持久化-五重架構級安全防護)
 * [v1.1.1 修復紀錄 (2026-10-25)](#v111-修復紀錄-2026-10-25)
@@ -125,6 +126,43 @@
     - 彈出溫馨提示：`⚠️ 您的帳號已被管理同工移除，系統已為您安全登出。`
   * **跨分頁即時聯動監聽**：加入 `window.addEventListener('storage')` 監聽 `morningstar_is_logged_in`，同裝置多分頁即刻同步登出。
 * **影響檔案**：[`src/app/page.tsx`](src/app/page.tsx)
+
+### 8. 全面校正追求統計「虛增加一 (+1)」之邏輯偏差與跨日殘留問題
+* **問題描述**：使用者回報追求統計數字出現非預期的「自動加一」或數據虛高現象。
+* **原因剖析與盤查**：
+  1. **常規專題追求進度標籤混淆已完成與下一篇目**：
+     - 在 [`TodayPursuitCard.tsx`](src/components/TodayPursuitCard.tsx)、[`ThemesDrawer.tsx`](src/components/ThemesDrawer.tsx) 與 [`PlanSelectorModal.tsx`](src/components/PlanSelectorModal.tsx) 中，常規追求主題的當前進度顯示原先寫為 `Math.min(plan.completedUnits + 1, plan.totalUnits)`。
+     - 當聖徒剛加入、已完成篇數為 0 時，進度條顯示 `0%`，上方標籤卻寫為「第 1 篇 / 共 12 篇」；當聖徒讀完第 1 篇打卡後（`completedUnits = 1`），標籤赫然跳成「第 2 篇 / 共 12 篇 (8%)」，導致進度顯示始終比實際已讀篇數多加了 1。
+  2. **管理員後台統計未校驗打卡日期造成跨日累加**：
+     - 在 [`AdminPanel.tsx`](src/components/AdminPanel.tsx) 中，計算「今日已追求完成總人次」、主題完成人次與聖徒列表完成狀態時，直接使用布林值 `m.todayCompleted`，未比對 `m.lastCompletedDate === currentUtc8Date`。
+     - 由於系統無跨日伺服器 cron 自動重置資料庫欄位，昨日（或前日）已完成的聖徒在今日仍被後台判定為「今日已完成」，造成後台統計人數異常虛高加一或多人。
+  3. **主頁面掛載與輪詢時寬鬆判空強行寫入今日歷史**：
+     - 在 [`src/app/page.tsx`](src/app/page.tsx) 的 `mergedDailyHistory` 邏輯中，原先有 `if (m.todayCompleted && (!m.lastCompletedDate || m.lastCompletedDate === currentUtc8))`。
+     - 若資料庫舊成員資料遺漏了 `lastCompletedDate`，系統誤將其視為「今天完成」，強行把今日歷史打卡設為 1，進而觸發連續天數 streak 自動多加 1 天。
+  4. **發表亮光分享心得時無端累加追求篇數**：
+     - 在 `handlePublishLight` 中，若分享標題未解析出具體篇號（`sharedUnitNum === null`），系統誤執行 `prev.totalChaptersRead + 1`，導致聖徒僅發表心得感想，累計追求篇數就被錯誤累加。
+  5. **打卡切換按鈕跨日狀態判斷**：
+     - `handleToggleComplete` 中取得 `prevPlanCompleted` 時未驗證是否為「今日」完成，造成跨日後點擊打卡可能發生狀態倒置。
+  6. **新約速讀與半年一遍期程未開始時的負值天數鉗位**：
+     - 在 [`ntBibleData.ts`](src/data/ntBibleData.ts) 中，若追求主題起始日大於今日（尚未開始），原先直接強制 Clamp 為第 1 天，導致期程未開始就提示「落後進度」。
+* **解決方案**：
+  * **進度標籤語義清晰統一**：
+    - 將 `TodayPursuitCard`、`ThemesDrawer` 與 `PlanSelectorModal` 之常規專題進度標籤修正為 `已追求 {completedUnits} / {totalUnits} {unit} ({percent}%)`，真實忠實反映聖徒實際完成之篇數，徹底移除人工 `+ 1`。
+  * **後台今日完成人數嚴格校準日期**：
+    - 在 `AdminPanel.tsx` 引入 `getUTC8DateString()`，統計今日完成時嚴格比對 `Boolean(m.todayCompleted && m.lastCompletedDate === currentUtc8Date)`，徹底解決跨日人數殘留。
+  * **杜絕幽靈今日歷史**：
+    - 移除 `mergedDailyHistory` 的 `!m.lastCompletedDate` 寬鬆回退，僅在 `m.todayCompleted && m.lastCompletedDate === currentUtc8` 時寫入今日打卡。
+  * **純化亮光分享計數**：
+    - `handlePublishLight` 僅累加 `totalSharesCount`，`totalChaptersRead` 僅在分享篇號大於當前累計篇數時才進行推進，絕不再盲目 `+ 1`。
+  * **優化未開始期程判定**：
+    - `calculateNTHalfYearPace` 與 `calculateNTSpeedPace` 增加 `isStarted` 判定，起始日在未來的期程 `daysElapsed` 為 0，預期章數為 0，提示期程即將開始。
+* **影響檔案**：
+  * [`src/components/TodayPursuitCard.tsx`](src/components/TodayPursuitCard.tsx)
+  * [`src/components/ThemesDrawer.tsx`](src/components/ThemesDrawer.tsx)
+  * [`src/components/PlanSelectorModal.tsx`](src/components/PlanSelectorModal.tsx)
+  * [`src/components/AdminPanel.tsx`](src/components/AdminPanel.tsx)
+  * [`src/app/page.tsx`](src/app/page.tsx)
+  * [`src/data/ntBibleData.ts`](src/data/ntBibleData.ts)
 
 ---
 

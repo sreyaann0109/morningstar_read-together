@@ -300,7 +300,7 @@ export const TodayPursuitCard: React.FC<TodayPursuitCardProps> = ({
             </div>
           ) : (
             <span className="text-xs sm:text-sm font-bold text-amber-900 dark:text-amber-200 bg-amber-100/70 dark:bg-amber-950/60 border border-amber-200/60 dark:border-amber-800 px-3 py-1 rounded-xl">
-              當前進度：第 {Math.min(plan.completedUnits + 1, plan.totalUnits)} {unit} / 共 {plan.totalUnits} {unit}
+              當前進度：已追求 {plan.completedUnits} / {plan.totalUnits} {unit} ({percent}%)
             </span>
           )}
 

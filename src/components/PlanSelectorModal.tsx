@@ -130,7 +130,7 @@ export const PlanSelectorModal: React.FC<PlanSelectorModalProps> = ({
                       )}
                       <div className="flex items-center gap-3 flex-wrap text-[11px]">
                         <span className="text-amber-800 font-medium">
-                          進度：第 {Math.min(p.completedUnits + 1, p.totalUnits)} {p.unitName || (p.category === 'bible' ? '章' : '篇')} / 共 {p.totalUnits} {p.unitName || (p.category === 'bible' ? '章' : '篇')} ({percent}%)
+                          進度：已追求 {p.completedUnits} / {p.totalUnits} {p.unitName || (p.category === 'bible' ? '章' : '篇')} ({percent}%)
                         </span>
                         {p.startDate && (
                           <span className="text-stone-400">

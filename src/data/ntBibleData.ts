@@ -203,9 +203,10 @@ export function calculateNTSpeedPace(
 
   // 整期追求總天數 (由 startDate 到 endDate 決定，不可被覆蓋)
   const totalDays = Math.max(1, diffDaysUTC8(startStr, endStr) + 1);
-  const rawElapsed = diffDaysUTC8(startStr, todayStr) + 1;
-  const daysElapsed = Math.max(1, Math.min(totalDays, rawElapsed));
-  const daysRemaining = Math.max(0, totalDays - daysElapsed);
+  const rawDiff = diffDaysUTC8(startStr, todayStr);
+  const isStarted = rawDiff >= 0;
+  const daysElapsed = isStarted ? Math.max(1, Math.min(totalDays, rawDiff + 1)) : 0;
+  const daysRemaining = isStarted ? Math.max(0, totalDays - daysElapsed) : totalDays;
 
   // 目標幾天讀完一遍 (預設 60 天，或由使用者自選 30/60/90 天)
   const speedDays = speedDaysParam && speedDaysParam > 0 ? speedDaysParam : 60;
@@ -213,8 +214,8 @@ export function calculateNTSpeedPace(
   const targetTotalRounds = Math.max(1, Math.round((totalDays / speedDays) * 10) / 10);
 
   // 累計預期章數與落後/超前差距 (支援跨遍累計)
-  const totalExpectedChapters = Math.ceil(dailyTargetChapters * daysElapsed);
-  const expectedRoundUnits = ((totalExpectedChapters - 1) % TOTAL_NT_CHAPTERS) + 1;
+  const totalExpectedChapters = isStarted ? Math.ceil(dailyTargetChapters * daysElapsed) : 0;
+  const expectedRoundUnits = totalExpectedChapters > 0 ? (((totalExpectedChapters - 1) % TOTAL_NT_CHAPTERS) + 1) : 1;
   const expectedLocation = getNTChapterLocation(expectedRoundUnits);
 
   const paceDelta = completedUnits - totalExpectedChapters;
@@ -287,13 +288,14 @@ export function calculateNTHalfYearPace(
   const todayStr = getUTC8DateString();
   const startStr = (startDateStr || todayStr).split('T')[0];
 
-  // If start is in the future, daysElapsed is clamped to 1
-  const daysDiff = diffDaysUTC8(startStr, todayStr) + 1;
-  const daysElapsed = Math.max(1, Math.min(TOTAL_NT_DAYS, daysDiff));
-  const daysRemaining = Math.max(0, TOTAL_NT_DAYS - daysElapsed);
+  // If start is in the future, daysElapsed is 0 (not started yet)
+  const rawDaysDiff = diffDaysUTC8(startStr, todayStr);
+  const isStarted = rawDaysDiff >= 0;
+  const daysElapsed = isStarted ? Math.max(1, Math.min(TOTAL_NT_DAYS, rawDaysDiff + 1)) : 0;
+  const daysRemaining = isStarted ? Math.max(0, TOTAL_NT_DAYS - daysElapsed) : TOTAL_NT_DAYS;
 
-  const expectedDayToday = daysElapsed;
-  const expectedChaptersToday = Math.min(TOTAL_NT_CHAPTERS, expectedDayToday * 2);
+  const expectedDayToday = Math.max(1, daysElapsed);
+  const expectedChaptersToday = isStarted ? Math.min(TOTAL_NT_CHAPTERS, daysElapsed * 2) : 0;
   const expectedSchedule = getNTDaySchedule(expectedDayToday);
 
   // paceDelta: 實際已讀章數 - 今日應讀章數
